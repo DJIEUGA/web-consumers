@@ -172,7 +172,6 @@ function Connexion() {
         if (res?.success && res?.data) {
           // redirect based on role
           const redirect = authStore.getDashboardRoute(res.data.role);
-          console.log(`from connection: ${redirect} for role ${res.data.role}`);
           navigate(redirect);
         }
       },

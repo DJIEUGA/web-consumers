@@ -20,6 +20,7 @@ import SearchResults from './pages/searchResults.jsx';
 import DashboardAdmin from './pages/DashboardAdmin';
 
 import './App.css';
+import DashboardCustomer from './pages/DashboardCustomer.tsx';
 
 function App() {
   // Initialize auth from localStorage on app mount
@@ -59,6 +60,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MODERATOR']}>
                   <DashboardAdmin />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard-client" 
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_CUSTOMER']}>
+                  <DashboardCustomer />
                 </ProtectedRoute>
               } 
             />

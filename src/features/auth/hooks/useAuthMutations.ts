@@ -19,7 +19,6 @@ export const useLoginMutation = () => {
       return response;
     },
     onSuccess: (data: any) => {
-      console.log(data.data);
       if (data.data) {
         const { role, token } = data.data;
         authStore.login(role, token);

@@ -119,7 +119,6 @@ export const useAuthStore = create<AuthState>()(
 
       getDashboardRoute: (role) => {
         const r = role ?? get().user?.role;
-        console.log(r)
 
         switch (r) {
           case 'ROLE_PRO':
@@ -127,7 +126,7 @@ export const useAuthStore = create<AuthState>()(
           case 'ROLE_ADMIN':
             return '/dashboard-admin';
           case 'ROLE_CUSTOMER':
-            return '/dashboard-admin';
+            return '/dashboard-client';
           default:
             return '/';
         }
