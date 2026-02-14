@@ -19,7 +19,7 @@
     "baseUrl": "src",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
   },
   "include": ["src/**/*","vite.config.ts",
     "eslint.config.js"],

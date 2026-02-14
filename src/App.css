@@ -1,4 +1,15 @@
 /* App.css - Gardez seulement les styles globaux de base */
+@import "tailwindcss";
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

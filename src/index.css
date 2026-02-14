@@ -1,3 +1,67 @@
+@import "tailwindcss";
+
+
+
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 180 60% 50%;
+    --accent-foreground: 0 0% 100%;
+    /* Jobty Primary: #3DC7C9 (Cyan) */
+    --primary: 181 100% 49%;
+    --primary-foreground: 0 0% 100%;
+    /* Jobty Secondary: #6852A3 (Purple) */
+    --secondary: 259 42% 45%;
+    --secondary-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 89%;
+    --input: 0 0% 96%;
+    --ring: 181 100% 49%;
+    --radius: 12px;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 180 60% 50%;
+    --accent-foreground: 0 0% 9%;
+    --primary: 181 100% 49%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 259 42% 55%;
+    --secondary-foreground: 0 0% 9%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 181 100% 49%;
+  }
+}
+
+@layer base {
+ * {
+    @apply border-[hsl(var(--border))];
+  }
+    body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

@@ -4,7 +4,6 @@
  */
 
 import { apiGet, apiPost, apiPut, apiPatch, apiUpload } from '../../../services/apiClient';
-import { API_ENDPOINTS } from '../../../utils/constants';
 import { 
   PROFILE_ENDPOINTS, 
   UserProfileUpdateDto, 
@@ -42,16 +41,15 @@ export interface UpdatePasswordPayload {
  * Get current user's profile
  */
 export const getProfile = async (): Promise<ApiResponse> => {
-  return apiGet(API_ENDPOINTS.USERS.PROFILE);
+  return apiGet(PROFILE_ENDPOINTS.ME);
 };
 
 /**
  * Get profile by user ID
  */
-export const getProfileById = async (
-  userId: string
-): Promise<ApiResponse> => {
-  return apiGet(`${API_ENDPOINTS.USERS.LIST}/${userId}`);
+export const getProfileById = async (userId: string): Promise<ApiResponse> => {
+  const path = PROFILE_ENDPOINTS.BY_ID.replace(':id', userId);
+  return apiGet(path);
 };
 
 /**
@@ -60,43 +58,37 @@ export const getProfileById = async (
 export const updateProfile = async (
   profileData: UpdateProfilePayload
 ): Promise<ApiResponse> => {
-  return apiPut(API_ENDPOINTS.USERS.PROFILE, profileData);
+  return apiPut(PROFILE_ENDPOINTS.ME, profileData);
 };
 
 /**
  * Upload avatar/profile picture
  */
-export const uploadAvatar = async (
-  file: File
-): Promise<ApiResponse> => {
+export const uploadAvatar = async (file: File): Promise<ApiResponse> => {
   const formData = new FormData();
   formData.append('avatar', file);
 
-  return apiUpload(`${API_ENDPOINTS.USERS.PROFILE}/avatar`, formData);
+  return apiUpload(PROFILE_ENDPOINTS.AVATAR, formData);
 };
 
 /**
  * Upload KYC documents (for freelancers)
  */
-export const uploadKYC = async (
-  kycData: KycPayload
-): Promise<ApiResponse> => {
+export const uploadKYC = async (kycData: KycPayload): Promise<ApiResponse> => {
   const formData = new FormData();
 
   Object.entries(kycData).forEach(([key, value]) => {
-    formData.append(key, value);
+    formData.append(key, value as any);
   });
 
-  return apiUpload(`${API_ENDPOINTS.USERS.PROFILE}/kyc`, formData);
+  return apiUpload(PROFILE_ENDPOINTS.KYC, formData);
 };
 
 /**
  * Verify email
  */
-export const verifyEmail = async (
-  token: string
-): Promise<ApiResponse> => {
-  return apiPost(`${API_ENDPOINTS.USERS.PROFILE}/verify-email`, { token });
+export const verifyEmail = async (token: string): Promise<ApiResponse> => {
+  return apiPost(PROFILE_ENDPOINTS.VERIFY_EMAIL, { token });
 };
 
 /**
@@ -105,19 +97,14 @@ export const verifyEmail = async (
 export const updatePassword = async (
   passwordData: UpdatePasswordPayload
 ): Promise<ApiResponse> => {
-  return apiPost(
-    `${API_ENDPOINTS.USERS.PROFILE}/change-password`,
-    passwordData
-  );
+  return apiPost(PROFILE_ENDPOINTS.CHANGE_PASSWORD, passwordData);
 };
 
 /**
  * Delete account
  */
-export const deleteAccount = async (
-  password: string
-): Promise<ApiResponse> => {
-  return apiPost(`${API_ENDPOINTS.USERS.PROFILE}/delete`, { password });
+export const deleteAccount = async (password: string): Promise<ApiResponse> => {
+  return apiPost(PROFILE_ENDPOINTS.DELETE, { password });
 };
 
 /**
