@@ -22,6 +22,6 @@
     },
   },
   "include": ["src/**/*","vite.config.ts",
-    "eslint.config.js"],
+    "eslint.config.js", "tailwind.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

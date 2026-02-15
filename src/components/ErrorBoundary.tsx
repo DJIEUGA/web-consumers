@@ -6,8 +6,8 @@ type State = {
   errorInfo: React.ErrorInfo | null;
 };
 
-class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, State> {
-  constructor(props: React.PropsWithChildren<{}>) {
+class ErrorBoundary extends React.Component<React.PropsWithChildren<object>, State> {
+  constructor(props: React.PropsWithChildren<object>) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
@@ -18,7 +18,6 @@ class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, State> 
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log in dev
-    // eslint-disable-next-line no-console
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     if (import.meta.env.PROD && (window as any).errorReporter) {
       (window as any).errorReporter.captureException(error, { contexts: { react: errorInfo } });

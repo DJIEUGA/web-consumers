@@ -209,7 +209,6 @@ function Connexion() {
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    // eslint-disable-next-line no-console
 
     loginMutation.mutate(loginData, {
       onSuccess: (res) => {
@@ -225,7 +224,6 @@ function Connexion() {
           err?.response?.message ||
           err?.response?.data?.message ||
           err?.message;
-        // eslint-disable-next-line no-alert, no-console
         console.error("Login failed error object:", err);
         alert(serverMessage || "Login failed. Please check your credentials.");
       },
