@@ -1,10 +1,15 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 /**
  * User roles
  */
-export type UserRole = 'ROLE_CUSTOMER' | 'ROLE_PRO' | 'ROLE_ADMIN' | 'ROLE_ENTERPRISE' | 'ROLE_MODERATOR';
+export type UserRole =
+  | "ROLE_CUSTOMER"
+  | "ROLE_PRO"
+  | "ROLE_ADMIN"
+  | "ROLE_ENTERPRISE"
+  | "ROLE_MODERATOR";
 
 /**
  * Authenticated user shape
@@ -50,12 +55,12 @@ export interface AuthState {
  */
 const storage = {
   get: (key: string) =>
-    typeof window !== 'undefined' ? localStorage.getItem(key) : null,
+    typeof window !== "undefined" ? localStorage.getItem(key) : null,
   set: (key: string, value: string) => {
-    if (typeof window !== 'undefined') localStorage.setItem(key, value);
+    if (typeof window !== "undefined") localStorage.setItem(key, value);
   },
   remove: (key: string) => {
-    if (typeof window !== 'undefined') localStorage.removeItem(key);
+    if (typeof window !== "undefined") localStorage.removeItem(key);
   },
 };
 
@@ -64,20 +69,20 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       role: null,
-      token: storage.get('jwt_token'),
-      isAuthenticated: !!storage.get('jwt_token'),
+      token: storage.get("jwt_token"),
+      isAuthenticated: !!storage.get("jwt_token"),
       isLoading: false,
       error: null,
 
       setUser: (user) => set({ user: user, error: null }),
-      setRole: (role) => set({role: role}),
+      setRole: (role) => set({ role: role }),
 
       setToken: (token) => {
         if (token) {
-          storage.set('jwt_token', token);
+          storage.set("jwt_token", token);
           set({ token, isAuthenticated: true, error: null });
         } else {
-          storage.remove('jwt_token');
+          storage.remove("jwt_token");
           set({ token: null, isAuthenticated: false });
         }
       },
@@ -87,7 +92,7 @@ export const useAuthStore = create<AuthState>()(
       setError: (error) => set({ error }),
 
       login: (role, token) => {
-        storage.set('jwt_token', token);
+        storage.set("jwt_token", token);
         set({
           role,
           token,
@@ -98,7 +103,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        storage.remove('jwt_token');
+        storage.remove("jwt_token");
         set({
           user: null,
           token: null,
@@ -113,34 +118,26 @@ export const useAuthStore = create<AuthState>()(
         })),
 
       refreshToken: (token) => {
-        storage.set('jwt_token', token);
+        storage.set("jwt_token", token);
         set({ token });
       },
 
       getDashboardRoute: (role) => {
         const r = role ?? get().user?.role;
 
-        switch (r) {
-          case 'ROLE_PRO':
-            return '/dashboard-freelance';
-          case 'ROLE_ADMIN':
-            return '/dashboard-admin';
-          case 'ROLE_CUSTOMER':
-            return '/dashboard-client';
-          default:
-            return '/';
-        }
+        if (!r) return "/";
+        return "/dashboard";
       },
 
       initializeAuth: () => {
-        const token = storage.get('jwt_token');
+        const token = storage.get("jwt_token");
         if (token) {
           set({ token, isAuthenticated: true });
         }
       },
     }),
     {
-      name: 'auth-store',
+      name: "auth-store",
       partialize: (state) => ({
         user: state.user,
         token: state.token,
