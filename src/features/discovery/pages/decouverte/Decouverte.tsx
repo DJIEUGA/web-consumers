@@ -39,10 +39,10 @@ import { HiOutlineSparkles } from 'react-icons/hi';
 import { FaWhatsapp } from 'react-icons/fa';
 import mapboxgl from 'mapbox-gl';
 import { COLORS } from '../../../../styles/colors';
-import logo from '../../../assets/logo.png';
+import logo from '../../../../assets/logo.png';
 import '../../styles/decouverte/style.css';
 
-function Decouverte() {
+export const Decouverte = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const mapContainer = useRef(null);
@@ -682,4 +682,3 @@ function Decouverte() {
   );
 }
 
-export default Decouverte;

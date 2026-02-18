@@ -8,6 +8,7 @@ import queryClient from './lib/query-client';
 import { Connexion } from './features/auth/pages';
 import { Home } from './features/discovery/pages';
 import { Marketplace } from './features/marketplace/pages';
+import {Decouverte} from './features/discovery/pages/decouverte/Decouverte.tsx';
 import { Portfolio } from './features/portfolio/pages';
 import { Localisation } from './features/localisation/pages';
 import { JobAlerte } from './features/jobalerte/pages';
@@ -18,6 +19,7 @@ import { ProfilPublicFreelance } from './features/profile/pages';
 import './App.css';
 import UserDashboard from './features/dashboard/pages/index.tsx';
 import NotFound from './pages/NotFound.tsx';
+import SearchResults from './features/discovery/pages/search/SearchResults.tsx';
 
 function App() {
   // Initialize auth from localStorage on app mount

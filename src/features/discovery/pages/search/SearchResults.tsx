@@ -5,7 +5,7 @@ import {
   FiMenu, FiX, FiUser, FiFilter, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
-import logo from '../../../assets/logo.png';
+import logo from '../../../../assets/logo.png';
 import '../../styles/search/style.css';
 
 function SearchResults() {

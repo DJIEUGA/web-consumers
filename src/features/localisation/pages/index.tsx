@@ -31,7 +31,7 @@ import {
 } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
 import logo from '../../../assets/logo.png';
-import './Localisation.css';
+import '../styles/localisation/style.css';
 
 export const Localisation = () => {
   const navigate = useNavigate();
