@@ -1,4 +1,7 @@
 // Export all shadcn UI components from here for convenient importing
+// All components are styled according to Jobty design system (Indigo primary, 12px radius)
+// See DESIGN_SYSTEM.md for detailed usage and theming information
+
 export { Button, buttonVariants } from "@/components/ui/ShadcnButton"
 export type { ButtonProps } from "@/components/ui/ShadcnButton"
 
@@ -27,6 +30,9 @@ export {
 } from "@/components/ui/Select"
 
 export { Label } from "@/components/ui/Label"
+
+export { Badge, badgeVariants } from "@/components/ui/Badge"
+export type { BadgeProps } from "@/components/ui/Badge"
 
 export {
   Form,

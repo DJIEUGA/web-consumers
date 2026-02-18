@@ -1,8 +1,3 @@
-/**
- * Profile Mutations & Queries
- * TanStack Query hooks for profile operations
- */
-
 import {
   useMutation,
   useQuery,
@@ -23,15 +18,10 @@ import {
   deleteAccount,
 } from '../services/profileApi';
 
-/**
- * Generic placeholders – replace with real domain types later
- */
 type Profile = unknown;
 type ApiError = unknown;
+type Variables = unknown;
 
-/**
- * Fetch current user's profile
- */
 export const useProfileQuery = (
   options?: UseQueryOptions<Profile, ApiError>
 ): UseQueryResult<Profile, ApiError> => {
@@ -63,18 +53,18 @@ export const useProfileByIdQuery = (
  * Update user profile
  */
 export const useUpdateProfileMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
 ) => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updateProfile,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, undefined, undefined);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, variables) => {
+      options?.onError?.(error, variables, undefined, undefined);
     },
   });
 };
@@ -83,15 +73,15 @@ export const useUpdateProfileMutation = (
  * Upload avatar
  */
 export const useUploadAvatarMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
 ) => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: uploadAvatar,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, undefined, undefined);
     },
   });
 };
@@ -100,15 +90,15 @@ export const useUploadAvatarMutation = (
  * Upload KYC documents
  */
 export const useUploadKYCMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
 ) => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: uploadKYC,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, undefined, undefined);
     },
   });
 };
@@ -117,15 +107,15 @@ export const useUploadKYCMutation = (
  * Verify email
  */
 export const useVerifyEmailMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
 ) => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: verifyEmail,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, undefined, undefined);
     },
   });
 };
@@ -134,12 +124,12 @@ export const useVerifyEmailMutation = (
  * Change password
  */
 export const useChangePasswordMutation = (
-  options?: UseMutationOptions<void, ApiError, unknown>
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
 ) => {
-  return useMutation<void, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updatePassword,
-    onSuccess: (data, variables, context) => {
-      options?.onSuccess?.(data, variables, context);
+    onSuccess: (data, variables) => {
+      options?.onSuccess?.(data, variables, undefined, undefined);
     },
   });
 };
@@ -148,15 +138,15 @@ export const useChangePasswordMutation = (
  * Delete account
  */
 export const useDeleteAccountMutation = (
-  options?: UseMutationOptions<void, ApiError, void>
+  options?: UseMutationOptions<Profile, ApiError, string, unknown>
 ) => {
   const queryClient = useQueryClient();
 
-  return useMutation<void, ApiError, void>({
+  return useMutation<Profile, ApiError, string, unknown>({
     mutationFn: deleteAccount,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data, variables) => {
       queryClient.clear();
-      options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, undefined, undefined);
     },
   });
 };

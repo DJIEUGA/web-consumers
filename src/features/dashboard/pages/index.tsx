@@ -1,4 +1,4 @@
-import Connexion from "@/features/auth/pages";
+
 import React from "react";
 import AdminDashboard from "./admin";
 import EnterpriseDashboard from "./enterprise";
@@ -6,6 +6,7 @@ import ProDashboard from "./pro";
 import CustomerDashboard from "./customer";
 import ModeratorDashboard from "./moderator";
 import { Navigate } from "react-router-dom";
+import {Connexion} from "@/features/auth/pages";
 import { useAuthStore } from "../../../stores/auth.store";
 
 const UserDashboard = () => {

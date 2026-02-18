@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import {useAuthStore}  from './stores/auth.store.js';
 import queryClient from './lib/query-client';
 import { Connexion } from './features/auth/pages';
+import EmailVerificationPage from './features/auth/pages/EmailVerificationPage';
 import { Home } from './features/discovery/pages';
 import { Marketplace } from './features/marketplace/pages';
 import {Decouverte} from './features/discovery/pages/decouverte/Decouverte.tsx';
@@ -35,6 +36,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/decouverte" element={<Decouverte />} />
         <Route path="/connexion" element={<Connexion />} />
+        <Route path="/auth/confirm" element={<EmailVerificationPage />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/localisation" element={<Localisation />} />
