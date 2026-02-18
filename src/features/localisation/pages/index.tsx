@@ -29,11 +29,11 @@ import {
   FaInstagram, 
   FaWhatsapp 
 } from 'react-icons/fa';
-import { COLORS } from '../styles/colors';
-import logo from '../assets/logo.png';
-import './localisation.css';
+import { COLORS } from '../../../styles/colors';
+import logo from '../../../assets/logo.png';
+import './Localisation.css';
 
-function Localisation() {
+export const Localisation = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -357,7 +357,7 @@ function Localisation() {
                 className={`localisation-category-btn ${selectedCategory === cat.id ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(cat.id)}
                 style={{
-                  '--category-color': cat.color,
+                  'color': cat.color,
                   borderColor: selectedCategory === cat.id ? cat.color : 'transparent',
                   backgroundColor: selectedCategory === cat.id ? `${cat.color}15` : 'white'
                 }}
@@ -386,7 +386,7 @@ function Localisation() {
                     style={{
                       left: `${(lieu.lng + 4.1) * 500}%`,
                       top: `${(5.4 - lieu.lat) * 500}%`,
-                      '--marker-color': getCategoryColor(lieu.categorie)
+                      'color': getCategoryColor(lieu.categorie)
                     }}
                     onClick={() => openPlaceDetails(lieu)}
                   >
@@ -701,5 +701,3 @@ function Localisation() {
     </div>
   );
 }
-
-export default Localisation;

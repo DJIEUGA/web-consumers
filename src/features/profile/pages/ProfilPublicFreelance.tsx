@@ -8,7 +8,7 @@ import {
   FiCamera, FiEdit3
 } from 'react-icons/fi';
 import { FaHandshake, FaFacebookF, FaTwitter, FaLinkedinIn, FaWhatsapp } from 'react-icons/fa';
-import logo from '../assets/logo.png';
+import logo from '../../../assets/logo.png';
 import './ProfilPublicFreelance.css';
 
 function ProfilPublicFreelance() {

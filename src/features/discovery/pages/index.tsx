@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.png';
-import './home.css';
+import logo from '../../../assets/logo.png';
+import '../styles/Home.css';
+import SearchBar from '../../../components/shared/SearchBar';
 
-import SearchBar from '../components/shared/SearchBar';
-import Header from '../components/shared/Header';
-import Footer from '../components/shared/Footer';
-
-function Home() {
+export const Home = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [placeholderText, setPlaceholderText] = useState('lieux, secteur d\'activité, ville, quartier...');
@@ -78,5 +75,3 @@ function Home() {
     </div>
   );
 }
-
-export default Home;

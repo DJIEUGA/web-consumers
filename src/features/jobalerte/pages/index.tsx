@@ -35,11 +35,11 @@ import {
   FaInstagram, 
   FaWhatsapp 
 } from 'react-icons/fa';
-import { COLORS } from '../styles/colors';
-import logo from '../assets/logo.png';
-import './jobAlerte.css';
+import { COLORS } from '../../../styles/colors';
+import logo from '../../../assets/logo.png';
+import '../styles/JobAlerte.css';
 
-function JobAlerte() {
+export const JobAlerte = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -327,7 +327,7 @@ function JobAlerte() {
                         key={cat.id}
                         className={`category-card ${alerteForm.categorie === cat.id ? 'selected' : ''}`}
                         onClick={() => selectCategorie(cat.id)}
-                        style={{ '--cat-color': cat.color }}
+                        style={{ 'color': cat.color }}
                       >
                         <div className="category-icon-wrapper" style={{ backgroundColor: `${cat.color}15` }}>
                           <IconComponent style={{ color: cat.color }} />
@@ -371,7 +371,7 @@ function JobAlerte() {
                           type="button"
                           className={`urgence-btn ${alerteForm.urgence === niveau.id ? 'selected' : ''}`}
                           onClick={() => handleFormChange('urgence', niveau.id)}
-                          style={{ '--urgence-color': niveau.color }}
+                          style={{ "color": niveau.color }}
                         >
                           <span className="urgence-label">{niveau.label}</span>
                           <span className="urgence-desc">{niveau.description}</span>
@@ -806,4 +806,3 @@ function JobAlerte() {
   );
 }
 
-export default JobAlerte;

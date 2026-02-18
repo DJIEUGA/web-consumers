@@ -1,0 +1,1 @@
+export { default as ProfilPublicFreelance } from './ProfilPublicFreelance';

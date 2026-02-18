@@ -38,9 +38,9 @@ import {
 import { HiOutlineSparkles } from 'react-icons/hi';
 import { FaWhatsapp } from 'react-icons/fa';
 import mapboxgl from 'mapbox-gl';
-import { COLORS } from '../styles/colors';
-import logo from '../assets/logo.png';
-import './decouverte.css';
+import { COLORS } from '../../../../styles/colors';
+import logo from '../../../assets/logo.png';
+import '../../styles/decouverte/style.css';
 
 function Decouverte() {
   const navigate = useNavigate();

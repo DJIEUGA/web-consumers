@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { COLORS } from "../styles/colors";
-import "./marketplace.css";
+import { COLORS } from "../../../styles/colors";
+import "./Marketplace.css";
 
-import Header from "../components/shared/Header";
-import Footer from "../components/shared/Footer";
-import FiltersBar from "../components/shared/FiltersBar";
-import FreelanceCard from "../components/shared/FreelanceCard";
-import EnterpriseCard from "../components/shared/EnterpriseCard";
-import JobCard from "../components/shared/JobCard";
-import SidebarMenu from "../components/shared/SidebarMenu";
+import Header from "../../../components/shared/Header";
+import Footer from "../../../components/shared/Footer";
+import FiltersBar from "../../../components/shared/FiltersBar";
+import FreelanceCard from "../../../components/shared/FreelanceCard";
+import EnterpriseCard from "../../../components/shared/EnterpriseCard";
+import JobCard from "../../../components/shared/JobCard";
+import SidebarMenu from "../../../components/shared/SidebarMenu";
 import { FiAward, FiBriefcase, FiStar, FiUser } from "react-icons/fi";
 
 function Marketplace() {
@@ -427,3 +427,4 @@ function Marketplace() {
 }
 
 export default Marketplace;
+

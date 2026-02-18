@@ -11,11 +11,11 @@ import {
   FiMapPin, FiBriefcase, FiPhone, FiMail, FiExternalLink
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp, FaHandshake, FaRocket } from 'react-icons/fa';
-import { COLORS } from '../styles/colors';
-import logo from '../assets/logo.png';
-import './collaborationSpace.css';
+import { COLORS } from '../../../styles/colors';
+import logo from '../../../assets/logo.png';
+import '../styles/collaboration/style.css';
 
-function CollaborationSpace() {
+export const CollaborationSpace = ()=> {
   const navigate = useNavigate();
   const { freelanceId } = useParams();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1268,5 +1268,3 @@ function CollaborationSpace() {
     </div>
   );
 }
-
-export default CollaborationSpace;

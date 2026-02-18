@@ -9,9 +9,9 @@ import {
   FiEye
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
-import { COLORS } from '../styles/colors';
-import logo from '../assets/logo.png';
-import './portfolio.css';
+import { COLORS } from '../../../styles/colors';
+import logo from '../../../assets/logo.png';
+import './Portfolio.css';
 
 function Portfolio() {
   const navigate = useNavigate();

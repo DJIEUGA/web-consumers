@@ -19,11 +19,11 @@ import {
   FiTrendingUp
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp, FaGraduationCap } from 'react-icons/fa';
-import { COLORS } from '../styles/colors';
-import logo from '../assets/logo.png';
-import './jobExperience.css';
+import { COLORS } from '../../../styles/colors';
+import logo from '../../../assets/logo.png';
+import '../styles/jobexperience/style.css';
 
-function JobExperience() {
+export const JobExperience = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('profils');
@@ -331,7 +331,7 @@ function JobExperience() {
   const getTimeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now - date);
+    const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) return "Aujourd'hui";
@@ -811,5 +811,3 @@ function JobExperience() {
     </div>
   );
 }
-
-export default JobExperience;

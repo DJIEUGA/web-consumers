@@ -19,9 +19,9 @@ import {
 } from 'react-icons/fi';
 import { COLORS } from '../../../styles/colors';
 import logo from '../../../assets/logo.png';
-import '../../../styles/auth/Connexion.css';
+import '../styles/Connexion.css';
 
-function Connexion() {
+export const Connexion = () => {
   const navigate = useNavigate();
   const loginMutation = useLoginMutation();
   const registerMutation = useRegisterMutation();
@@ -803,4 +803,3 @@ function Connexion() {
   );
 }
 
-export default Connexion;

@@ -1,4 +1,4 @@
-import Connexion from "@/features/auth/pages/Connexion";
+import Connexion from "@/features/auth/pages";
 import React from "react";
 import AdminDashboard from "./admin";
 import EnterpriseDashboard from "./enterprise";
