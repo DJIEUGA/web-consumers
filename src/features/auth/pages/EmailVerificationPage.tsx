@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { useConfirmEmail } from '@/features/auth/services/auth.service';
+import { useConfirmEmail } from '@/features/auth/services/auth.service.ts';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 
 const EmailVerificationPage = () => {
