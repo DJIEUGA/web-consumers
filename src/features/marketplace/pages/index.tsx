@@ -1,6 +1,7 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { 
   FiSearch, 
   FiMapPin, 
@@ -17,7 +18,8 @@ import {
   FiUser,
   FiUsers,
   FiAward,
-  FiLoader
+  FiLoader,
+  FiAlertCircle
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
@@ -25,7 +27,9 @@ import logo from '@/assets/logo.png';
 import { usePublicProfiles } from '../hooks/usePublicProfiles';
 import { mapPublicProfileToFreelanceCard } from '../utils/profileMapper';
 import type { PublicProfile } from '../types/publicProfile.d';
-import './marketplace.css';
+import { EmptyState, ErrorState } from '@/components/ui';
+import { parseApiError, getErrorDescription } from '@/utils/errorHandler';
+import './Marketplace.css';
 
 export const Marketplace = () =>{
   const navigate = useNavigate();
@@ -50,15 +54,30 @@ export const Marketplace = () =>{
     enabled: true,
   });
 
-  // Log API state changes
-  React.useEffect(() => {
-    console.log('[MARKETPLACE] Fetch state:', {
-      isLoading,
-      hasError: !!error,
-      error,
-      profilesResponse,
-    });
-  }, [profilesResponse, isLoading, error]);
+  // Parse error information
+  const parsedError = useMemo(() => {
+    if (!error) return null;
+    return parseApiError(error);
+  }, [error]);
+
+  // Handle errors with toast notifications
+  useEffect(() => {
+    if (error && parsedError) {
+      toast.error(parsedError.title, {
+        description: parsedError.message + (parsedError.status ? ` (Code: ${parsedError.status})` : ''),
+        duration: 5000,
+        action: {
+          label: 'Réessayer',
+          onClick: () => window.location.reload(),
+        },
+      });
+      
+      console.error('[MARKETPLACE] Error fetching profiles:', {
+        parsed: parsedError,
+        original: error,
+      });
+    }
+  }, [error, parsedError]);
 
   // Transform API profiles to freelance card format
   const apiProfiles = useMemo(() => {
@@ -490,15 +509,6 @@ export const Marketplace = () =>{
           </span>
         </div>
 
-        {error && (
-          <div className="error-state">
-            <p>Erreur lors du chargement des profils. Veuillez réessayer.</p>
-            <p style={{ fontSize: '0.9em', color: '#666' }}>
-              {error instanceof Error ? error.message : JSON.stringify(error)}
-            </p>
-          </div>
-        )}
-
         {isLoading ? (
           <div className="freelance-grid">
             {[...Array(4)].map((_, i) => (
@@ -514,10 +524,44 @@ export const Marketplace = () =>{
               </div>
             ))}
           </div>
-        ) : filteredProfiles.length === 0 ? (
-          <div className="no-results">
-            <p>Aucun professionnel ne correspond à vos critères.</p>
-          </div>
+        ) : filteredProfiles.length === 0 && !error ? (
+          <EmptyState
+            icon={<FiUsers size={48} />}
+            title="Aucun professionnel trouvé"
+            description="Essayez de modifier vos critères de recherche ou explorez d'autres catégories."
+            action={{
+              label: 'Réinitialiser les filtres',
+              onClick: () => {
+                setFilters({
+                  search: '',
+                  secteur: '',
+                  pays: '',
+                  ville: '',
+                  categorie: ''
+                });
+              }
+            }}
+          />
+        ) : error ? (
+          <ErrorState
+            icon={<FiAlertCircle size={48} />}
+            title={parsedError?.title || 'Impossible de charger les profils'}
+            description={
+              parsedError?.message || 
+              getErrorDescription(parsedError?.status) || 
+              'Une erreur est survenue. Veuillez réessayer.'
+            }
+            status={parsedError?.status}
+            technicalDetails={
+              parsedError?.details?.length 
+                ? parsedError.details.join('\n')
+                : JSON.stringify(error, null, 2)
+            }
+            action={{
+              label: 'Réessayer',
+              onClick: () => window.location.reload()
+            }}
+          />
         ) : (
           <div className="freelance-grid">
             {visibleFreelances.map((freelance) => (
