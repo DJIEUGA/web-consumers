@@ -21,12 +21,14 @@ import {
   FaChartLine, FaMapMarkedAlt 
 } from 'react-icons/fa';
 import logo from '../../../../assets/logo.png';
+import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import './css/style.css';
 
 function AdminDashboard() {
   const navigate = useNavigate();
   const logoutMutation = useLogoutMutation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [kycDetail, setKycDetail] = useState(null);
@@ -357,6 +359,8 @@ function AdminDashboard() {
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
+  const openProfile = () => setProfileOpen(true);
+  const closeProfile = () => setProfileOpen(false);
 
   const getStatutBadge = (statut) => {
     const statuts = {
@@ -555,7 +559,7 @@ function AdminDashboard() {
               <FiBell />
               <span className="admin-notif-badge">15</span>
             </button>
-            <button className="admin-profile-btn">
+            <button className="admin-profile-btn" onClick={openProfile}>
               <img src={adminUser.photo} alt="" />
             </button>
           </div>
@@ -1674,6 +1678,7 @@ function AdminDashboard() {
 
         </div>
       </main>
+      <ProfileDrawer open={profileOpen} onClose={closeProfile} />
     </div>
   );
 }

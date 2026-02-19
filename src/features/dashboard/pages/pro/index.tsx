@@ -22,12 +22,14 @@ import { FaBullhorn } from 'react-icons/fa';
 import { FaHandshake, FaRocket } from 'react-icons/fa';
 
 import logo from '../../../../assets/logo.png';
+import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import './css/style.css';
 
 function ProDashboard() {
   const navigate = useNavigate();
   const logoutMutation = useLogoutMutation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
   const [viewMode, setViewMode] = useState('grid');
   const [paiementSubTab, setPaiementSubTab] = useState('recus');
@@ -284,6 +286,8 @@ const performanceServices = [
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
+  const openProfile = () => setProfileOpen(true);
+  const closeProfile = () => setProfileOpen(false);
 
   const handleCarteFormChange = (field, value) => {
     setCarteForm({ ...carteForm, [field]: value });
@@ -467,7 +471,7 @@ const performanceServices = [
               <FiBell />
               <span className="dash-notif-badge">{stats.messagesNonLus}</span>
             </button>
-            <button className="dash-profile-btn">
+            <button className="dash-profile-btn" onClick={openProfile}>
               <img src={freelance.photo} alt="" />
             </button>
           </div>
@@ -1579,6 +1583,7 @@ const performanceServices = [
 )}
         </div>
       </main>
+      <ProfileDrawer open={profileOpen} onClose={closeProfile} />
     </div>
   );
 }

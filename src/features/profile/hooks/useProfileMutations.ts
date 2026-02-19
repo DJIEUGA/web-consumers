@@ -11,6 +11,9 @@ import {
   getProfile,
   getProfileById,
   updateProfile,
+  updateStandardProfile,
+  updateProProfile,
+  updateEnterpriseProfile,
   uploadAvatar,
   uploadKYC,
   verifyEmail,
@@ -59,6 +62,66 @@ export const useUpdateProfileMutation = (
 
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updateProfile,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      options?.onSuccess?.(data, variables, undefined, undefined);
+    },
+    onError: (error, variables) => {
+      options?.onError?.(error, variables, undefined, undefined);
+    },
+  });
+};
+
+/**
+ * Update standard profile (ROLE_CUSTOMER)
+ */
+export const useUpdateStandardProfileMutation = (
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, unknown>({
+    mutationFn: updateStandardProfile,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      options?.onSuccess?.(data, variables, undefined, undefined);
+    },
+    onError: (error, variables) => {
+      options?.onError?.(error, variables, undefined, undefined);
+    },
+  });
+};
+
+/**
+ * Update pro profile (ROLE_PRO)
+ */
+export const useUpdateProProfileMutation = (
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, unknown>({
+    mutationFn: updateProProfile,
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      options?.onSuccess?.(data, variables, undefined, undefined);
+    },
+    onError: (error, variables) => {
+      options?.onError?.(error, variables, undefined, undefined);
+    },
+  });
+};
+
+/**
+ * Update enterprise profile (ROLE_ENTERPRISE)
+ */
+export const useUpdateEnterpriseProfileMutation = (
+  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, unknown>({
+    mutationFn: updateEnterpriseProfile,
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       options?.onSuccess?.(data, variables, undefined, undefined);
@@ -155,6 +218,9 @@ export default {
   useProfileQuery,
   useProfileByIdQuery,
   useUpdateProfileMutation,
+  useUpdateStandardProfileMutation,
+  useUpdateProProfileMutation,
+  useUpdateEnterpriseProfileMutation,
   useUploadAvatarMutation,
   useUploadKYCMutation,
   useVerifyEmailMutation,

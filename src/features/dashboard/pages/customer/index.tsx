@@ -73,12 +73,14 @@ import {
   FaMapMarkedAlt,
 } from "react-icons/fa";
 import logo from '../../../../assets/logo.png';
+import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import "./css/style.css";
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
   const logoutMutation = useLogoutMutation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("apercu");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [kycDetail, setKycDetail] = useState(null);
@@ -94,6 +96,8 @@ const CustomerDashboard = () => {
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
+  const openProfile = () => setProfileOpen(true);
+  const closeProfile = () => setProfileOpen(false);
   return (
     <div className="admin-page">
       {/* SIDEBAR */}
@@ -175,7 +179,7 @@ const CustomerDashboard = () => {
               <FiBell />
               <span className="admin-notif-badge">15</span>
             </button>
-            <button className="admin-profile-btn">
+            <button className="admin-profile-btn" onClick={openProfile}>
               <img src={adminUser.photo} alt="" />
             </button>
           </div>
@@ -183,6 +187,7 @@ const CustomerDashboard = () => {
 
         <div className="admin-content"></div>
       </main>
+      <ProfileDrawer open={profileOpen} onClose={closeProfile} />
     </div>
   );
 };

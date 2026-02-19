@@ -165,15 +165,21 @@ export const Connexion = () => {
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
+    console.log('[CONNEXION_PAGE] handleLoginSubmit called');
     loginMutation.mutate(loginData, {
       onSuccess: (res) => {
+        console.log('[CONNEXION_PAGE] Login mutation onSuccess, response:', res);
         if (res?.success && res?.data) {
           // redirect based on role
           const redirect = authStore.getDashboardRoute(res.data.role);
+          console.log('[CONNEXION_PAGE] Redirecting to:', redirect);
           navigate(redirect);
+        } else {
+          console.warn('[CONNEXION_PAGE] Unexpected response structure:', res);
         }
       },
       onError: (err) => {
+        console.error('[CONNEXION_PAGE] Login failed');
         // Try to show server-provided message when available
         const serverMessage = err?.response?.message || err?.response?.data?.message || err?.message;
         console.error('Login failed error object:', err);
