@@ -318,9 +318,11 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
         <div className="profile-drawer-header">
           <div>
             <p className="profile-drawer-eyebrow">Profil</p>
-            <h2>Completez vos informations</h2>
+            <h2>{payload?.isVerified ? 'Vos informations' : 'Completez vos informations'}</h2>
             <p className="profile-drawer-subtitle">
-              Pour finaliser la creation de votre compte
+              {payload?.isVerified
+              ? 'Gerez et mettez a jour vos donnees personnelles'
+              : 'Pour finaliser la creation de votre compte'}
             </p>
           </div>
           <button className="profile-drawer-close" onClick={handleClose}>
