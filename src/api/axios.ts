@@ -18,7 +18,6 @@ const axiosInstance: AxiosInstance = axios.create({
  */
 axiosInstance.interceptors.request.use(
   (config) => {
-    // @ts-ignore
     if (!config.skipAuth) {
       const token = localStorage.getItem('jwt_token');
       if (token) {
@@ -61,7 +60,6 @@ axiosInstance.interceptors.response.use(
     if (
       error.response?.status === 401 && 
       !originalRequest._retry && 
-      // @ts-ignore
       !originalRequest.skipAuth
     ) {
       // Mark request as retried to prevent infinite loops

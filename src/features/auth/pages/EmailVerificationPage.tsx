@@ -16,7 +16,7 @@ const EmailVerificationPage = () => {
     }
 
     confirmMutation.mutate(token);
-  }, [token]);
+  }, [confirmMutation, token]);
 
   if (!token) {
     return (
