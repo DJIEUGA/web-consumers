@@ -29,6 +29,7 @@ type ProfileFormState = {
   hourlyRate: string;
   averageRating: string;
   avatarUrl: string;
+  verified?: boolean;
 };
 
 const emptyForm: ProfileFormState = {
@@ -47,6 +48,7 @@ const emptyForm: ProfileFormState = {
   hourlyRate: '',
   averageRating: '',
   avatarUrl: '',
+  verified: false,
 };
 
 /**
@@ -82,6 +84,7 @@ const transformProfileToForm = (payload: Record<string, unknown>): ProfileFormSt
     firstName: toStringValue(user.firstName ?? payload.firstName ?? payload.prenom),
     lastName: toStringValue(user.lastName ?? payload.lastName ?? payload.nom),
     username: toStringValue(user.username ?? payload.username ?? payload.pseudo),
+    verified: Boolean(user.verified ?? payload.verified),
     email: toStringValue(user.email ?? payload.email),
     country: toStringValue(payload.country ?? payload.pays),
     city: toStringValue(payload.city ?? payload.ville),
@@ -318,9 +321,9 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
         <div className="profile-drawer-header">
           <div>
             <p className="profile-drawer-eyebrow">Profil</p>
-            <h2>{payload?.isVerified ? 'Vos informations' : 'Completez vos informations'}</h2>
+            <h2>{payload?.verified ? 'Vos informations' : 'Completez vos informations'}</h2>
             <p className="profile-drawer-subtitle">
-              {payload?.isVerified
+              {payload?.verified
               ? 'Gerez et mettez a jour vos donnees personnelles'
               : 'Pour finaliser la creation de votre compte'}
             </p>

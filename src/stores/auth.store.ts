@@ -106,16 +106,10 @@ export const useAuthStore = create<AuthState>()(
       setError: (error) => set({ error }),
 
       login: (role, token, user = null) => {
-        console.log('[AUTH_STORE] login() called with role:', role, 'token:', token?.substring(0, 20) + '...');
         const expiry = Date.now() + TOKEN_EXPIRY_DURATION;
         storage.set("jwt_token", token);
         storage.set("jwt_token_expiry", expiry.toString());
-        
-        console.log('[AUTH_STORE] Saved to localStorage:', {
-          jwt_token_saved: !!storage.get("jwt_token"),
-          jwt_token_expiry_saved: !!storage.get("jwt_token_expiry")
-        });
-        
+
         set({
           role,
           token,
@@ -124,14 +118,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           isLoading: false,
           error: null,
-        });
-        
-        const state = get();
-        console.log('[AUTH_STORE] Store state after set():', {
-          isAuthenticated: state.isAuthenticated,
-          token: state.token?.substring(0, 20) + '...',
-          role: state.role,
-          isHydrated: state.isHydrated
         });
       },
 
@@ -153,11 +139,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           error: null,
         });
-
-        // Optionally redirect to login
-        if (typeof window !== "undefined") {
-          window.location.href = "/connexion";
-        }
       },
 
       updateUser: (data) =>
@@ -204,23 +185,15 @@ export const useAuthStore = create<AuthState>()(
       },
 
       initializeAuth: () => {
-        console.log('[AUTH_STORE] initializeAuth() called');
         const token = storage.get("jwt_token");
         const expiryStr = storage.get("jwt_token_expiry");
-        
-        console.log('[AUTH_STORE] Reading from localStorage:', { 
-          tokenExists: !!token, 
-          expiryExists: !!expiryStr,
-          token: token?.substring(0, 20) + '...'
-        });
-        
+
         if (token && expiryStr) {
           const expiry = parseInt(expiryStr, 10);
           const now = Date.now();
 
           // Check if token is still valid
           if (now < expiry) {
-            console.log('[AUTH_STORE] Token is valid, setting isAuthenticated=true and isHydrated=true');
             set({ 
               token, 
               tokenExpiry: expiry,
@@ -229,7 +202,6 @@ export const useAuthStore = create<AuthState>()(
             });
           } else {
             // Token expired - clean up
-            console.log('[AUTH_STORE] Token expired, clearing auth state');
             storage.remove("jwt_token");
             storage.remove("jwt_token_expiry");
             set({ 
@@ -241,7 +213,6 @@ export const useAuthStore = create<AuthState>()(
           }
         } else {
           // No token found - mark as hydrated
-          console.log('[AUTH_STORE] No token in localStorage, setting isHydrated=true');
           set({ isHydrated: true });
         }
       },
@@ -258,15 +229,8 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        console.log('[AUTH_STORE] Persist middleware onRehydrateStorage callback fired');
         if (state) {
-          console.log('[AUTH_STORE] Rehydrated state from localStorage:', {
-            isAuthenticated: state.isAuthenticated,
-            token: state.token?.substring(0, 20) + '...',
-            role: state.role
-          });
           state.isHydrated = true;
-          console.log('[AUTH_STORE] Set isHydrated = true');
         }
       },
     },

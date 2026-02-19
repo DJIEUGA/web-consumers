@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useLoginMutation, useRegisterMutation } from '../hooks/useAuthMutations';
-import { useBackgroundProfileUpdate } from '../hooks/useProfileUpdate';
-import { useAuthStore } from '../../../stores/auth.store';
-import { 
-  FiMail, 
-  FiLock, 
-  FiUser, 
-  FiPhone, 
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../../hooks/useNotification";
+import {
+  useLoginMutation,
+  useRegisterMutation,
+} from "../hooks/useAuthMutations";
+import { useBackgroundProfileUpdate } from "../hooks/useProfileUpdate";
+import { useAuthStore } from "../../../stores/auth.store";
+import {
+  FiMail,
+  FiLock,
+  FiUser,
+  FiPhone,
   FiMapPin,
   FiBriefcase,
   FiArrowLeft,
@@ -15,28 +19,38 @@ import {
   FiEyeOff,
   FiArrowRight,
   FiCalendar,
-  FiFileText
-} from 'react-icons/fi';
-import { COLORS } from '../../../styles/colors';
-import logo from '../../../assets/logo.png';
-import '../styles/Connexion.css';
+  FiFileText,
+} from "react-icons/fi";
+import { COLORS } from "../../../styles/colors";
+import logo from "../../../assets/logo.png";
+import "../styles/Connexion.css";
 
 export const Connexion = () => {
+
   const navigate = useNavigate();
+  const notify = useNotification();
   const loginMutation = useLoginMutation();
   const registerMutation = useRegisterMutation();
   const profileUpdateMutation = useBackgroundProfileUpdate();
   const authStore = useAuthStore();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('freelance');
+  const [selectedRole, setSelectedRole] = useState("freelance");
   const [signupStep, setSignupStep] = useState(1);
 
   // Map UI roles to API role enum
   const roleMapping = {
-    freelance: 'ROLE_PRO',
-    entreprise: 'ROLE_ENTERPRISE',
-    client: 'ROLE_CUSTOMER'
+    freelance: "ROLE_PRO",
+    entreprise: "ROLE_ENTERPRISE",
+    client: "ROLE_CUSTOMER",
+  };
+
+  const extractErrorMessage = (error: any, fallback: string) => {
+    if (error?.response?.message) return error.response.message;
+    if (error?.response?.data?.message) return error.response.data.message;
+    if (error?.message) return error.message;
+    if (typeof error === "string") return error;
+    return fallback;
   };
 
   /**
@@ -46,7 +60,7 @@ export const Connexion = () => {
   const buildProfileUpdateData = () => {
     const apiRole = roleMapping[selectedRole];
 
-    if (apiRole === 'ROLE_CUSTOMER') {
+    if (apiRole === "ROLE_CUSTOMER") {
       // Standard profile for ROLE_CUSTOMER (Visiteur)
       return {
         role: apiRole,
@@ -54,11 +68,11 @@ export const Connexion = () => {
           // Only collect country, city for visiteur
           ...(signupData.pays && { country: signupData.pays }),
           ...(signupData.ville && { city: signupData.ville }),
-        }
+        },
       };
     }
 
-    if (apiRole === 'ROLE_PRO') {
+    if (apiRole === "ROLE_PRO") {
       // Pro profile for ROLE_PRO (Freelance)
       return {
         role: apiRole,
@@ -70,11 +84,11 @@ export const Connexion = () => {
           // specialite can be used as skills list
           skills: signupData.specialite ? [signupData.specialite] : [],
           // Additional fields like hourlyRate could be added to form later
-        }
+        },
       };
     }
 
-    if (apiRole === 'ROLE_ENTERPRISE') {
+    if (apiRole === "ROLE_ENTERPRISE") {
       // Enterprise profile for ROLE_ENTERPRISE
       return {
         role: apiRole,
@@ -85,7 +99,7 @@ export const Connexion = () => {
           industry: signupData.secteur,
           description: signupData.description,
           // Additional fields like registrationNumber, websiteUrl could be added to form later
-        }
+        },
       };
     }
 
@@ -94,64 +108,105 @@ export const Connexion = () => {
 
   // États pour le formulaire de connexion
   const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
 
   // États pour le formulaire d'inscription
   const [signupData, setSignupData] = useState({
-    nom: '',
-    prenom: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    telephone: '',
-    ville: '',
-    pays: '',
-    secteur: '',
-    specialite: '',
-    nomEntreprise: '',
-    anneesExperience: '',
-    description: ''
+    nom: "",
+    prenom: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    telephone: "",
+    ville: "",
+    pays: "",
+    secteur: "",
+    specialite: "",
+    nomEntreprise: "",
+    anneesExperience: "",
+    description: "",
   });
 
   // Listes de pays africains
   const paysAfricains = [
-    'Sénégal', 'Côte d\'Ivoire', 'Mali', 'Burkina Faso', 'Niger', 'Bénin', 'Togo',
-    'Ghana', 'Nigeria', 'Cameroun', 'Gabon', 'Congo', 'RD Congo', 'Tchad',
-    'Guinée', 'Guinée-Bissau', 'Gambie', 'Sierra Leone', 'Liberia',
-    'Maroc', 'Algérie', 'Tunisie', 'Libye', 'Mauritanie',
-    'Égypte', 'Soudan', 'Éthiopie', 'Kenya', 'Tanzanie', 'Ouganda',
-    'Rwanda', 'Burundi', 'Somalie', 'Djibouti', 'Érythrée',
-    'Angola', 'Mozambique', 'Zimbabwe', 'Zambie', 'Malawi',
-    'Afrique du Sud', 'Namibie', 'Botswana', 'Lesotho', 'Eswatini',
-    'Madagascar', 'Maurice', 'Comores', 'Seychelles', 'Cap-Vert'
+    "Sénégal",
+    "Côte d'Ivoire",
+    "Mali",
+    "Burkina Faso",
+    "Niger",
+    "Bénin",
+    "Togo",
+    "Ghana",
+    "Nigeria",
+    "Cameroun",
+    "Gabon",
+    "Congo",
+    "RD Congo",
+    "Tchad",
+    "Guinée",
+    "Guinée-Bissau",
+    "Gambie",
+    "Sierra Leone",
+    "Liberia",
+    "Maroc",
+    "Algérie",
+    "Tunisie",
+    "Libye",
+    "Mauritanie",
+    "Égypte",
+    "Soudan",
+    "Éthiopie",
+    "Kenya",
+    "Tanzanie",
+    "Ouganda",
+    "Rwanda",
+    "Burundi",
+    "Somalie",
+    "Djibouti",
+    "Érythrée",
+    "Angola",
+    "Mozambique",
+    "Zimbabwe",
+    "Zambie",
+    "Malawi",
+    "Afrique du Sud",
+    "Namibie",
+    "Botswana",
+    "Lesotho",
+    "Eswatini",
+    "Madagascar",
+    "Maurice",
+    "Comores",
+    "Seychelles",
+    "Cap-Vert",
   ];
 
   // Liste des secteurs d'activité
   const secteursActivite = [
-    'Bâtiment & Travaux',
-    'Électricité & Plomberie',
-    'Informatique & Tech',
-    'Design & Création',
-    'Santé & Bien-être',
-    'Éducation & Formation',
-    'Commerce & Vente',
-    'Transport & Logistique',
-    'Agriculture',
-    'Artisanat',
-    'Juridique & Administratif',
-    'Marketing & Communication',
-    'Finance & Comptabilité',
-    'Événementiel',
-    'Restauration',
-    'Mécanique & Automobile'
+    "Bâtiment & Travaux",
+    "Électricité & Plomberie",
+    "Informatique & Tech",
+    "Design & Création",
+    "Santé & Bien-être",
+    "Éducation & Formation",
+    "Commerce & Vente",
+    "Transport & Logistique",
+    "Agriculture",
+    "Artisanat",
+    "Juridique & Administratif",
+    "Marketing & Communication",
+    "Finance & Comptabilité",
+    "Événementiel",
+    "Restauration",
+    "Mécanique & Automobile",
   ];
 
   const handleLoginChange = (e) => {
     setLoginData({
       ...loginData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -159,32 +214,7 @@ export const Connexion = () => {
     const { name, value } = e.target;
     setSignupData({
       ...signupData,
-      [name]: value
-    });
-  };
-
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    console.log('[CONNEXION_PAGE] handleLoginSubmit called');
-    loginMutation.mutate(loginData, {
-      onSuccess: (res) => {
-        console.log('[CONNEXION_PAGE] Login mutation onSuccess, response:', res);
-        if (res?.success && res?.data) {
-          // redirect based on role
-          const redirect = authStore.getDashboardRoute(res.data.role);
-          console.log('[CONNEXION_PAGE] Redirecting to:', redirect);
-          navigate(redirect);
-        } else {
-          console.warn('[CONNEXION_PAGE] Unexpected response structure:', res);
-        }
-      },
-      onError: (err) => {
-        console.error('[CONNEXION_PAGE] Login failed');
-        // Try to show server-provided message when available
-        const serverMessage = err?.response?.message || err?.response?.data?.message || err?.message;
-        console.error('Login failed error object:', err);
-        alert(serverMessage || 'Login failed. Please check your credentials.');
-      },
+      [name]: value,
     });
   };
 
@@ -193,17 +223,29 @@ export const Connexion = () => {
 
     // Validation
     if (signupData.password !== signupData.confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+      notify.error(
+        "Erreur de validation",
+        "Les mots de passe ne correspondent pas",
+        {
+          duration: 4000,
+        },
+      );
       return;
     }
 
     if (signupData.password.length < 8) {
-      alert('Le mot de passe doit contenir au moins 8 caractères');
+      notify.error(
+        "Erreur de validation",
+        "Le mot de passe doit contenir au moins 8 caractères",
+        {
+          duration: 4000,
+        },
+      );
       return;
     }
 
     // Passer à l'étape 2 seulement pour freelance et entreprise
-    if (selectedRole === 'freelance' || selectedRole === 'entreprise') {
+    if (selectedRole === "freelance" || selectedRole === "entreprise") {
       setSignupStep(2);
     } else {
       // Pour le porteur de projet/visiteur, inscription directe
@@ -213,12 +255,18 @@ export const Connexion = () => {
 
   const handleSignupStep2Submit = (e) => {
     e.preventDefault();
-    
+
     if (signupData.description.length < 50) {
-      alert('La description doit contenir au moins 50 caractères');
+      notify.error(
+        "Erreur de validation",
+        "La description doit contenir au moins 50 caractères",
+        {
+          duration: 4000,
+        },
+      );
       return;
     }
-    
+
     handleFinalSubmit();
   };
 
@@ -232,44 +280,50 @@ export const Connexion = () => {
       role: roleMapping[selectedRole],
       // Add optional fields if they have values
       ...(signupData.pays && { country: signupData.pays }),
-      ...(signupData.ville && { city: signupData.ville })
+      ...(signupData.ville && { city: signupData.ville }),
     };
-
-    console.log('Registration payload:', registrationPayload);
 
     registerMutation.mutate(registrationPayload, {
       onSuccess: (res) => {
         if (res?.success) {
           // Registration successful - show confirmation message
-          alert('Inscription réussie ! Vérifiez votre email pour confirmer votre compte.');
-          
+          notify.success(
+            "Inscription réussie!",
+            "Vérifiez votre email pour confirmer votre compte.",
+            {
+              duration: 5000,
+            },
+          );
+
           // Trigger profile update in background (non-blocking)
           // Do NOT await this, just fire and forget
           const profileUpdateData = buildProfileUpdateData();
-          if (profileUpdateData && profileUpdateData.profileData && Object.keys(profileUpdateData.profileData).length > 0) {
-            console.log('Starting background profile update:', profileUpdateData);
+          if (
+            profileUpdateData &&
+            profileUpdateData.profileData &&
+            Object.keys(profileUpdateData.profileData).length > 0
+          ) {
             profileUpdateMutation.mutate(profileUpdateData, {
-              onSuccess: () => {
-                console.log('Background profile update completed successfully');
-              },
-              onError: (err) => {
-                // Error is already logged by the mutation hook
-                console.warn('Background profile update failed (non-blocking):', err);
-              },
+              onSuccess: () => {},
+              onError: () => {},
             });
           }
 
           // Reset form and redirect to login
           setIsLogin(true);
           setSignupStep(1);
-          setLoginData({ email: signupData.email, password: '' });
+          setLoginData({ email: signupData.email, password: "" });
         }
       },
       onError: (err) => {
-        // Show server-provided error message
-        const serverMessage = err?.response?.message || err?.response?.data?.message || err?.message;
-        console.error('Registration failed error object:', err);
-        alert(serverMessage || 'Registration failed. Please try again.');
+        const serverMessage = extractErrorMessage(err, "Veuillez réessayer");
+        notify.error(
+          "Inscription échouée",
+          serverMessage,
+          {
+            duration: 5000,
+          },
+        );
       },
     });
   };
@@ -281,31 +335,28 @@ export const Connexion = () => {
   const toggleForm = () => {
     setIsLogin(!isLogin);
     setSignupStep(1);
-    setLoginData({ email: '', password: '' });
+    setLoginData({ email: "", password: "" });
     setSignupData({
-      nom: '',
-      prenom: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      telephone: '',
-      ville: '',
-      pays: '',
-      secteur: '',
-      specialite: '',
-      nomEntreprise: '',
-      anneesExperience: '',
-      description: ''
+      nom: "",
+      prenom: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      telephone: "",
+      ville: "",
+      pays: "",
+      secteur: "",
+      specialite: "",
+      nomEntreprise: "",
+      anneesExperience: "",
+      description: "",
     });
   };
 
   return (
     <div className="connexion-container">
       {/* Bouton retour */}
-      <button 
-        className="back-button"
-        onClick={() => navigate('/')}
-      >
+      <button className="back-button" onClick={() => navigate("/")}>
         <FiArrowLeft /> Retour à l'accueil
       </button>
 
@@ -319,30 +370,36 @@ export const Connexion = () => {
         {/* Titre */}
         <h1 className="connexion-title">
           <span className="title-prefix">
-            {isLogin ? 'Bon retour sur' : signupStep === 2 ? 'Complétez votre profil' : 'Rejoignez'}
+            {isLogin
+              ? "Bon retour sur"
+              : signupStep === 2
+                ? "Complétez votre profil"
+                : "Rejoignez"}
           </span>
-          {signupStep === 1 && <span style={{ color: COLORS.primary }}> Jobty</span>}
+          {signupStep === 1 && (
+            <span style={{ color: COLORS.primary }}> Jobty</span>
+          )}
         </h1>
         <p className="connexion-subtitle">
-          {isLogin 
-            ? 'Connectez-vous pour accéder à votre compte' 
-            : signupStep === 2 
-              ? 'Quelques informations supplémentaires pour finaliser votre inscription'
-              : 'Créez votre compte et commencez votre aventure'}
+          {isLogin
+            ? "Connectez-vous pour accéder à votre compte"
+            : signupStep === 2
+              ? "Quelques informations supplémentaires pour finaliser votre inscription"
+              : "Créez votre compte et commencez votre aventure"}
         </p>
 
         {/* Toggle Connexion/Inscription (seulement à l'étape 1) */}
         {signupStep === 1 && (
           <div className="form-toggle">
-            <button 
-              className={`toggle-btn ${isLogin ? 'active' : ''}`}
+            <button
+              className={`toggle-btn ${isLogin ? "active" : ""}`}
               onClick={() => setIsLogin(true)}
               style={isLogin ? { backgroundColor: COLORS.primary } : {}}
             >
               Connexion
             </button>
-            <button 
-              className={`toggle-btn ${!isLogin ? 'active' : ''}`}
+            <button
+              className={`toggle-btn ${!isLogin ? "active" : ""}`}
               onClick={() => setIsLogin(false)}
               style={!isLogin ? { backgroundColor: COLORS.primary } : {}}
             >
@@ -353,7 +410,51 @@ export const Connexion = () => {
 
         {/* Formulaire de CONNEXION */}
         {isLogin ? (
-          <form className="connexion-form" onSubmit={handleLoginSubmit}>
+          <form
+            className="connexion-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+
+              if (loginMutation.isPending) {
+                return;
+              }
+
+              loginMutation.mutate(loginData, {
+                onSuccess: (res) => {
+                  if (res?.success && res?.data) {
+                    // Save token and user to auth store
+                    authStore.login(res.data.role, res.data.token, res.data);
+
+                    // Show success notification
+                    notify.success('Connexion réussie', 'Bienvenue! Redirection en cours...', {
+                      duration: 2000,
+                    });
+
+                    // Wait for toast to display, then redirect
+                    setTimeout(() => {
+                      const redirect = authStore.getDashboardRoute(res.data.role);
+                      navigate(redirect);
+                    }, 2500);
+                  } else {
+                    notify.error('Erreur', 'Réponse du serveur inattendue', {
+                      duration: 5000,
+                    });
+                  }
+                },
+                onError: (err) => {
+                  const errorMessage = extractErrorMessage(
+                    err,
+                    "Vérifiez vos identifiants",
+                  );
+
+                  // Show error notification
+                  notify.error("Échec de la connexion", errorMessage, {
+                    duration: 5000,
+                  });
+                },
+              });
+            }}
+          >
             <div className="form-group">
               <label htmlFor="login-email">
                 <FiMail /> Email
@@ -375,7 +476,7 @@ export const Connexion = () => {
               </label>
               <div className="password-input">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   id="login-password"
                   name="password"
                   placeholder="••••••••"
@@ -403,13 +504,15 @@ export const Connexion = () => {
               </a>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="submit-btn"
               style={{ backgroundColor: COLORS.primary }}
               disabled={loginMutation.isPending}
             >
-              {loginMutation.isPending ? 'Connexion en cours...' : 'Se connecter'}
+              {loginMutation.isPending
+                ? "Connexion en cours..."
+                : "Se connecter"}
             </button>
           </form>
         ) : (
@@ -418,50 +521,65 @@ export const Connexion = () => {
             {/* ÉTAPE 1 : Informations de base */}
             {signupStep === 1 && (
               <>
-               {/* Sélection du rôle */}
-<div className="role-selection">
-  <p className="role-label">Je suis :</p>
-  <div className="role-buttons">
-    <button
-      type="button"
-      className={`role-btn ${selectedRole === 'freelance' ? 'active' : ''}`}
-      onClick={() => setSelectedRole('freelance')}
-      style={selectedRole === 'freelance' ? { 
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary 
-      } : {}}
-    >
-      <FiUser />
-      Freelance
-    </button>
-    <button
-      type="button"
-      className={`role-btn ${selectedRole === 'entreprise' ? 'active' : ''}`}
-      onClick={() => setSelectedRole('entreprise')}
-      style={selectedRole === 'entreprise' ? { 
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary 
-      } : {}}
-    >
-      <FiBriefcase />
-      Entreprise
-    </button>
-    <button
-      type="button"
-      className={`role-btn ${selectedRole === 'client' ? 'active' : ''}`}
-      onClick={() => setSelectedRole('client')}
-      style={selectedRole === 'client' ? { 
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary 
-      } : {}}
-    >
-      <FiUser />
-      Visiteur
-    </button>
-  </div>
-</div>
+                {/* Sélection du rôle */}
+                <div className="role-selection">
+                  <p className="role-label">Je suis :</p>
+                  <div className="role-buttons">
+                    <button
+                      type="button"
+                      className={`role-btn ${selectedRole === "freelance" ? "active" : ""}`}
+                      onClick={() => setSelectedRole("freelance")}
+                      style={
+                        selectedRole === "freelance"
+                          ? {
+                              backgroundColor: COLORS.primary,
+                              borderColor: COLORS.primary,
+                            }
+                          : {}
+                      }
+                    >
+                      <FiUser />
+                      Freelance
+                    </button>
+                    <button
+                      type="button"
+                      className={`role-btn ${selectedRole === "entreprise" ? "active" : ""}`}
+                      onClick={() => setSelectedRole("entreprise")}
+                      style={
+                        selectedRole === "entreprise"
+                          ? {
+                              backgroundColor: COLORS.primary,
+                              borderColor: COLORS.primary,
+                            }
+                          : {}
+                      }
+                    >
+                      <FiBriefcase />
+                      Entreprise
+                    </button>
+                    <button
+                      type="button"
+                      className={`role-btn ${selectedRole === "client" ? "active" : ""}`}
+                      onClick={() => setSelectedRole("client")}
+                      style={
+                        selectedRole === "client"
+                          ? {
+                              backgroundColor: COLORS.primary,
+                              borderColor: COLORS.primary,
+                            }
+                          : {}
+                      }
+                    >
+                      <FiUser />
+                      Visiteur
+                    </button>
+                  </div>
+                </div>
 
-                <form className="connexion-form" onSubmit={handleSignupStep1Submit}>
+                <form
+                  className="connexion-form"
+                  onSubmit={handleSignupStep1Submit}
+                >
                   {/* Nom et Prénom */}
                   <div className="form-row">
                     <div className="form-group">
@@ -512,7 +630,7 @@ export const Connexion = () => {
                   </div>
 
                   {/* Pays et Ville pour PORTEUR DE PROJET uniquement */}
-                  {selectedRole === 'client' && (
+                  {selectedRole === "client" && (
                     <>
                       {/* Pays avec select */}
                       <div className="form-group">
@@ -560,7 +678,7 @@ export const Connexion = () => {
                     </label>
                     <div className="password-input">
                       <input
-                        type={showPassword ? 'text' : 'password'}
+                        type={showPassword ? "text" : "password"}
                         id="signup-password"
                         name="password"
                         placeholder="••••••••"
@@ -586,7 +704,7 @@ export const Connexion = () => {
                       <FiLock /> Confirmer le mot de passe
                     </label>
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       id="confirm-password"
                       name="confirmPassword"
                       placeholder="••••••••"
@@ -601,21 +719,37 @@ export const Connexion = () => {
                     <label className="checkbox-label">
                       <input type="checkbox" required />
                       <span>
-                        J'accepte les <a href="/conditions" style={{ color: COLORS.primary }}>conditions d'utilisation</a> et la <a href="/confidentialite" style={{ color: COLORS.primary }}>politique de confidentialité</a>
+                        J'accepte les{" "}
+                        <a href="/conditions" style={{ color: COLORS.primary }}>
+                          conditions d'utilisation
+                        </a>{" "}
+                        et la{" "}
+                        <a
+                          href="/confidentialite"
+                          style={{ color: COLORS.primary }}
+                        >
+                          politique de confidentialité
+                        </a>
                       </span>
                     </label>
                   </div>
 
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="submit-btn"
                     style={{ backgroundColor: COLORS.primary }}
                     disabled={registerMutation.isPending}
                   >
-                    {registerMutation.isPending 
-                      ? 'Inscription en cours...' 
-                      : (selectedRole === 'client' ? 'Créer mon compte' : 'Continuer')}
-                    {!registerMutation.isPending && (selectedRole === 'freelance' || selectedRole === 'entreprise') && <FiArrowRight style={{ marginLeft: '8px' }} />}
+                    {registerMutation.isPending
+                      ? "Inscription en cours..."
+                      : selectedRole === "client"
+                        ? "Créer mon compte"
+                        : "Continuer"}
+                    {!registerMutation.isPending &&
+                      (selectedRole === "freelance" ||
+                        selectedRole === "entreprise") && (
+                        <FiArrowRight style={{ marginLeft: "8px" }} />
+                      )}
                   </button>
                 </form>
               </>
@@ -624,7 +758,7 @@ export const Connexion = () => {
             {/* ÉTAPE 2 : Compléter le profil (Freelance/Entreprise uniquement) */}
             {signupStep === 2 && (
               <>
-                <button 
+                <button
                   className="back-step-button"
                   onClick={goBackToStep1}
                   type="button"
@@ -632,7 +766,10 @@ export const Connexion = () => {
                   <FiArrowLeft /> Retour
                 </button>
 
-                <form className="connexion-form" onSubmit={handleSignupStep2Submit}>
+                <form
+                  className="connexion-form"
+                  onSubmit={handleSignupStep2Submit}
+                >
                   {/* Téléphone */}
                   <div className="form-group">
                     <label htmlFor="telephone">
@@ -687,7 +824,7 @@ export const Connexion = () => {
                   </div>
 
                   {/* Nom de l'entreprise (uniquement pour entreprise) */}
-                  {selectedRole === 'entreprise' && (
+                  {selectedRole === "entreprise" && (
                     <div className="form-group">
                       <label htmlFor="nomEntreprise">
                         <FiBriefcase /> Nom de l'entreprise
@@ -734,20 +871,28 @@ export const Connexion = () => {
                       type="text"
                       id="specialite"
                       name="specialite"
-                      placeholder={selectedRole === 'freelance' ? 'Ex: Développeur Full-Stack' : 'Ex: Construction de bâtiments'}
+                      placeholder={
+                        selectedRole === "freelance"
+                          ? "Ex: Développeur Full-Stack"
+                          : "Ex: Construction de bâtiments"
+                      }
                       value={signupData.specialite}
                       onChange={handleSignupChange}
                       required
                     />
                     <small className="input-hint">
-                      Précisez votre spécialité dans le secteur {signupData.secteur || 'sélectionné'}
+                      Précisez votre spécialité dans le secteur{" "}
+                      {signupData.secteur || "sélectionné"}
                     </small>
                   </div>
 
                   {/* Années d'expérience/exercice */}
                   <div className="form-group">
                     <label htmlFor="anneesExperience">
-                      <FiCalendar /> {selectedRole === 'freelance' ? 'Années d\'expérience' : 'Années d\'exercice'}
+                      <FiCalendar />{" "}
+                      {selectedRole === "freelance"
+                        ? "Années d'expérience"
+                        : "Années d'exercice"}
                     </label>
                     <input
                       type="number"
@@ -765,29 +910,38 @@ export const Connexion = () => {
                   {/* Description/Bio */}
                   <div className="form-group">
                     <label htmlFor="description">
-                      <FiFileText /> {selectedRole === 'freelance' ? 'Bio / Présentation' : 'Description de l\'entreprise'}
+                      <FiFileText />{" "}
+                      {selectedRole === "freelance"
+                        ? "Bio / Présentation"
+                        : "Description de l'entreprise"}
                     </label>
                     <textarea
                       id="description"
                       name="description"
-                      placeholder={selectedRole === 'freelance' 
-                        ? 'Présentez-vous brièvement, vos compétences, votre parcours...'
-                        : 'Décrivez votre entreprise, vos services, votre mission...'}
+                      placeholder={
+                        selectedRole === "freelance"
+                          ? "Présentez-vous brièvement, vos compétences, votre parcours..."
+                          : "Décrivez votre entreprise, vos services, votre mission..."
+                      }
                       rows={4}
                       value={signupData.description}
                       onChange={handleSignupChange}
                       required
                       minLength={50}
                     />
-                    <small className="input-hint">Minimum 50 caractères ({signupData.description.length}/50)</small>
+                    <small className="input-hint">
+                      Minimum 50 caractères ({signupData.description.length}/50)
+                    </small>
                   </div>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="submit-btn"
                     style={{ backgroundColor: COLORS.primary }}
                     disabled={registerMutation.isPending}
                   >
-                    {registerMutation.isPending ? 'Inscription en cours...' : 'Créer mon compte'}
+                    {registerMutation.isPending
+                      ? "Inscription en cours..."
+                      : "Créer mon compte"}
                   </button>
                 </form>
               </>
@@ -798,7 +952,9 @@ export const Connexion = () => {
         {/* Lien pour basculer (seulement à l'étape 1) */}
         {signupStep === 1 && (
           <p className="toggle-link">
-            {isLogin ? "Vous n'avez pas de compte ?" : "Vous avez déjà un compte ?"}
+            {isLogin
+              ? "Vous n'avez pas de compte ?"
+              : "Vous avez déjà un compte ?"}
             <button onClick={toggleForm} style={{ color: COLORS.primary }}>
               {isLogin ? "S'inscrire" : "Se connecter"}
             </button>
@@ -807,5 +963,4 @@ export const Connexion = () => {
       </div>
     </div>
   );
-}
-
+};

@@ -34,33 +34,24 @@ axiosInstance.interceptors.request.use(
  * Standardizes error handling and catches 401 Unauthorized to trigger logout.
  */
 axiosInstance.interceptors.response.use(
-  (response) => {
-    console.log('[AXIOS] Response interceptor - full response:', {
-      status: response.status,
-      url: response.config.url,
-      dataIsArray: Array.isArray(response.data),
-      dataType: typeof response.data,
-      dataLength: Array.isArray(response.data) ? response.data.length : 'N/A',
-      data: response.data
-    });
-    return response.data; // Automatically extract ApiResponse.data
-  },
+  (response) => response.data,
   (error) => {
-    console.error('[AXIOS] Error interceptor caught:', {
-      status: error.response?.status,
-      url: error.config?.url,
-      skipAuth: error.config?.skipAuth,
-      errorData: error.response?.data
-    });
-    
     const originalRequest = error.config;
+    const requestUrl = (originalRequest?.url || '').toLowerCase();
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/verify') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/confirm');
     
     // Handle Session Expiry - trigger frontend logout
     // Skip logout for public endpoints (skipAuth=true) to avoid unnecessary redirects
     if (
       error.response?.status === 401 && 
       !originalRequest._retry && 
-      !originalRequest.skipAuth
+      !originalRequest.skipAuth &&
+      !isAuthEndpoint
     ) {
       // Mark request as retried to prevent infinite loops
       originalRequest._retry = true;
