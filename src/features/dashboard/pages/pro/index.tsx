@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogoutMutation } from '../../../../features/auth/hooks/useAuthMutations';
 import { 
@@ -14,15 +14,24 @@ import {
 } from 'react-icons/fi';
 
 import { 
-  // ... vos imports existants ...
   FiBarChart2, FiPieChart, FiActivity, FiTrendingDown,
   FiMap, FiMousePointer, FiPercent, FiUsers as FiUsersIcon
 } from 'react-icons/fi';
 import { FaBullhorn } from 'react-icons/fa';
 import { FaHandshake, FaRocket } from 'react-icons/fa';
 
-import logo from '../../../../assets/logo.png';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
+import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import { useDashboardProfile } from '../../hooks/useDashboardProfile';
+import {
+  useStatsOverview,
+  useTransactions,
+  useServices,
+  usePosts,
+  useCollaborations,
+  useAdCampaigns,
+  useAnalytics,
+} from '../../hooks/useDashboardData';
 import './css/style.css';
 
 function ProDashboard() {
@@ -31,28 +40,58 @@ function ProDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
-  const [viewMode, setViewMode] = useState('grid');
   const [paiementSubTab, setPaiementSubTab] = useState('recus');
   const [parametresSubTab, setParametresSubTab] = useState('notifications');
   const [pubSubTab, setPubSubTab] = useState('actives');
   const [analyticsSubTab, setAnalyticsSubTab] = useState('apercu');
   
+  // Fetch dashboard data from hooks (safe defaults)
+  const { profile } = useDashboardProfile();
+  const { data: statsData } = useStatsOverview();
+  const { data: transactions = [] } = useTransactions();
+  const { data: services = [] } = useServices();
+  const { data: posts = [] } = usePosts();
+  const { data: collaborations = [] } = useCollaborations();
+  const { data: campagnesPub = [] } = useAdCampaigns();
+  const { data: analyticsDataFromHook } = useAnalytics();
+
+  const dashboardProfile = {
+    firstName: '',
+    lastName: '',
+    subtitle: '',
+    avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aminata',
+    sector: 'Informatique',
+    specialization: 'Développeuse Full Stack',
+    city: 'Abidjan',
+    country: "Côte d'Ivoire",
+    ...profile
+  };
+
+  const stats = {
+    messagesNonLus: 0,
+    gainsTotal: 0,
+    projetsEnCours: 0,
+    projetsRealises: 0,
+    vuesProfile: 0,
+    ...statsData
+  };
+
   // Formulaire Carte Pro
   const [carteForm, setCarteForm] = useState({
-    photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aminata',
-    nom: 'Koné',
-    prenom: 'Aminata',
-    secteur: 'Informatique',
-    specialite: 'Développeuse Full Stack',
-    ville: 'Abidjan',
-    pays: 'Côte d\'Ivoire',
+    photo: dashboardProfile.avatarUrl,
+    nom: dashboardProfile.lastName,
+    prenom: dashboardProfile.firstName,
+    secteur: dashboardProfile.sector,
+    specialite: dashboardProfile.specialization,
+    ville: dashboardProfile.city,
+    pays: dashboardProfile.country,
     tarifHoraire: 15000,
     tags: ['React', 'Node.js', 'MongoDB', 'UI/UX'],
     disponible: true,
-    typeBouton: 'collaborer' // 'contacter' ou 'collaborer'
+    typeBouton: 'collaborer'
   });
 
-  // Données du freelance
+  // Données du freelance (card data)
   const freelance = {
     id: 1,
     ...carteForm,
@@ -62,28 +101,10 @@ function ProDashboard() {
     plan: 'gratuit'
   };
 
-  // Indicateurs clés
-  const stats = {
-    gainsTotal: 2450000,
-    projetsEnCours: 3,
-    projetsRealises: 89,
-    noteMoyenne: 4.8,
-    vuesProfile: 1247,
-    messagesNonLus: 5
-  };
-
-  // Transactions
-  const transactions = {
-    recues: [
-      { id: 1, client: 'Marc Dubois', projet: 'Site web StartupTech', montant: 150000, date: '2024-01-20', statut: 'recu' },
-      { id: 2, client: 'Sophie Martin', projet: 'App mobile Restaurant', montant: 135000, date: '2024-01-18', statut: 'recu' },
-      { id: 3, client: 'Jean Kouassi', projet: 'Dashboard Analytics', montant: 170000, date: '2024-01-15', statut: 'en_attente' }
-    ],
-    retraits: [
-      { id: 1, montant: 400000, methode: 'Mobile Money', numero: '**** 1234', date: '2024-01-10', statut: 'complete' },
-      { id: 2, montant: 300000, methode: 'Virement bancaire', numero: 'CI**************5678', date: '2024-01-05', statut: 'complete' },
-      { id: 3, montant: 250000, methode: 'Mobile Money', numero: '**** 1234', date: '2024-01-01', statut: 'en_cours' }
-    ]
+  // Mock transactions structure (TODO: restructure when backend implements /transactions/by-type endpoint)
+  const transactionsByType = {
+    recues: transactions || [],
+    retraits: []  // TODO: separate withdrawals endpoint
   };
 
   // Paramètres Notifications
@@ -106,84 +127,7 @@ function ProDashboard() {
     afficherTags: false
   });
 
-  // Services
-  const services = [
-    {
-      id: 1,
-      titre: 'Création site web vitrine',
-      description: 'Site web responsive avec design moderne',
-      prix: 250000,
-      delai: '2 semaines',
-      image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400',
-      actif: true,
-      vues: 342,
-      commandes: 12
-    },
-    {
-      id: 2,
-      titre: 'Application web sur mesure',
-      description: 'Développement complet frontend + backend',
-      prix: 500000,
-      delai: '1 mois',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400',
-      actif: true,
-      vues: 189,
-      commandes: 7
-    }
-  ];
-
-  // Posts
-  const posts = [
-    {
-      id: 1,
-      type: 'image',
-      titre: 'Site e-commerce Afro Style',
-      description: 'Plateforme complète avec paiement mobile money',
-      medias: ['https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400'],
-      likes: 234,
-      commentaires: 18,
-      date: '2024-01-15'
-    },
-    {
-      id: 2,
-      type: 'link',
-      titre: 'Application de gestion scolaire',
-      description: 'Dashboard admin + app mobile parents/élèves',
-      url: 'https://demo.schoolapp.ci',
-      likes: 156,
-      commentaires: 12,
-      date: '2024-01-10'
-    }
-  ];
-
-  // Collaborations
-  const collaborations = [
-    {
-      id: 1,
-      titre: 'Site web StartupTech',
-      client: 'Marc Dubois',
-      clientPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marc',
-      statut: 'en_cours',
-      progression: 65,
-      montant: 300000,
-      dateDebut: '2024-01-20',
-      prochaineLivraison: 'Maquette finale - 2 jours'
-    },
-    {
-      id: 2,
-      titre: 'Site e-commerce Mode',
-      client: 'Aïcha Traoré',
-      clientPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aicha',
-      statut: 'termine',
-      progression: 100,
-      montant: 350000,
-      dateFin: '2024-01-18',
-      note: 5
-    }
-  ];
-
-
-  // Données Publicité
+// Mock publicité stats (TODO: backend to implement /ads/stats endpoint)
 const publiciteStats = {
   budgetMois: 45000,
   budgetTotal: 100000,
@@ -193,7 +137,21 @@ const publiciteStats = {
   tauxConversion: 7.6
 };
 
-const campagnes = [
+// ✅ FIX: assign campaign objects to a variable/array with consistent shape
+const campagnes = (campagnesPub && campagnesPub.length > 0) ? campagnesPub.map(c => ({
+  id: c.id,
+  nom: c.nom || c.name || '',
+  type: c.type || '',
+  statut: c.statut || c.status || 'active',
+  impressions: c.impressions || 0,
+  clics: c.clics || c.clicks || 0,
+  ctr: c.ctr || 0,
+  budgetDepense: c.budgetDepense || c.spentBudget || 0,
+  budgetTotal: c.budgetTotal || c.totalBudget || 0,
+  joursRestants: c.joursRestants || c.daysRemaining || 0,
+  zone: c.zone,
+  motsCles: c.motsCles || c.keywords
+})) : [
   {
     id: 1,
     nom: 'Bâtiment & Travaux',
@@ -204,7 +162,9 @@ const campagnes = [
     ctr: 2.1,
     budgetDepense: 15000,
     budgetTotal: 30000,
-    joursRestants: 15
+    joursRestants: 15,
+    zone: undefined,
+    motsCles: undefined
   },
   {
     id: 2,
@@ -216,7 +176,9 @@ const campagnes = [
     ctr: 4.4,
     budgetDepense: 12000,
     budgetTotal: 25000,
-    zone: 'Dakar (10km)'
+    joursRestants: 0,
+    zone: 'Dakar (10km)',
+    motsCles: undefined
   },
   {
     id: 3,
@@ -228,6 +190,8 @@ const campagnes = [
     ctr: 4.3,
     budgetDepense: 18000,
     budgetTotal: 45000,
+    joursRestants: 0,
+    zone: undefined,
     motsCles: ['développeur web', 'site e-commerce']
   },
   {
@@ -239,7 +203,10 @@ const campagnes = [
     clics: 23,
     ctr: 2.6,
     budgetDepense: 8000,
-    budgetTotal: 20000
+    budgetTotal: 20000,
+    joursRestants: 0,
+    zone: undefined,
+    motsCles: undefined
   }
 ];
 
@@ -288,6 +255,16 @@ const performanceServices = [
   const closeMenu = () => setMenuOpen(false);
   const openProfile = () => setProfileOpen(true);
   const closeProfile = () => setProfileOpen(false);
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate('/');
+      },
+      onError: () => {
+        navigate('/');
+      },
+    });
+  };
 
   const handleCarteFormChange = (field, value) => {
     setCarteForm({ ...carteForm, [field]: value });
@@ -324,16 +301,25 @@ const performanceServices = [
   };
 
   const getStatutBadge = (statut) => {
+    const key = String(statut ?? '').toLowerCase();
+
     const statuts = {
-      'en_cours': { label: 'En cours', color: '#3DC7C9' },
-      'termine': { label: 'Terminé', color: '#28a745' },
-      'en_attente': { label: 'En attente', color: '#ffc107' },
-      'recu': { label: 'Reçu', color: '#28a745' },
-      'complete': { label: 'Complété', color: '#28a745' }
+      en_cours: { label: 'En cours', color: '#3DC7C9' },
+      termine: { label: 'Terminé', color: '#28a745' },
+      en_attente: { label: 'En attente', color: '#ffc107' },
+      recu: { label: 'Reçu', color: '#28a745' },
+      complete: { label: 'Complété', color: '#28a745' },
+      active: { label: 'Active', color: '#28a745' },
+      pause: { label: 'En pause', color: '#6b7280' },
     };
-    const s = statuts[statut];
+
+    const s = statuts[key] ?? { label: 'Inconnu', color: '#64748b' };
+
     return (
-      <span className="dash-statut-badge" style={{ backgroundColor: `${s.color}20`, color: s.color }}>
+      <span
+        className="dash-statut-badge"
+        style={{ backgroundColor: `${s.color}20`, color: s.color }}
+      >
         {s.label}
       </span>
     );
@@ -341,112 +327,28 @@ const performanceServices = [
 
   return (
     <div className="dash-page">
-      {/* SIDEBAR */}
-      <aside className={`dash-sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="dash-sidebar-header">
-          <img 
-          src={logo} alt="Jobty" className="dash-sidebar-logo" 
-          onClick={() => navigate('/')} style={{ cursor: 'pointer' }}/>
-          <button className="dash-close-btn" onClick={closeMenu}>
-            <FiX />
-          </button>
-        </div>
-
-        <div className="dash-user-card">
-          <img src={freelance.photo} alt={`${freelance.prenom} ${freelance.nom}`} className="dash-user-photo" />
-          <h3>{freelance.prenom} {freelance.nom}</h3>
-          <p>{freelance.specialite}</p>
+      <RoleSidebar
+        role="ROLE_PRO"
+        variant="dash"
+        open={menuOpen}
+        activeTab={activeTab}
+        onClose={closeMenu}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        isLoggingOut={logoutMutation.isPending}
+        user={{
+          firstName: dashboardProfile.firstName,
+          lastName: dashboardProfile.lastName,
+          subtitle: dashboardProfile.subtitle,
+          photo: dashboardProfile.avatarUrl,
+        }}
+        userExtra={
           <div className="dash-user-rating">
             {renderStars(freelance.note)}
             <span>{freelance.note}</span>
           </div>
-        </div>
-
-        <nav className="dash-nav">
-          <button 
-            className={`dash-nav-item ${activeTab === 'apercu' ? 'active' : ''}`}
-            onClick={() => setActiveTab('apercu')}
-          >
-            <FiGrid /> Aperçu
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'carte' ? 'active' : ''}`}
-            onClick={() => setActiveTab('carte')}
-          >
-            <FiUser /> Ma carte pro
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'services' ? 'active' : ''}`}
-            onClick={() => setActiveTab('services')}
-          >
-            <FiBriefcase /> Services
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'posts' ? 'active' : ''}`}
-            onClick={() => setActiveTab('posts')}
-          >
-            <FiImage /> Réalisations
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'collaborations' ? 'active' : ''}`}
-            onClick={() => setActiveTab('collaborations')}
-          >
-            <FaHandshake /> Collaborations
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'paiement' ? 'active' : ''}`}
-            onClick={() => setActiveTab('paiement')}
-          >
-            <FiCreditCard /> Paiement
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'facturation' ? 'active' : ''}`}
-            onClick={() => setActiveTab('facturation')}
-          >
-            <FiFileText /> Facturation
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'parametres' ? 'active' : ''}`}
-            onClick={() => setActiveTab('parametres')}
-          >
-            <FiSettings /> Paramètres
-          </button>
-
-          <button 
-  className={`dash-nav-item ${activeTab === 'publicite' ? 'active' : ''}`}
-  onClick={() => setActiveTab('publicite')}
->
-  <FaBullhorn /> Publicité
-</button>
-<button 
-  className={`dash-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
-  onClick={() => setActiveTab('analytics')}
->
-  <FiBarChart2 /> Analytics
-</button>
-        </nav>
-
-        <button 
-          className="dash-logout-btn" 
-          onClick={() => {
-            logoutMutation.mutate(undefined, {
-              onSuccess: () => {
-                navigate('/');
-              },
-              onError: (err) => {
-                console.error('Logout error:', err);
-                // Still navigate even if logout fails
-                navigate('/');
-              },
-            });
-          }}
-          disabled={logoutMutation.isPending}
-        >
-          <FiLogOut /> {logoutMutation.isPending ? 'Déconnexion...' : 'Déconnexion'}
-        </button>
-      </aside>
-
-      {menuOpen && <div className="dash-overlay" onClick={closeMenu}></div>}
+        }
+      />
 
       {/* MAIN CONTENT */}
       <main className="dash-main">
@@ -472,7 +374,7 @@ const performanceServices = [
               <span className="dash-notif-badge">{stats.messagesNonLus}</span>
             </button>
             <button className="dash-profile-btn" onClick={openProfile}>
-              <img src={freelance.photo} alt="" />
+              <img src={dashboardProfile.avatarUrl} alt="" />
             </button>
           </div>
         </header>
@@ -489,7 +391,7 @@ const performanceServices = [
                   </div>
                   <div className="dash-stat-content">
                     <span className="dash-stat-label">Gains récoltés</span>
-                    <span className="dash-stat-value">{stats.gainsTotal.toLocaleString()} FCFA</span>
+                    <span className="dash-stat-value">{stats.gainsTotal} FCFA</span>
                     <span className="dash-stat-trend">
                       <FiTrendingUp /> +12% ce mois
                     </span>
@@ -554,7 +456,7 @@ const performanceServices = [
                   </button>
                 </div>
                 <div className="dash-projects-quick">
-                  {collaborations.filter(c => c.statut === 'en_cours').map(collab => (
+                  {collaborations.filter(c => c.statut === 'en_attente').map(collab => (
                     <div key={collab.id} className="dash-project-quick-card">
                       <div className="dash-project-quick-header">
                         <img src={collab.clientPhoto} alt={collab.client} />
@@ -562,7 +464,7 @@ const performanceServices = [
                           <h4>{collab.titre}</h4>
                           <p>{collab.client}</p>
                         </div>
-                        <span className="dash-project-amount">{collab.montant.toLocaleString()} F</span>
+                        <span className="dash-project-amount">{collab.montant} F</span>
                       </div>
                       <div className="dash-project-progress">
                         <div className="dash-progress-bar">
@@ -800,7 +702,7 @@ const performanceServices = [
                         <FiDollarSign />
                         <div>
                           <span className="marketplace-tarif-label">À partir de</span>
-                          <span className="marketplace-tarif-value">{parseInt(carteForm.tarifHoraire.toString()).toLocaleString()} FCFA/h</span>
+                          <span className="marketplace-tarif-value">{parseInt(carteForm.tarifHoraire.toString())} FCFA/h</span>
                         </div>
                       </div>
                       <div className="marketplace-actions">
@@ -861,7 +763,7 @@ const performanceServices = [
                       <h3>{service.titre}</h3>
                       <p>{service.description}</p>
                       <div className="dash-service-meta">
-                        <span className="dash-service-prix">{service.prix.toLocaleString()} FCFA</span>
+                        <span className="dash-service-prix">{service.prix} FCFA</span>
                         <span className="dash-service-delai">
                           <FiClock /> {service.delai}
                         </span>
@@ -949,7 +851,7 @@ const performanceServices = [
                       {getStatutBadge(collab.statut)}
                     </div>
 
-                    {collab.statut === 'en_cours' && (
+                    {collab.statut === 'en_attente' && (
                       <>
                         <div className="dash-collab-progress">
                           <div className="dash-progress-bar">
@@ -965,7 +867,7 @@ const performanceServices = [
 
                     <div className="dash-collab-footer">
                       <span className="dash-collab-amount">
-                        <FiDollarSign /> {collab.montant.toLocaleString()} FCFA
+                        <FiDollarSign /> {collab.montant} FCFA
                       </span>
                     </div>
 
@@ -1002,7 +904,7 @@ const performanceServices = [
 
               {paiementSubTab === 'recus' && (
                 <div className="dash-transactions-list">
-                  {transactions.recues.map(trans => (
+                  {transactionsByType.recues.map(trans => (
                     <div key={trans.id} className="dash-transaction-card">
                       <div className="dash-transaction-info">
                         <h4>{trans.projet}</h4>
@@ -1010,7 +912,7 @@ const performanceServices = [
                         <span className="dash-transaction-date">{new Date(trans.date).toLocaleDateString('fr-FR')}</span>
                       </div>
                       <div className="dash-transaction-right">
-                        <span className="dash-transaction-amount">+{trans.montant.toLocaleString()} FCFA</span>
+                        <span className="dash-transaction-amount">+{trans.montant} FCFA</span>
                         {getStatutBadge(trans.statut)}
                       </div>
                     </div>
@@ -1023,7 +925,7 @@ const performanceServices = [
                   <button className="dash-btn-primary dash-btn-full">
                     <FiDownload /> Demander un retrait
                   </button>
-                  {transactions.retraits.map(retrait => (
+                  {transactionsByType.retraits.map(retrait => (
                     <div key={retrait.id} className="dash-transaction-card">
                       <div className="dash-transaction-info">
                         <h4>{retrait.methode}</h4>
@@ -1031,7 +933,7 @@ const performanceServices = [
                         <span className="dash-transaction-date">{new Date(retrait.date).toLocaleDateString('fr-FR')}</span>
                       </div>
                       <div className="dash-transaction-right">
-                        <span className="dash-transaction-amount withdraw">-{retrait.montant.toLocaleString()} FCFA</span>
+                        <span className="dash-transaction-amount withdraw">-{retrait.montant} FCFA</span>
                         {getStatutBadge(retrait.statut)}
                       </div>
                     </div>
@@ -1226,7 +1128,7 @@ const performanceServices = [
           </div>
           <div className="dash-stat-content">
             <span className="dash-stat-label">Impressions</span>
-            <span className="dash-stat-value">{publiciteStats.impressions.toLocaleString()}</span>
+            <span className="dash-stat-value">{publiciteStats.impressions}</span>
           </div>
         </div>
         <div className="dash-stat-card secondary">
@@ -1286,7 +1188,7 @@ const performanceServices = [
                 <p>{campagne.type}</p>
                 
                 <div className="dash-service-meta">
-                  <span className="dash-service-prix">{campagne.impressions.toLocaleString()} impressions</span>
+                  <span className="dash-service-prix">{campagne.impressions} impressions</span>
                   <span className="dash-service-delai">
                     <FiTrendingUp /> {campagne.ctr}% CTR
                   </span>
@@ -1307,7 +1209,7 @@ const performanceServices = [
                 </div>
                 
                 <p className="dash-project-next">
-                  Budget: {campagne.budgetDepense.toLocaleString()} / {campagne.budgetTotal.toLocaleString()} F
+                  Budget: {campagne.budgetDepense} / {campagne.budgetTotal} F
                 </p>
               </div>
               
@@ -1344,7 +1246,7 @@ const performanceServices = [
           <FiEye />
         </div>
         <div className="dash-analytics-metric-content">
-          <span className="dash-analytics-metric-value">{analyticsData.vuesProfil.toLocaleString()}</span>
+          <span className="dash-analytics-metric-value">{analyticsData.vuesProfil}</span>
           <span className="dash-analytics-metric-label">Vues profil</span>
           <span className="dash-analytics-metric-trend success">
             <FiTrendingUp /> +23%
@@ -1441,7 +1343,7 @@ const performanceServices = [
           <h3><FiEye /> Visibilité du profil</h3>
           <div className="dash-analytics-stats-row">
             <div className="dash-analytics-stat-item">
-              <span className="dash-analytics-stat-number">{analyticsData.vuesProfil.toLocaleString()}</span>
+              <span className="dash-analytics-stat-number">{analyticsData.vuesProfil}</span>
               <span className="dash-analytics-stat-text">Vues totales</span>
             </div>
             <div className="dash-analytics-stat-item">
@@ -1559,7 +1461,7 @@ const performanceServices = [
             {performanceServices.map((service, index) => (
               <div key={index} className="dash-analytics-table-row">
                 <span className="dash-analytics-service-name">{service.service}</span>
-                <span className="dash-analytics-service-prix">{service.prix.toLocaleString()} F</span>
+                <span className="dash-analytics-service-prix">{service.prix} F</span>
                 <span>{service.vues}</span>
                 <span>{service.devis}</span>
                 <span className="dash-analytics-service-conv">{service.conversion}%</span>

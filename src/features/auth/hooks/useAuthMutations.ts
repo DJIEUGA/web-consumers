@@ -22,7 +22,7 @@ export const useLoginMutation = () => {
         if (!response.success) {
           const err: any = new Error(response.message || 'Login failed');
           err.response = response;
-          err.statusCode = response.statusCode;
+          err.statusCode = response.status;
           throw err;
         }
         

@@ -20,8 +20,21 @@ import {
   FaHandshake, FaRocket, FaBalanceScale, FaUserShield,
   FaChartLine, FaMapMarkedAlt 
 } from 'react-icons/fa';
-import logo from '../../../../assets/logo.png';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
+import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import { useDashboardProfile } from '../../hooks/useDashboardProfile';
+import {
+  useStatsToday,
+  useStatsMonth,
+  useAlerts,
+  useUsers,
+  useProjects,
+  useKycQueue,
+  useDisputes,
+  usePayments,
+  useAnalytics,
+  useTransactions,
+} from '../../hooks/useDashboardData';
 import './css/style.css';
 
 function AdminDashboard() {
@@ -30,261 +43,31 @@ function AdminDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
+  const [, setKycDetail] = useState(null);
+  const [, setLitigeDetail] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [kycDetail, setKycDetail] = useState(null);
-  const [litigeDetail, setLitigeDetail] = useState(null);
   
-  // Données Admin
+  // Fetch dashboard data from hooks
+  const { profile: dashboardProfile } = useDashboardProfile();
+  const { data: statsToday } = useStatsToday();
+  const { data: statsMonth } = useStatsMonth();
+  const { data: alertes } = useAlerts();
+  const { data: users } = useUsers();
+  const { data: projets } = useProjects();
+  const { data: kycDemandes } = useKycQueue();
+  const { data: litiges } = useDisputes();
+  const { data: paiements } = usePayments();
+  const { data: analyticsData } = useAnalytics();
+  const { data: transactions } = useTransactions();
+  
   const adminUser = {
-    nom: 'Admin',
-    prenom: 'Julie',
-    role: 'Super Admin',
-    photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AdminJulie'
+    nom: dashboardProfile.lastName,
+    prenom: dashboardProfile.firstName,
+    role: dashboardProfile.subtitle,
+    photo: dashboardProfile.avatarUrl,
   };
 
-  // Statistiques en temps réel
-  const statsToday = {
-    nouveauxUsers: 127,
-    nouveauxProjets: 45,
-    commissions: 124500,
-    satisfaction: 4.8,
-    trendUsers: 23,
-    trendProjets: 18,
-    trendCommissions: 12
-  };
-
-  const statsMonth = {
-    usersActifs: 2340,
-    projets: 890,
-    volume: 3200000,
-    contrats: 234,
-    quotaUsers: 78,
-    trendProjets: 45,
-    trendContrats: 32
-  };
-
-  // Alertes importantes
-  const alertes = [
-    { type: 'warning', message: '12 litiges en attente de résolution' },
-    { type: 'danger', message: '3 paiements bloqués depuis +48h' },
-    { type: 'info', message: '8 vérifications KYC en attente' },
-    { type: 'success', message: 'Pic d\'activité inhabituel détecté (Nigeria +340%)' }
-  ];
-
-  // Utilisateurs
-  const users = [
-    {
-      id: 'USER-12345',
-      nom: 'Diallo',
-      prenom: 'Amadou',
-      email: 'amadou.diallo@email.com',
-      tel: '+221 77 123 45 67',
-      type: 'Pro',
-      specialite: 'Développeur',
-      pays: 'Sénégal',
-      ville: 'Dakar',
-      statut: 'actif',
-      certifie: true,
-      kyc: 'verifie',
-      note: 4.9,
-      nbAvis: 18,
-      inscrit: '12/01/2025',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amadou',
-      stats: {
-        projetsCompletes: 23,
-        volumeTotal: 2300000,
-        tauxSucces: 92,
-        tauxReponse: 98,
-        delaiMoyen: 2.3,
-        messagesEnvoyes: 234,
-        projetsEnCours: 3
-      },
-      finances: {
-        revenusTotal: 2345000,
-        enAttente: 125000,
-        paye: 2220000,
-        sequestreActif: 125000,
-        dernierPaiement: '03/01/2025'
-      }
-    },
-    {
-      id: 'USER-67890',
-      nom: 'Kouassi',
-      prenom: 'Fatima',
-      email: 'fatima.k@email.com',
-      tel: '+225 07 12 34 56',
-      type: 'Client',
-      pays: 'Côte d\'Ivoire',
-      ville: 'Abidjan',
-      statut: 'suspendu',
-      certifie: false,
-      kyc: 'en_attente',
-      note: 4.2,
-      nbAvis: 5,
-      inscrit: '08/01/2025',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima'
-    }
-  ];
-
-  // File d'attente KYC
-  const kycQueue = [
-    {
-      id: 'KYC-7821',
-      userId: 'USER-98765',
-      nom: 'Mohammed',
-      prenom: 'Ibrahim',
-      type: 'Pro',
-      specialite: 'Développeur',
-      pays: 'Nigeria',
-      typeDoc: 'CNI + Selfie',
-      soumis: '03/01/2025',
-      delai: '48h',
-      priorite: 'urgent',
-      documents: {
-        cniRecto: '/docs/cni_recto.jpg',
-        cniVerso: '/docs/cni_verso.jpg',
-        selfie: '/docs/selfie.jpg'
-      },
-      scoreIA: 87,
-      authenticite: 92,
-      correspondance: 89
-    },
-    {
-      id: 'KYC-7822',
-      userId: 'USER-11111',
-      nom: 'Bah',
-      prenom: 'Aïcha',
-      type: 'Pro',
-      specialite: 'Designer',
-      pays: 'Sénégal',
-      typeDoc: 'Passeport',
-      soumis: '04/01/2025',
-      delai: '12h',
-      priorite: 'normal'
-    },
-    {
-      id: 'KYC-7823',
-      userId: 'USER-22222',
-      nom: 'Asante',
-      prenom: 'Kofi',
-      type: 'Client',
-      pays: 'Ghana',
-      typeDoc: 'Permis',
-      soumis: '04/01/2025',
-      delai: '2h',
-      priorite: 'faible'
-    }
-  ];
-
-  // Projets
-  const projets = [
-    {
-      id: 'P-123',
-      titre: 'App mobile e-commerce',
-      client: 'Kofi Asante',
-      clientId: 'USER-456',
-      pays: 'Ghana',
-      budget: 2500000,
-      statut: 'ouvert',
-      candidatures: 3,
-      dateCreation: '02/01/2025'
-    },
-    {
-      id: 'P-122',
-      titre: 'Site vitrine',
-      client: 'Fatima Kouassi',
-      clientId: 'USER-67890',
-      pays: 'Côte d\'Ivoire',
-      budget: 500000,
-      statut: 'en_attente',
-      candidatures: 0,
-      dateCreation: '03/01/2025'
-    },
-    {
-      id: 'P-121',
-      titre: 'Logo entreprise',
-      client: 'Amadou Diallo',
-      clientId: 'USER-12345',
-      pays: 'Sénégal',
-      budget: 150000,
-      statut: 'en_cours',
-      candidatures: 1,
-      dateCreation: '01/01/2025'
-    }
-  ];
-
-  // Transactions
-  const transactions = [
-    {
-      id: 'T-8821',
-      date: '04/01/2025 15:23',
-      de: 'Kofi A.',
-      vers: 'Séquestre',
-      montant: 250000,
-      type: 'Dépôt',
-      methode: 'Carte',
-      statut: 'valide'
-    },
-    {
-      id: 'T-8820',
-      date: '04/01/2025 14:12',
-      de: 'Séquestre',
-      vers: 'Ibrahim M.',
-      montant: 125000,
-      type: 'Payout',
-      methode: 'MTN Money',
-      statut: 'en_cours'
-    },
-    {
-      id: 'T-8819',
-      date: '04/01/2025 12:45',
-      de: 'Fatima K.',
-      vers: 'Séquestre',
-      montant: 450000,
-      type: 'Dépôt',
-      methode: 'Orange Money',
-      statut: 'valide'
-    }
-  ];
-
-  // Litiges
-  const litiges = [
-    {
-      id: 'L-234',
-      projetId: 'P-123',
-      titre: 'Travail non conforme',
-      montant: 2500000,
-      plaignant: 'Kofi Asante',
-      defendeur: 'Ibrahim Mohammed',
-      ouvertDepuis: '7 jours',
-      priorite: 'urgent',
-      statut: 'escalade'
-    },
-    {
-      id: 'L-233',
-      projetId: 'P-122',
-      titre: 'Problème de qualité',
-      montant: 500000,
-      plaignant: 'Fatima K.',
-      defendeur: 'Aïcha B.',
-      ouvertDepuis: '3 jours',
-      priorite: 'moyen',
-      statut: 'en_cours'
-    },
-    {
-      id: 'L-232',
-      projetId: 'P-121',
-      titre: 'Retard de livraison',
-      montant: 150000,
-      plaignant: 'Amadou D.',
-      defendeur: 'Client123',
-      ouvertDepuis: '1 jour',
-      priorite: 'faible',
-      statut: 'nouveau'
-    }
-  ];
-
-  // Analytics
+  // Mock analytics structure (TODO: backend to implement detailed analytics endpoint)
   const analytics = {
     users: {
       total: 12340,
@@ -320,7 +103,7 @@ function AdminDashboard() {
     ]
   };
 
-  // Modérateurs
+  // Mock moderators (TODO: backend to implement moderators endpoint)
   const moderateurs = [
     {
       id: 'MOD-001',
@@ -361,6 +144,16 @@ function AdminDashboard() {
   const closeMenu = () => setMenuOpen(false);
   const openProfile = () => setProfileOpen(true);
   const closeProfile = () => setProfileOpen(false);
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate('/');
+      },
+      onError: () => {
+        navigate('/');
+      },
+    });
+  };
 
   const getStatutBadge = (statut) => {
     const statuts = {
@@ -430,111 +223,22 @@ function AdminDashboard() {
 
   return (
     <div className="admin-page">
-      {/* SIDEBAR */}
-      <aside className={`admin-sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="admin-sidebar-header">
-          <img 
-            src={logo} 
-            alt="Jobty" 
-            className="admin-sidebar-logo" 
-            onClick={() => navigate('/')} 
-            style={{ cursor: 'pointer' }}
-          />
-          <button className="admin-close-btn" onClick={closeMenu}>
-            <FiX />
-          </button>
-        </div>
-
-        <div className="admin-user-card">
-          <img src={adminUser.photo} alt={`${adminUser.prenom} ${adminUser.nom}`} />
-          <h3>{adminUser.prenom} {adminUser.nom}</h3>
-          <p>{adminUser.role}</p>
-        </div>
-
-        <nav className="admin-nav">
-          <button 
-            className={`admin-nav-item ${activeTab === 'apercu' ? 'active' : ''}`}
-            onClick={() => setActiveTab('apercu')}
-          >
-            <FiGrid /> Vue d'ensemble
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
-          >
-            <FiUsers /> Utilisateurs
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'projets' ? 'active' : ''}`}
-            onClick={() => setActiveTab('projets')}
-          >
-            <FiBriefcase /> Projets
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'paiements' ? 'active' : ''}`}
-            onClick={() => setActiveTab('paiements')}
-          >
-            <FiCreditCard /> Paiements
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'litiges' ? 'active' : ''}`}
-            onClick={() => setActiveTab('litiges')}
-          >
-            <FaBalanceScale /> Litiges
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'carte' ? 'active' : ''}`}
-            onClick={() => setActiveTab('carte')}
-          >
-            <FiMap /> Carte
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'stats' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stats')}
-          >
-            <FiBarChart2 /> Analytics
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'kyc' ? 'active' : ''}`}
-            onClick={() => setActiveTab('kyc')}
-          >
-            <FiShield /> Vérification KYC
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'moderateurs' ? 'active' : ''}`}
-            onClick={() => setActiveTab('moderateurs')}
-          >
-            <FaUserShield /> Modérateurs
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'config' ? 'active' : ''}`}
-            onClick={() => setActiveTab('config')}
-          >
-            <FiSettings /> Configuration
-          </button>
-        </nav>
-
-        <button 
-          className="admin-logout-btn" 
-          onClick={() => {
-            logoutMutation.mutate(undefined, {
-              onSuccess: () => {
-                navigate('/');
-              },
-              onError: (err) => {
-                console.error('Logout error:', err);
-                // Still navigate even if logout fails
-                navigate('/');
-              },
-            });
-          }}
-          disabled={logoutMutation.isPending}
-        >
-          <FiLogOut /> {logoutMutation.isPending ? 'Déconnexion...' : 'Déconnexion'}
-        </button>
-      </aside>
-
-      {menuOpen && <div className="admin-overlay" onClick={closeMenu}></div>}
+      <RoleSidebar
+        role="ROLE_ADMIN"
+        variant="admin"
+        open={menuOpen}
+        activeTab={activeTab}
+        onClose={closeMenu}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        isLoggingOut={logoutMutation.isPending}
+        user={{
+          firstName: adminUser.prenom,
+          lastName: adminUser.nom,
+          subtitle: adminUser.role,
+          photo: adminUser.photo,
+        }}
+      />
 
       {/* MAIN CONTENT */}
       <main className="admin-main">
@@ -568,7 +272,7 @@ function AdminDashboard() {
         <div className="admin-content">
           
           {/* ALERTES */}
-          {activeTab === 'apercu' && (
+          {activeTab === 'apercu' && alertes && (
             <div className="admin-alerts">
               {alertes.map((alerte, index) => (
                 <div key={index} className={`admin-alert admin-alert-${alerte.type}`}>
@@ -580,7 +284,7 @@ function AdminDashboard() {
           )}
 
           {/* ONGLET APERÇU */}
-          {activeTab === 'apercu' && (
+          {activeTab === 'apercu' && statsToday && statsMonth && (
             <div className="admin-apercu">
               {/* Stats du jour */}
               <div className="admin-stats-section">
@@ -747,7 +451,7 @@ function AdminDashboard() {
                 <div className="admin-recent-card">
                   <h3>Transactions récentes</h3>
                   <div className="admin-recent-list">
-                    {transactions.slice(0, 3).map(trans => (
+                    {transactions && transactions.slice(0, 3).map(trans => (
                       <div key={trans.id} className="admin-recent-item">
                         <div className="admin-recent-info">
                           <span className="admin-recent-id">{trans.id}</span>
@@ -765,7 +469,7 @@ function AdminDashboard() {
                 <div className="admin-recent-card">
                   <h3>KYC en attente</h3>
                   <div className="admin-recent-list">
-                    {kycQueue.map(kyc => (
+                    {kycDemandes && kycDemandes.map(kyc => (
                       <div key={kyc.id} className="admin-recent-item">
                         <div className="admin-recent-info">
                           <span className="admin-recent-name">{kyc.prenom} {kyc.nom}</span>
@@ -783,7 +487,7 @@ function AdminDashboard() {
                 <div className="admin-recent-card">
                   <h3>Litiges actifs</h3>
                   <div className="admin-recent-list">
-                    {litiges.map(litige => (
+                    {litiges && litiges.map(litige => (
                       <div key={litige.id} className="admin-recent-item">
                         <div className="admin-recent-info">
                           <span className="admin-recent-name">{litige.titre}</span>
@@ -802,7 +506,7 @@ function AdminDashboard() {
           )}
 
           {/* ONGLET UTILISATEURS */}
-          {activeTab === 'users' && (
+          {activeTab === 'users' && users && (
             <div className="admin-users-section">
               <div className="admin-section-header">
                 <div>
@@ -894,7 +598,7 @@ function AdminDashboard() {
                         <td>
                           {user.kyc === 'verifie' && <span className="admin-kyc-badge verified"><FiCheckCircle /> Vérifié</span>}
                           {user.kyc === 'en_attente' && <span className="admin-kyc-badge pending"><FiClock /> En attente</span>}
-                          {user.kyc === 'refuse' && <span className="admin-kyc-badge rejected"><FiXCircle /> Refusé</span>}
+                          {user.kyc === 'rejete' && <span className="admin-kyc-badge rejected"><FiXCircle /> Refusé</span>}
                         </td>
                         <td>
                           <div className="admin-rating">
@@ -934,18 +638,18 @@ function AdminDashboard() {
           )}
 
           {/* ONGLET KYC */}
-          {activeTab === 'kyc' && (
+          {activeTab === 'kyc' && kycDemandes && (
             <div className="admin-kyc-section">
               <div className="admin-section-header">
                 <div>
                   <h2>File d'attente KYC</h2>
-                  <p className="admin-section-subtitle">{kycQueue.length} vérifications en attente</p>
+                  <p className="admin-section-subtitle">{kycDemandes.length} vérifications en attente</p>
                 </div>
               </div>
 
               {/* Liste KYC */}
               <div className="admin-kyc-queue">
-                {kycQueue.map(kyc => (
+                {kycDemandes.map(kyc => (
                   <div key={kyc.id} className="admin-kyc-card">
                     <div className="admin-kyc-priority">
                       {getPrioriteBadge(kyc.priorite)}
@@ -1005,7 +709,7 @@ function AdminDashboard() {
           )}
 
           {/* ONGLET PROJETS */}
-          {activeTab === 'projets' && (
+          {activeTab === 'projets' && projets && (
             <div className="admin-projects-section">
               <div className="admin-section-header">
                 <div>
@@ -1080,7 +784,7 @@ function AdminDashboard() {
           )}
 
           {/* ONGLET PAIEMENTS */}
-          {activeTab === 'paiements' && (
+          {activeTab === 'paiements' && paiements && (
             <div className="admin-payments-section">
               <div className="admin-section-header">
                 <div>
@@ -1148,7 +852,7 @@ function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {transactions.map(trans => (
+                      {transactions && transactions.map(trans => (
                         <tr key={trans.id}>
                           <td><strong>{trans.id}</strong></td>
                           <td>{trans.date}</td>
@@ -1174,7 +878,7 @@ function AdminDashboard() {
           )}
 
           {/* ONGLET LITIGES */}
-          {activeTab === 'litiges' && (
+          {activeTab === 'litiges' && litiges && (
             <div className="admin-disputes-section">
               <div className="admin-section-header">
                 <div>

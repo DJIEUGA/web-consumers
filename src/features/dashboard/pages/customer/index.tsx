@@ -72,8 +72,9 @@ import {
   FaChartLine,
   FaMapMarkedAlt,
 } from "react-icons/fa";
-import logo from '../../../../assets/logo.png';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
+import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import { useDashboardProfile } from '../../hooks/useDashboardProfile';
 import "./css/style.css";
 
 const CustomerDashboard = () => {
@@ -82,87 +83,47 @@ const CustomerDashboard = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("apercu");
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [kycDetail, setKycDetail] = useState(null);
-  const [litigeDetail, setLitigeDetail] = useState(null);
+  const { profile: dashboardProfile } = useDashboardProfile();
 
-  // Données Admin
   const adminUser = {
-    nom: "Client",
-    prenom: "Julia",
-    role: "Client(e)",
-    photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=AdminJulie",
+    nom: dashboardProfile.lastName,
+    prenom: dashboardProfile.firstName,
+    role: dashboardProfile.subtitle,
+    photo: dashboardProfile.avatarUrl,
   };
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
   const openProfile = () => setProfileOpen(true);
   const closeProfile = () => setProfileOpen(false);
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate("/");
+      },
+      onError: () => {
+        navigate("/");
+      },
+    });
+  };
   return (
     <div className="admin-page">
-      {/* SIDEBAR */}
-      <aside className={`admin-sidebar ${menuOpen ? "open" : ""}`}>
-        <div className="admin-sidebar-header">
-          <img
-            src={logo}
-            alt="Jobty"
-            className="admin-sidebar-logo"
-            onClick={() => navigate("/")}
-            style={{ cursor: "pointer" }}
-          />
-          <button className="admin-close-btn" onClick={closeMenu}>
-            <FiX />
-          </button>
-        </div>
-
-        <div className="admin-user-card">
-          <img
-            src={adminUser.photo}
-            alt={`${adminUser.prenom} ${adminUser.nom}`}
-          />
-          <h3>
-            {adminUser.prenom} {adminUser.nom}
-          </h3>
-          <p>{adminUser.role}</p>
-        </div>
-
-        <nav className="admin-nav">
-          <button
-            className={`admin-nav-item ${activeTab === "apercu" ? "active" : ""}`}
-            onClick={() => setActiveTab("apercu")}
-          >
-            <FiGrid /> Vue d'ensemble
-          </button>
-          <button
-            className={`admin-nav-item ${activeTab === "projets" ? "active" : ""}`}
-            onClick={() => setActiveTab("projets")}
-          >
-            <FiBriefcase /> Projets
-          </button>
-        </nav>
-
-        <button
-          className="admin-logout-btn"
-          onClick={() => {
-            logoutMutation.mutate(undefined, {
-              onSuccess: () => {
-                navigate("/");
-              },
-              onError: (err) => {
-                console.error("Logout error:", err);
-                // Still navigate even if logout fails
-                navigate("/");
-              },
-            });
-          }}
-          disabled={logoutMutation.isPending}
-        >
-          <FiLogOut />{" "}
-          {logoutMutation.isPending ? "Déconnexion..." : "Déconnexion"}
-        </button>
-      </aside>
-
-      {menuOpen && <div className="admin-overlay" onClick={closeMenu}></div>}
+      <RoleSidebar
+        role="ROLE_CUSTOMER"
+        variant="admin"
+        open={menuOpen}
+        activeTab={activeTab}
+        onClose={closeMenu}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        isLoggingOut={logoutMutation.isPending}
+        user={{
+          firstName: adminUser.prenom,
+          lastName: adminUser.nom,
+          subtitle: adminUser.role,
+          photo: adminUser.photo,
+        }}
+      />
 
       {/* MAIN CONTENT */}
       <main className="admin-main">

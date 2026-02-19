@@ -20,8 +20,20 @@ import {
   FaHandshake, FaRocket, FaBalanceScale, FaUserShield,
   FaChartLine, FaMapMarkedAlt 
 } from 'react-icons/fa';
-import logo from '../../../../assets/logo.png';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
+import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import { useDashboardProfile } from '../../hooks/useDashboardProfile';
+import {
+  useStatsToday,
+  useStatsMonth,
+  useAlerts,
+  useUsers,
+  useProjects,
+  useKycQueue,
+  useDisputes,
+  useAnalytics,
+  useTransactions,
+} from '../../hooks/useDashboardData';
 import './css/style.css';
 
 function ModeratorDashboard() {
@@ -30,261 +42,30 @@ function ModeratorDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
+  const [, setKycDetail] = useState(null);
+  const [, setLitigeDetail] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [kycDetail, setKycDetail] = useState(null);
-  const [litigeDetail, setLitigeDetail] = useState(null);
   
-  // Données Admin
+  // Fetch dashboard data from hooks
+  const { profile: dashboardProfile } = useDashboardProfile();
+  const { data: statsToday } = useStatsToday();
+  const { data: statsMonth } = useStatsMonth();
+  const { data: alertes } = useAlerts();
+  const { data: users } = useUsers();
+  const { data: projets } = useProjects();
+  const { data: kycDemandes } = useKycQueue();
+  const { data: litiges } = useDisputes();
+  const { data: analyticsData } = useAnalytics();
+  const { data: transactions } = useTransactions();
+  
   const adminUser = {
-    nom: 'Admin',
-    prenom: 'Julie',
-    role: 'Super Admin',
-    photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AdminJulie'
+    nom: dashboardProfile.lastName,
+    prenom: dashboardProfile.firstName,
+    role: dashboardProfile.subtitle,
+    photo: dashboardProfile.avatarUrl,
   };
 
-  // Statistiques en temps réel
-  const statsToday = {
-    nouveauxUsers: 127,
-    nouveauxProjets: 45,
-    commissions: 124500,
-    satisfaction: 4.8,
-    trendUsers: 23,
-    trendProjets: 18,
-    trendCommissions: 12
-  };
-
-  const statsMonth = {
-    usersActifs: 2340,
-    projets: 890,
-    volume: 3200000,
-    contrats: 234,
-    quotaUsers: 78,
-    trendProjets: 45,
-    trendContrats: 32
-  };
-
-  // Alertes importantes
-  const alertes = [
-    { type: 'warning', message: '12 litiges en attente de résolution' },
-    { type: 'danger', message: '3 paiements bloqués depuis +48h' },
-    { type: 'info', message: '8 vérifications KYC en attente' },
-    { type: 'success', message: 'Pic d\'activité inhabituel détecté (Nigeria +340%)' }
-  ];
-
-  // Utilisateurs
-  const users = [
-    {
-      id: 'USER-12345',
-      nom: 'Diallo',
-      prenom: 'Amadou',
-      email: 'amadou.diallo@email.com',
-      tel: '+221 77 123 45 67',
-      type: 'Pro',
-      specialite: 'Développeur',
-      pays: 'Sénégal',
-      ville: 'Dakar',
-      statut: 'actif',
-      certifie: true,
-      kyc: 'verifie',
-      note: 4.9,
-      nbAvis: 18,
-      inscrit: '12/01/2025',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amadou',
-      stats: {
-        projetsCompletes: 23,
-        volumeTotal: 2300000,
-        tauxSucces: 92,
-        tauxReponse: 98,
-        delaiMoyen: 2.3,
-        messagesEnvoyes: 234,
-        projetsEnCours: 3
-      },
-      finances: {
-        revenusTotal: 2345000,
-        enAttente: 125000,
-        paye: 2220000,
-        sequestreActif: 125000,
-        dernierPaiement: '03/01/2025'
-      }
-    },
-    {
-      id: 'USER-67890',
-      nom: 'Kouassi',
-      prenom: 'Fatima',
-      email: 'fatima.k@email.com',
-      tel: '+225 07 12 34 56',
-      type: 'Client',
-      pays: 'Côte d\'Ivoire',
-      ville: 'Abidjan',
-      statut: 'suspendu',
-      certifie: false,
-      kyc: 'en_attente',
-      note: 4.2,
-      nbAvis: 5,
-      inscrit: '08/01/2025',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima'
-    }
-  ];
-
-  // File d'attente KYC
-  const kycQueue = [
-    {
-      id: 'KYC-7821',
-      userId: 'USER-98765',
-      nom: 'Mohammed',
-      prenom: 'Ibrahim',
-      type: 'Pro',
-      specialite: 'Développeur',
-      pays: 'Nigeria',
-      typeDoc: 'CNI + Selfie',
-      soumis: '03/01/2025',
-      delai: '48h',
-      priorite: 'urgent',
-      documents: {
-        cniRecto: '/docs/cni_recto.jpg',
-        cniVerso: '/docs/cni_verso.jpg',
-        selfie: '/docs/selfie.jpg'
-      },
-      scoreIA: 87,
-      authenticite: 92,
-      correspondance: 89
-    },
-    {
-      id: 'KYC-7822',
-      userId: 'USER-11111',
-      nom: 'Bah',
-      prenom: 'Aïcha',
-      type: 'Pro',
-      specialite: 'Designer',
-      pays: 'Sénégal',
-      typeDoc: 'Passeport',
-      soumis: '04/01/2025',
-      delai: '12h',
-      priorite: 'normal'
-    },
-    {
-      id: 'KYC-7823',
-      userId: 'USER-22222',
-      nom: 'Asante',
-      prenom: 'Kofi',
-      type: 'Client',
-      pays: 'Ghana',
-      typeDoc: 'Permis',
-      soumis: '04/01/2025',
-      delai: '2h',
-      priorite: 'faible'
-    }
-  ];
-
-  // Projets
-  const projets = [
-    {
-      id: 'P-123',
-      titre: 'App mobile e-commerce',
-      client: 'Kofi Asante',
-      clientId: 'USER-456',
-      pays: 'Ghana',
-      budget: 2500000,
-      statut: 'ouvert',
-      candidatures: 3,
-      dateCreation: '02/01/2025'
-    },
-    {
-      id: 'P-122',
-      titre: 'Site vitrine',
-      client: 'Fatima Kouassi',
-      clientId: 'USER-67890',
-      pays: 'Côte d\'Ivoire',
-      budget: 500000,
-      statut: 'en_attente',
-      candidatures: 0,
-      dateCreation: '03/01/2025'
-    },
-    {
-      id: 'P-121',
-      titre: 'Logo entreprise',
-      client: 'Amadou Diallo',
-      clientId: 'USER-12345',
-      pays: 'Sénégal',
-      budget: 150000,
-      statut: 'en_cours',
-      candidatures: 1,
-      dateCreation: '01/01/2025'
-    }
-  ];
-
-  // Transactions
-  const transactions = [
-    {
-      id: 'T-8821',
-      date: '04/01/2025 15:23',
-      de: 'Kofi A.',
-      vers: 'Séquestre',
-      montant: 250000,
-      type: 'Dépôt',
-      methode: 'Carte',
-      statut: 'valide'
-    },
-    {
-      id: 'T-8820',
-      date: '04/01/2025 14:12',
-      de: 'Séquestre',
-      vers: 'Ibrahim M.',
-      montant: 125000,
-      type: 'Payout',
-      methode: 'MTN Money',
-      statut: 'en_cours'
-    },
-    {
-      id: 'T-8819',
-      date: '04/01/2025 12:45',
-      de: 'Fatima K.',
-      vers: 'Séquestre',
-      montant: 450000,
-      type: 'Dépôt',
-      methode: 'Orange Money',
-      statut: 'valide'
-    }
-  ];
-
-  // Litiges
-  const litiges = [
-    {
-      id: 'L-234',
-      projetId: 'P-123',
-      titre: 'Travail non conforme',
-      montant: 2500000,
-      plaignant: 'Kofi Asante',
-      defendeur: 'Ibrahim Mohammed',
-      ouvertDepuis: '7 jours',
-      priorite: 'urgent',
-      statut: 'escalade'
-    },
-    {
-      id: 'L-233',
-      projetId: 'P-122',
-      titre: 'Problème de qualité',
-      montant: 500000,
-      plaignant: 'Fatima K.',
-      defendeur: 'Aïcha B.',
-      ouvertDepuis: '3 jours',
-      priorite: 'moyen',
-      statut: 'en_cours'
-    },
-    {
-      id: 'L-232',
-      projetId: 'P-121',
-      titre: 'Retard de livraison',
-      montant: 150000,
-      plaignant: 'Amadou D.',
-      defendeur: 'Client123',
-      ouvertDepuis: '1 jour',
-      priorite: 'faible',
-      statut: 'nouveau'
-    }
-  ];
-
-  // Analytics
+  // Mock analytics (TODO: backend to implement detailed analytics endpoint)
   const analytics = {
     users: {
       total: 12340,
@@ -320,47 +101,20 @@ function ModeratorDashboard() {
     ]
   };
 
-  // Modérateurs
-  const moderateurs = [
-    {
-      id: 'MOD-001',
-      nom: 'Konate',
-      prenom: 'Sarah',
-      role: 'Modérateur Senior',
-      email: 'sarah.konate@jobty.com',
-      depuis: '12/2023',
-      permissions: ['KYC', 'Litiges', 'Support'],
-      statut: 'en_ligne',
-      stats: {
-        kycVerifies: 23,
-        litigesResolus: 8,
-        usersModeres: 12,
-        tempsReponse: 1.2
-      }
-    },
-    {
-      id: 'MOD-002',
-      nom: 'Martin',
-      prenom: 'Paul',
-      role: 'Modérateur',
-      email: 'paul.martin@jobty.com',
-      depuis: '03/2024',
-      permissions: ['KYC', 'Users'],
-      statut: 'hors_ligne',
-      derniereActivite: 'il y a 2h',
-      stats: {
-        kycVerifies: 15,
-        litigesResolus: 3,
-        usersModeres: 5,
-        tempsReponse: 3.4
-      }
-    }
-  ];
-
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
   const openProfile = () => setProfileOpen(true);
   const closeProfile = () => setProfileOpen(false);
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate('/');
+      },
+      onError: () => {
+        navigate('/');
+      },
+    });
+  };
 
   const getStatutBadge = (statut) => {
     const statuts = {
@@ -430,111 +184,22 @@ function ModeratorDashboard() {
 
   return (
     <div className="admin-page">
-      {/* SIDEBAR */}
-      <aside className={`admin-sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="admin-sidebar-header">
-          <img 
-            src={logo} 
-            alt="Jobty" 
-            className="admin-sidebar-logo" 
-            onClick={() => navigate('/')} 
-            style={{ cursor: 'pointer' }}
-          />
-          <button className="admin-close-btn" onClick={closeMenu}>
-            <FiX />
-          </button>
-        </div>
-
-        <div className="admin-user-card">
-          <img src={adminUser.photo} alt={`${adminUser.prenom} ${adminUser.nom}`} />
-          <h3>{adminUser.prenom} {adminUser.nom}</h3>
-          <p>{adminUser.role}</p>
-        </div>
-
-        <nav className="admin-nav">
-          <button 
-            className={`admin-nav-item ${activeTab === 'apercu' ? 'active' : ''}`}
-            onClick={() => setActiveTab('apercu')}
-          >
-            <FiGrid /> Vue d'ensemble
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
-          >
-            <FiUsers /> Utilisateurs
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'projets' ? 'active' : ''}`}
-            onClick={() => setActiveTab('projets')}
-          >
-            <FiBriefcase /> Projets
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'paiements' ? 'active' : ''}`}
-            onClick={() => setActiveTab('paiements')}
-          >
-            <FiCreditCard /> Paiements
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'litiges' ? 'active' : ''}`}
-            onClick={() => setActiveTab('litiges')}
-          >
-            <FaBalanceScale /> Litiges
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'carte' ? 'active' : ''}`}
-            onClick={() => setActiveTab('carte')}
-          >
-            <FiMap /> Carte
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'stats' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stats')}
-          >
-            <FiBarChart2 /> Analytics
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'kyc' ? 'active' : ''}`}
-            onClick={() => setActiveTab('kyc')}
-          >
-            <FiShield /> Vérification KYC
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'moderateurs' ? 'active' : ''}`}
-            onClick={() => setActiveTab('moderateurs')}
-          >
-            <FaUserShield /> Modérateurs
-          </button>
-          <button 
-            className={`admin-nav-item ${activeTab === 'config' ? 'active' : ''}`}
-            onClick={() => setActiveTab('config')}
-          >
-            <FiSettings /> Configuration
-          </button>
-        </nav>
-
-        <button 
-          className="admin-logout-btn" 
-          onClick={() => {
-            logoutMutation.mutate(undefined, {
-              onSuccess: () => {
-                navigate('/');
-              },
-              onError: (err) => {
-                console.error('Logout error:', err);
-                // Still navigate even if logout fails
-                navigate('/');
-              },
-            });
-          }}
-          disabled={logoutMutation.isPending}
-        >
-          <FiLogOut /> {logoutMutation.isPending ? 'Déconnexion...' : 'Déconnexion'}
-        </button>
-      </aside>
-
-      {menuOpen && <div className="admin-overlay" onClick={closeMenu}></div>}
+      <RoleSidebar
+        role="ROLE_MODERATOR"
+        variant="admin"
+        open={menuOpen}
+        activeTab={activeTab}
+        onClose={closeMenu}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        isLoggingOut={logoutMutation.isPending}
+        user={{
+          firstName: adminUser.prenom,
+          lastName: adminUser.nom,
+          subtitle: adminUser.role,
+          photo: adminUser.photo,
+        }}
+      />
 
       {/* MAIN CONTENT */}
       <main className="admin-main">
@@ -543,16 +208,12 @@ function ModeratorDashboard() {
             <FiMenu />
           </button>
           <h1 className="admin-page-title">
-            {activeTab === 'apercu' && 'Tableau de bord Admin'}
+            {activeTab === 'apercu' && 'Tableau de bord Modérateur'}
             {activeTab === 'users' && 'Gestion des utilisateurs'}
             {activeTab === 'projets' && 'Gestion des projets'}
-            {activeTab === 'paiements' && 'Gestion des paiements'}
             {activeTab === 'litiges' && 'Gestion des litiges'}
-            {activeTab === 'carte' && 'Vue carte interactive'}
             {activeTab === 'stats' && 'Analytics & Rapports'}
             {activeTab === 'kyc' && 'Vérification KYC'}
-            {activeTab === 'moderateurs' && 'Gestion des modérateurs'}
-            {activeTab === 'config' && 'Configuration plateforme'}
           </h1>
           <div className="admin-header-actions">
             <button className="admin-notif-btn">
@@ -568,7 +229,7 @@ function ModeratorDashboard() {
         <div className="admin-content">
           
           {/* ALERTES */}
-          {activeTab === 'apercu' && (
+          {activeTab === 'apercu' && alertes && (
             <div className="admin-alerts">
               {alertes.map((alerte, index) => (
                 <div key={index} className={`admin-alert admin-alert-${alerte.type}`}>
@@ -580,7 +241,7 @@ function ModeratorDashboard() {
           )}
 
           {/* ONGLET APERÇU */}
-          {activeTab === 'apercu' && (
+          {activeTab === 'apercu' && statsToday && statsMonth && (
             <div className="admin-apercu">
               {/* Stats du jour */}
               <div className="admin-stats-section">
@@ -747,7 +408,7 @@ function ModeratorDashboard() {
                 <div className="admin-recent-card">
                   <h3>Transactions récentes</h3>
                   <div className="admin-recent-list">
-                    {transactions.slice(0, 3).map(trans => (
+                    {transactions && transactions.slice(0, 3).map(trans => (
                       <div key={trans.id} className="admin-recent-item">
                         <div className="admin-recent-info">
                           <span className="admin-recent-id">{trans.id}</span>
@@ -765,7 +426,7 @@ function ModeratorDashboard() {
                 <div className="admin-recent-card">
                   <h3>KYC en attente</h3>
                   <div className="admin-recent-list">
-                    {kycQueue.map(kyc => (
+                    {kycDemandes && kycDemandes.map(kyc => (
                       <div key={kyc.id} className="admin-recent-item">
                         <div className="admin-recent-info">
                           <span className="admin-recent-name">{kyc.prenom} {kyc.nom}</span>
@@ -783,7 +444,7 @@ function ModeratorDashboard() {
                 <div className="admin-recent-card">
                   <h3>Litiges actifs</h3>
                   <div className="admin-recent-list">
-                    {litiges.map(litige => (
+                    {litiges && litiges.map(litige => (
                       <div key={litige.id} className="admin-recent-item">
                         <div className="admin-recent-info">
                           <span className="admin-recent-name">{litige.titre}</span>
@@ -802,7 +463,7 @@ function ModeratorDashboard() {
           )}
 
           {/* ONGLET UTILISATEURS */}
-          {activeTab === 'users' && (
+          {activeTab === 'users' && users && (
             <div className="admin-users-section">
               <div className="admin-section-header">
                 <div>
@@ -894,7 +555,7 @@ function ModeratorDashboard() {
                         <td>
                           {user.kyc === 'verifie' && <span className="admin-kyc-badge verified"><FiCheckCircle /> Vérifié</span>}
                           {user.kyc === 'en_attente' && <span className="admin-kyc-badge pending"><FiClock /> En attente</span>}
-                          {user.kyc === 'refuse' && <span className="admin-kyc-badge rejected"><FiXCircle /> Refusé</span>}
+                          {user.kyc === 'non_verifie' && <span className="admin-kyc-badge rejected"><FiXCircle /> Non vérifié</span>}
                         </td>
                         <td>
                           <div className="admin-rating">
@@ -934,18 +595,18 @@ function ModeratorDashboard() {
           )}
 
           {/* ONGLET KYC */}
-          {activeTab === 'kyc' && (
+          {activeTab === 'kyc' && kycDemandes && (
             <div className="admin-kyc-section">
               <div className="admin-section-header">
                 <div>
                   <h2>File d'attente KYC</h2>
-                  <p className="admin-section-subtitle">{kycQueue.length} vérifications en attente</p>
+                  <p className="admin-section-subtitle">{kycDemandes.length} vérifications en attente</p>
                 </div>
               </div>
 
               {/* Liste KYC */}
               <div className="admin-kyc-queue">
-                {kycQueue.map(kyc => (
+                {kycDemandes.map(kyc => (
                   <div key={kyc.id} className="admin-kyc-card">
                     <div className="admin-kyc-priority">
                       {getPrioriteBadge(kyc.priorite)}
@@ -1005,7 +666,7 @@ function ModeratorDashboard() {
           )}
 
           {/* ONGLET PROJETS */}
-          {activeTab === 'projets' && (
+          {activeTab === 'projets' && projets && (
             <div className="admin-projects-section">
               <div className="admin-section-header">
                 <div>
@@ -1079,102 +740,8 @@ function ModeratorDashboard() {
             </div>
           )}
 
-          {/* ONGLET PAIEMENTS */}
-          {activeTab === 'paiements' && (
-            <div className="admin-payments-section">
-              <div className="admin-section-header">
-                <div>
-                  <h2>Gestion des paiements</h2>
-                  <p className="admin-section-subtitle">Dashboard financier</p>
-                </div>
-                <button className="admin-btn-primary">
-                  <FiDownload /> Exporter rapport
-                </button>
-              </div>
-
-              {/* Métriques financières */}
-              <div className="admin-finance-metrics">
-                <div className="admin-metric-card primary">
-                  <h3>Volume total</h3>
-                  <p className="admin-metric-value">12,450,000 F</p>
-                  <span className="admin-metric-trend">+23% vs mois dernier</span>
-                </div>
-                <div className="admin-metric-card secondary">
-                  <h3>Commissions</h3>
-                  <p className="admin-metric-value">1,245,000 F</p>
-                  <span className="admin-metric-info">10% du volume</span>
-                </div>
-                <div className="admin-metric-card accent">
-                  <h3>En séquestre</h3>
-                  <p className="admin-metric-value">2,340,000 F</p>
-                  <span className="admin-metric-info">18 projets actifs</span>
-                </div>
-                <div className="admin-metric-card">
-                  <h3>Versé aux pros</h3>
-                  <p className="admin-metric-value">8,865,000 F</p>
-                  <span className="admin-metric-info">Ce mois</span>
-                </div>
-              </div>
-
-              {/* Alertes paiements */}
-              <div className="admin-payment-alerts">
-                <div className="admin-alert admin-alert-danger">
-                  <FiAlertCircle />
-                  <span>3 paiements échoués (dernières 24h)</span>
-                  <button className="admin-btn-link">Voir détails</button>
-                </div>
-                <div className="admin-alert admin-alert-warning">
-                  <FiAlertTriangle />
-                  <span>5 remboursements en attente d'approbation</span>
-                  <button className="admin-btn-link">Traiter</button>
-                </div>
-              </div>
-
-              {/* Transactions récentes */}
-              <div className="admin-transactions">
-                <h3>Transactions récentes</h3>
-                <div className="admin-table-container">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Date</th>
-                        <th>De → Vers</th>
-                        <th>Montant</th>
-                        <th>Type</th>
-                        <th>Méthode</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.map(trans => (
-                        <tr key={trans.id}>
-                          <td><strong>{trans.id}</strong></td>
-                          <td>{trans.date}</td>
-                          <td>{trans.de} → {trans.vers}</td>
-                          <td className="admin-text-primary">
-                            <strong>{trans.montant.toLocaleString()} F</strong>
-                          </td>
-                          <td>{trans.type}</td>
-                          <td>{trans.methode}</td>
-                          <td>{getStatutBadge(trans.statut)}</td>
-                          <td>
-                            <button className="admin-action-btn">
-                              <FiEye />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* ONGLET LITIGES */}
-          {activeTab === 'litiges' && (
+          {activeTab === 'litiges' && litiges && (
             <div className="admin-disputes-section">
               <div className="admin-section-header">
                 <div>
@@ -1251,74 +818,6 @@ function ModeratorDashboard() {
                     <span className="admin-stat-info">des cas</span>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* ONGLET CARTE */}
-          {activeTab === 'carte' && (
-            <div className="admin-map-section">
-              <div className="admin-section-header">
-                <div>
-                  <h2>Vue carte interactive</h2>
-                  <p className="admin-section-subtitle">Répartition géographique des utilisateurs et projets</p>
-                </div>
-              </div>
-
-              {/* Filtres carte */}
-              <div className="admin-map-filters">
-                <label className="admin-checkbox">
-                  <input type="checkbox" defaultChecked />
-                  <span>Professionnels disponibles</span>
-                </label>
-                <label className="admin-checkbox">
-                  <input type="checkbox" defaultChecked />
-                  <span>Projets ouverts</span>
-                </label>
-                <label className="admin-checkbox">
-                  <input type="checkbox" />
-                  <span>Pros certifiés</span>
-                </label>
-                <label className="admin-checkbox">
-                  <input type="checkbox" />
-                  <span>Nouveaux inscrits (7j)</span>
-                </label>
-              </div>
-
-              {/* Carte placeholder */}
-              <div className="admin-map-container">
-                <div className="admin-map-placeholder">
-                  <FaMapMarkedAlt />
-                  <h3>Carte interactive</h3>
-                  <p>Intégration Google Maps / Mapbox</p>
-                  <div className="admin-map-legend">
-                    <span>🟢 Professionnel disponible</span>
-                    <span>🔵 Projet ouvert</span>
-                    <span>🟡 Zone d'activité élevée</span>
-                    <span>🔴 Problème détecté</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Heatmap par région */}
-              <div className="admin-heatmap">
-                <h3>Répartition par région</h3>
-                {analytics.geo.map(pays => (
-                  <div key={pays.pays} className="admin-heatmap-row">
-                    <span className="admin-heatmap-country">
-                      {pays.flag} {pays.pays}
-                    </span>
-                    <div className="admin-heatmap-bar">
-                      <div 
-                        className="admin-heatmap-fill" 
-                        style={{width: `${pays.pct}%`}}
-                      ></div>
-                    </div>
-                    <span className="admin-heatmap-value">
-                      {pays.users.toLocaleString()} ({pays.pct}%)
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
           )}
@@ -1508,169 +1007,6 @@ function ModeratorDashboard() {
                 </button>
                 <button className="admin-btn-secondary">
                   <FiMail /> Programmer envoi
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ONGLET MODÉRATEURS */}
-          {activeTab === 'moderateurs' && (
-            <div className="admin-moderators-section">
-              <div className="admin-section-header">
-                <div>
-                  <h2>Équipe de modération</h2>
-                  <p className="admin-section-subtitle">{moderateurs.length} modérateurs actifs</p>
-                </div>
-                <button className="admin-btn-primary">
-                  <FiPlus /> Ajouter un modérateur
-                </button>
-              </div>
-
-              {/* Liste des modérateurs */}
-              <div className="admin-moderators-grid">
-                {moderateurs.map(mod => (
-                  <div key={mod.id} className="admin-moderator-card">
-                    <div className="admin-mod-header">
-                      <div className="admin-mod-info">
-                        <h3>{mod.prenom} {mod.nom}</h3>
-                        <p>{mod.role}</p>
-                        <small>Admin depuis {mod.depuis}</small>
-                      </div>
-                      {getStatutBadge(mod.statut)}
-                    </div>
-                    
-                    <div className="admin-mod-permissions">
-                      <h4>Permissions</h4>
-                      <div className="admin-mod-tags">
-                        {mod.permissions.map(perm => (
-                          <span key={perm} className="admin-tag">{perm}</span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="admin-mod-stats">
-                      <div className="admin-mod-stat">
-                        <span>{mod.stats.kycVerifies}</span>
-                        <small>KYC vérifiées</small>
-                      </div>
-                      <div className="admin-mod-stat">
-                        <span>{mod.stats.litigesResolus}</span>
-                        <small>Litiges résolus</small>
-                      </div>
-                      <div className="admin-mod-stat">
-                        <span>{mod.stats.tempsReponse}h</span>
-                        <small>Temps réponse</small>
-                      </div>
-                    </div>
-
-                    <div className="admin-mod-actions">
-                      <button className="admin-btn-secondary">
-                        <FiEdit3 /> Éditer
-                      </button>
-                      <button className="admin-btn-secondary">
-                        <FiActivity /> Activité
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ONGLET CONFIGURATION */}
-          {activeTab === 'config' && (
-            <div className="admin-config-section">
-              <div className="admin-section-header">
-                <h2>Configuration de la plateforme</h2>
-              </div>
-
-              {/* Paramètres finances */}
-              <div className="admin-config-card">
-                <h3><FiDollarSign /> Finances</h3>
-                <div className="admin-config-grid">
-                  <div className="admin-config-item">
-                    <label>Commission plateforme (%)</label>
-                    <input type="number" defaultValue="10" />
-                  </div>
-                  <div className="admin-config-item">
-                    <label>Seuil minimum projet (FCFA)</label>
-                    <input type="number" defaultValue="50000" />
-                  </div>
-                  <div className="admin-config-item">
-                    <label>Frais de retrait (FCFA)</label>
-                    <input type="number" defaultValue="500" />
-                  </div>
-                  <div className="admin-config-item">
-                    <label>Délai de séquestre (jours)</label>
-                    <input type="number" defaultValue="7" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Paramètres sécurité */}
-              <div className="admin-config-card">
-                <h3><FiShield /> Sécurité</h3>
-                <div className="admin-config-grid">
-                  <div className="admin-config-item">
-                    <label>KYC obligatoire pour</label>
-                    <select>
-                      <option>Projets &gt; 500k FCFA</option>
-                      <option>Tous les projets</option>
-                      <option>Désactivé</option>
-                    </select>
-                  </div>
-                  <div className="admin-config-item">
-                    <label>2FA obligatoire pour</label>
-                    <select>
-                      <option>Admins seulement</option>
-                      <option>Tous les utilisateurs</option>
-                      <option>Optionnel</option>
-                    </select>
-                  </div>
-                  <div className="admin-config-item">
-                    <label>Expiration sessions (jours)</label>
-                    <input type="number" defaultValue="30" />
-                  </div>
-                  <div className="admin-config-item">
-                    <label>Tentatives login max</label>
-                    <input type="number" defaultValue="5" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Paramètres notifications */}
-              <div className="admin-config-card">
-                <h3><FiBell /> Notifications</h3>
-                <div className="admin-config-toggles">
-                  <label className="admin-toggle">
-                    <input type="checkbox" defaultChecked />
-                    <span className="admin-toggle-slider"></span>
-                    <span>Emails transactionnels</span>
-                  </label>
-                  <label className="admin-toggle">
-                    <input type="checkbox" defaultChecked />
-                    <span className="admin-toggle-slider"></span>
-                    <span>SMS pour paiements</span>
-                  </label>
-                  <label className="admin-toggle">
-                    <input type="checkbox" />
-                    <span className="admin-toggle-slider"></span>
-                    <span>Push notifications</span>
-                  </label>
-                  <label className="admin-toggle">
-                    <input type="checkbox" defaultChecked />
-                    <span className="admin-toggle-slider"></span>
-                    <span>Newsletter hebdomadaire</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="admin-config-actions">
-                <button className="admin-btn-primary">
-                  <FiSave /> Sauvegarder les modifications
-                </button>
-                <button className="admin-btn-secondary">
-                  <FiRefreshCw /> Réinitialiser
                 </button>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogoutMutation } from '../../../../features/auth/hooks/useAuthMutations';
 import { 
@@ -21,8 +21,18 @@ import {
 import { FaBullhorn } from 'react-icons/fa';
 import { FaHandshake, FaRocket } from 'react-icons/fa';
 
-import logo from '../../../../assets/logo.png';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
+import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import { useDashboardProfile } from '../../hooks/useDashboardProfile';
+import {
+  useStatsOverview,
+  useTransactions,
+  useServices,
+  usePosts,
+  useCollaborations,
+  useAdCampaigns,
+  useAnalytics,
+} from '../../hooks/useDashboardData';
 import './css/style.css';
 
 function EnterpriseDashboard() {
@@ -31,26 +41,35 @@ function EnterpriseDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
-  const [viewMode, setViewMode] = useState('grid');
   const [paiementSubTab, setPaiementSubTab] = useState('recus');
   const [parametresSubTab, setParametresSubTab] = useState('notifications');
   const [pubSubTab, setPubSubTab] = useState('actives');
   const [analyticsSubTab, setAnalyticsSubTab] = useState('apercu');
   
+  // Fetch dashboard data from hooks
+  const { profile: dashboardProfile } = useDashboardProfile();
+  const { data: statsData } = useStatsOverview();
+  const { data: transactions } = useTransactions();
+  const { data: services } = useServices();
+  const { data: posts } = usePosts();
+  const { data: collaborations } = useCollaborations();
+  const { data: campagnesPub } = useAdCampaigns();
+  const { data: analyticsDataFromHook } = useAnalytics();
+  
   // Formulaire Carte Pro
-  const [carteForm, setCarteForm] = useState({
-    photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aminata',
-    nom: 'Koné',
-    prenom: 'Aminata',
-    secteur: 'Informatique',
-    specialite: 'Développeuse Full Stack',
-    ville: 'Abidjan',
-    pays: 'Côte d\'Ivoire',
+  const [carteForm, setCarteForm] = useState(() => ({
+    photo: dashboardProfile.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aminata',
+    nom: dashboardProfile.lastName || 'Koné',
+    prenom: dashboardProfile.firstName || 'Aminata',
+    secteur: dashboardProfile.sector || 'Informatique',
+    specialite: dashboardProfile.specialization || 'Développeuse Full Stack',
+    ville: dashboardProfile.city || 'Abidjan',
+    pays: dashboardProfile.country || 'Côte d\'Ivoire',
     tarifHoraire: 15000,
     tags: ['React', 'Node.js', 'MongoDB', 'UI/UX'],
     disponible: true,
     typeBouton: 'collaborer' // 'contacter' ou 'collaborer'
-  });
+  }));
 
   // Données du freelance
   const freelance = {
@@ -62,8 +81,8 @@ function EnterpriseDashboard() {
     plan: 'gratuit'
   };
 
-  // Indicateurs clés
-  const stats = {
+  // Indicateurs clés (fallback mock data)
+  const mockStats = {
     gainsTotal: 2450000,
     projetsEnCours: 3,
     projetsRealises: 89,
@@ -72,8 +91,8 @@ function EnterpriseDashboard() {
     messagesNonLus: 5
   };
 
-  // Transactions
-  const transactions = {
+  // Mock transactions (override the hook data if needed)
+  const mockTransactions = {
     recues: [
       { id: 1, client: 'Marc Dubois', projet: 'Site web StartupTech', montant: 150000, date: '2024-01-20', statut: 'recu' },
       { id: 2, client: 'Sophie Martin', projet: 'App mobile Restaurant', montant: 135000, date: '2024-01-18', statut: 'recu' },
@@ -106,8 +125,8 @@ function EnterpriseDashboard() {
     afficherTags: false
   });
 
-  // Services
-  const services = [
+  // Services (mock data - consider using the hook data from useServices() instead)
+  const mockServices = [
     {
       id: 1,
       titre: 'Création site web vitrine',
@@ -132,58 +151,9 @@ function EnterpriseDashboard() {
     }
   ];
 
-  // Posts
-  const posts = [
-    {
-      id: 1,
-      type: 'image',
-      titre: 'Site e-commerce Afro Style',
-      description: 'Plateforme complète avec paiement mobile money',
-      medias: ['https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400'],
-      likes: 234,
-      commentaires: 18,
-      date: '2024-01-15'
-    },
-    {
-      id: 2,
-      type: 'link',
-      titre: 'Application de gestion scolaire',
-      description: 'Dashboard admin + app mobile parents/élèves',
-      url: 'https://demo.schoolapp.ci',
-      likes: 156,
-      commentaires: 12,
-      date: '2024-01-10'
-    }
-  ];
-
-  // Collaborations
-  const collaborations = [
-    {
-      id: 1,
-      titre: 'Site web StartupTech',
-      client: 'Marc Dubois',
-      clientPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marc',
-      statut: 'en_cours',
-      progression: 65,
-      montant: 300000,
-      dateDebut: '2024-01-20',
-      prochaineLivraison: 'Maquette finale - 2 jours'
-    },
-    {
-      id: 2,
-      titre: 'Site e-commerce Mode',
-      client: 'Aïcha Traoré',
-      clientPhoto: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aicha',
-      statut: 'termine',
-      progression: 100,
-      montant: 350000,
-      dateFin: '2024-01-18',
-      note: 5
-    }
-  ];
 
 
-  // Données Publicité
+// Données Publicité
 const publiciteStats = {
   budgetMois: 45000,
   budgetTotal: 100000,
@@ -243,8 +213,8 @@ const campagnes = [
   }
 ];
 
-// Données Analytics
-const analyticsData = {
+// Données Analytics (mock fallback)
+const mockAnalyticsData = {
   vuesProfil: 2340,
   paysActifs: 12,
   visibilite: 145,
@@ -253,6 +223,13 @@ const analyticsData = {
   tempsMoyen: '3min 24s',
   tauxRebond: 34
 };
+
+// Use hook data if available, otherwise use mock
+const analyticsData = (
+  analyticsDataFromHook && !Array.isArray(analyticsDataFromHook) 
+    ? analyticsDataFromHook 
+    : mockAnalyticsData
+);
 
 const sourcesTrafic = [
   { source: 'Recherche organique', vues: 1120, pct: 48 },
@@ -288,6 +265,16 @@ const performanceServices = [
   const closeMenu = () => setMenuOpen(false);
   const openProfile = () => setProfileOpen(true);
   const closeProfile = () => setProfileOpen(false);
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate('/');
+      },
+      onError: () => {
+        navigate('/');
+      },
+    });
+  };
 
   const handleCarteFormChange = (field, value) => {
     setCarteForm({ ...carteForm, [field]: value });
@@ -341,112 +328,28 @@ const performanceServices = [
 
   return (
     <div className="dash-page">
-      {/* SIDEBAR */}
-      <aside className={`dash-sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="dash-sidebar-header">
-          <img 
-          src={logo} alt="Jobty" className="dash-sidebar-logo" 
-          onClick={() => navigate('/')} style={{ cursor: 'pointer' }}/>
-          <button className="dash-close-btn" onClick={closeMenu}>
-            <FiX />
-          </button>
-        </div>
-
-        <div className="dash-user-card">
-          <img src={freelance.photo} alt={`${freelance.prenom} ${freelance.nom}`} className="dash-user-photo" />
-          <h3>{freelance.prenom} {freelance.nom}</h3>
-          <p>{freelance.specialite}</p>
+      <RoleSidebar
+        role="ROLE_ENTERPRISE"
+        variant="dash"
+        open={menuOpen}
+        activeTab={activeTab}
+        onClose={closeMenu}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        isLoggingOut={logoutMutation.isPending}
+        user={{
+          firstName: dashboardProfile.firstName,
+          lastName: dashboardProfile.lastName,
+          subtitle: dashboardProfile.subtitle,
+          photo: dashboardProfile.avatarUrl,
+        }}
+        userExtra={
           <div className="dash-user-rating">
             {renderStars(freelance.note)}
             <span>{freelance.note}</span>
           </div>
-        </div>
-
-        <nav className="dash-nav">
-          <button 
-            className={`dash-nav-item ${activeTab === 'apercu' ? 'active' : ''}`}
-            onClick={() => setActiveTab('apercu')}
-          >
-            <FiGrid /> Aperçu
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'carte' ? 'active' : ''}`}
-            onClick={() => setActiveTab('carte')}
-          >
-            <FiUser /> Ma carte pro
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'services' ? 'active' : ''}`}
-            onClick={() => setActiveTab('services')}
-          >
-            <FiBriefcase /> Services
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'posts' ? 'active' : ''}`}
-            onClick={() => setActiveTab('posts')}
-          >
-            <FiImage /> Réalisations
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'collaborations' ? 'active' : ''}`}
-            onClick={() => setActiveTab('collaborations')}
-          >
-            <FaHandshake /> Collaborations
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'paiement' ? 'active' : ''}`}
-            onClick={() => setActiveTab('paiement')}
-          >
-            <FiCreditCard /> Paiement
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'facturation' ? 'active' : ''}`}
-            onClick={() => setActiveTab('facturation')}
-          >
-            <FiFileText /> Facturation
-          </button>
-          <button 
-            className={`dash-nav-item ${activeTab === 'parametres' ? 'active' : ''}`}
-            onClick={() => setActiveTab('parametres')}
-          >
-            <FiSettings /> Paramètres
-          </button>
-
-          <button 
-  className={`dash-nav-item ${activeTab === 'publicite' ? 'active' : ''}`}
-  onClick={() => setActiveTab('publicite')}
->
-  <FaBullhorn /> Publicité
-</button>
-<button 
-  className={`dash-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
-  onClick={() => setActiveTab('analytics')}
->
-  <FiBarChart2 /> Analytics
-</button>
-        </nav>
-
-        <button 
-          className="dash-logout-btn" 
-          onClick={() => {
-            logoutMutation.mutate(undefined, {
-              onSuccess: () => {
-                navigate('/');
-              },
-              onError: (err) => {
-                console.error('Logout error:', err);
-                // Still navigate even if logout fails
-                navigate('/');
-              },
-            });
-          }}
-          disabled={logoutMutation.isPending}
-        >
-          <FiLogOut /> {logoutMutation.isPending ? 'Déconnexion...' : 'Déconnexion'}
-        </button>
-      </aside>
-
-      {menuOpen && <div className="dash-overlay" onClick={closeMenu}></div>}
+        }
+      />
 
       {/* MAIN CONTENT */}
       <main className="dash-main">
@@ -469,10 +372,10 @@ const performanceServices = [
           <div className="dash-header-actions">
             <button className="dash-notif-btn">
               <FiBell />
-              <span className="dash-notif-badge">{stats.messagesNonLus}</span>
+              <span className="dash-notif-badge">{statsData?.messagesNonLus || mockStats.messagesNonLus || 0}</span>
             </button>
             <button className="dash-profile-btn" onClick={openProfile}>
-              <img src={freelance.photo} alt="" />
+              <img src={dashboardProfile.avatarUrl} alt="" />
             </button>
           </div>
         </header>
@@ -489,7 +392,7 @@ const performanceServices = [
                   </div>
                   <div className="dash-stat-content">
                     <span className="dash-stat-label">Gains récoltés</span>
-                    <span className="dash-stat-value">{stats.gainsTotal.toLocaleString()} FCFA</span>
+                    <span className="dash-stat-value">{statsData?.gainsTotal?.toLocaleString() || mockStats.gainsTotal?.toLocaleString() || '0'} FCFA</span>
                     <span className="dash-stat-trend">
                       <FiTrendingUp /> +12% ce mois
                     </span>
@@ -502,7 +405,7 @@ const performanceServices = [
                   </div>
                   <div className="dash-stat-content">
                     <span className="dash-stat-label">Projets en cours</span>
-                    <span className="dash-stat-value">{stats.projetsEnCours}</span>
+                    <span className="dash-stat-value">{statsData?.projetsEnCours || mockStats.projetsEnCours || 0}</span>
                     <span className="dash-stat-info">collaborations actives</span>
                   </div>
                 </div>
@@ -513,7 +416,7 @@ const performanceServices = [
                   </div>
                   <div className="dash-stat-content">
                     <span className="dash-stat-label">Projets réalisés</span>
-                    <span className="dash-stat-value">{stats.projetsRealises}</span>
+                    <span className="dash-stat-value">{statsData?.projetsRealises || mockStats.projetsRealises || 0}</span>
                     <span className="dash-stat-info">missions complétées</span>
                   </div>
                 </div>
@@ -526,7 +429,7 @@ const performanceServices = [
                     <FiEye className="dash-activity-icon" />
                     <div>
                       <span className="dash-activity-label">Vues de profil</span>
-                      <span className="dash-activity-value">{stats.vuesProfile}</span>
+                      <span className="dash-activity-value">{statsData?.vuesProfile || mockStats.vuesProfile || 0}</span>
                     </div>
                   </div>
                   <div className="dash-activity-card">
@@ -554,26 +457,28 @@ const performanceServices = [
                   </button>
                 </div>
                 <div className="dash-projects-quick">
-                  {collaborations.filter(c => c.statut === 'en_cours').map(collab => (
-                    <div key={collab.id} className="dash-project-quick-card">
-                      <div className="dash-project-quick-header">
-                        <img src={collab.clientPhoto} alt={collab.client} />
-                        <div>
-                          <h4>{collab.titre}</h4>
-                          <p>{collab.client}</p>
+                      {collaborations?.filter(c => c.statut === 'actif').map(collab => (
+                        <div key={collab.id} className="dash-project-quick-card">
+                          <div className="dash-project-quick-header">
+                            <img src={collab.clientPhoto} alt={collab.client} />
+                            <div>
+                              <h4>{collab.titre}</h4>
+                              <p>{collab.client}</p>
+                            </div>
+                            <span className="dash-project-amount">{collab.montant?.toLocaleString()} F</span>
+                          </div>
+                          <div className="dash-project-progress">
+                            <div className="dash-progress-bar">
+                              <div className="dash-progress-fill" style={{ width: `${collab.progression}%` }}></div>
+                            </div>
+                            <span>{collab.progression}%</span>
+                          </div>
+                          {collab.prochaineLivraison && (
+                            <p className="dash-project-next">{collab.prochaineLivraison}</p>
+                          )}
                         </div>
-                        <span className="dash-project-amount">{collab.montant.toLocaleString()} F</span>
-                      </div>
-                      <div className="dash-project-progress">
-                        <div className="dash-progress-bar">
-                          <div className="dash-progress-fill" style={{ width: `${collab.progression}%` }}></div>
-                        </div>
-                        <span>{collab.progression}%</span>
-                      </div>
-                      <p className="dash-project-next">{collab.prochaineLivraison}</p>
+                      ))}
                     </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}
@@ -850,7 +755,7 @@ const performanceServices = [
               )}
 
               <div className="dash-services-grid">
-                {services.map(service => (
+                {mockServices.map(service => (
                   <div key={service.id} className="dash-service-card">
                     <div className="dash-service-image" style={{ backgroundImage: `url(${service.image})` }}>
                       <span className={`dash-service-status ${service.actif ? 'actif' : 'inactif'}`}>
@@ -941,7 +846,7 @@ const performanceServices = [
                 {collaborations.map(collab => (
                   <div key={collab.id} className="dash-collab-card">
                     <div className="dash-collab-header">
-                      <img src={collab.clientPhoto} alt={collab.client} />
+                        <img src={collab.clientImage || collab.clientPhoto || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'} alt={collab.client} />
                       <div className="dash-collab-info">
                         <h3>{collab.titre}</h3>
                         <p>{collab.client}</p>
@@ -949,7 +854,7 @@ const performanceServices = [
                       {getStatutBadge(collab.statut)}
                     </div>
 
-                    {collab.statut === 'en_cours' && (
+                    {collab.statut === 'actif' && (
                       <>
                         <div className="dash-collab-progress">
                           <div className="dash-progress-bar">
@@ -1002,7 +907,7 @@ const performanceServices = [
 
               {paiementSubTab === 'recus' && (
                 <div className="dash-transactions-list">
-                  {transactions.recues.map(trans => (
+                  {mockTransactions?.recues?.map(trans => (
                     <div key={trans.id} className="dash-transaction-card">
                       <div className="dash-transaction-info">
                         <h4>{trans.projet}</h4>
@@ -1023,7 +928,7 @@ const performanceServices = [
                   <button className="dash-btn-primary dash-btn-full">
                     <FiDownload /> Demander un retrait
                   </button>
-                  {transactions.retraits.map(retrait => (
+                  {mockTransactions?.retraits?.map(retrait => (
                     <div key={retrait.id} className="dash-transaction-card">
                       <div className="dash-transaction-info">
                         <h4>{retrait.methode}</h4>
