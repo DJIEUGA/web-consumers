@@ -16,7 +16,7 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#eaf3f5] px-4 py-8">
+    <div className="connexion-container">
       <div className="connexion-card">
         <div className="flex h-full flex-col">
           <div className="mt-2 mb-7 flex justify-center">
@@ -37,7 +37,7 @@ const ForgotPasswordPage = () => {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.8"
-                className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#46c6cb]"
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#46c6cb]"
                 aria-hidden="true"
               >
                 <path
@@ -53,11 +53,11 @@ const ForgotPasswordPage = () => {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="off"
-                className="h-11 w-full rounded-full border border-transparent bg-[#ececef] text-[12px] text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:border-[#b9edf0] focus:ring-2 focus:ring-[#d9f6f8]"
+                style={{paddingLeft: "40px"}}
+                className="w-full rounded-full border border-transparent bg-[#ececef] text-[12px] text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:border-[#b9edf0] focus:ring-2 focus:ring-[#d9f6f8]"
                 required
               />
             </div>
-
             <div className="flex justify-center">
               <button
                 type="submit"
@@ -73,8 +73,8 @@ const ForgotPasswordPage = () => {
           <button
             type="button"
             onClick={() => navigate("/connexion")}
-            className="px-5 text-[12px] mt-5 w-full text-center text-[#9aa3b2] transition-colors hover:text-[#667085]"
-          >
+            className="px-5 text-[12px] w-full text-center text-[#9aa3b2] transition-colors cursor-pointer hover:text-[#667085]"
+           style={{marginTop: '15px'}}>
             Retour à la connexion
           </button>
         </div>
