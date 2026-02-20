@@ -52,6 +52,23 @@ export interface AuthConfirmResponseData {
   token?: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponseData {
+  sent?: boolean;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
+export interface ResetPasswordResponseData {
+  reset?: boolean;
+}
+
 export interface ServiceDto {
   id: string;
   title: string;

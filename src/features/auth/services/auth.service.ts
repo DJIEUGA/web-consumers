@@ -7,8 +7,12 @@ import { useUIStore } from '@/stores/ui.store';
 import type {
   ApiEnvelope,
   AuthConfirmResponseData,
+  ForgotPasswordRequest,
+  ForgotPasswordResponseData,
   LoginRequest,
   LoginResponseData,
+  ResetPasswordRequest,
+  ResetPasswordResponseData,
   RegisterRequest,
   RegisterResponseData,
 } from '@/types/api';
@@ -17,6 +21,8 @@ const AUTH_ENDPOINTS = {
   LOGIN: '/api/v1/auth/login',
   REGISTER: '/api/v1/auth/register',
   CONFIRM: '/api/v1/auth/confirm',
+  FORGOT_PASSWORD: '/api/v1/auth/password/forgot',
+  RESET_PASSWORD: '/api/v1/auth/password/reset',
 } as const;
 
 type MutationError = {
@@ -92,6 +98,20 @@ export const confirmEmail = async (
   });
 
   return toEnvelope<AuthConfirmResponseData>(response);
+};
+
+export const forgotPassword = async (
+  payload: ForgotPasswordRequest
+): Promise<ApiEnvelope<ForgotPasswordResponseData>> => {
+  const response = await apiClient.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, payload);
+  return toEnvelope<ForgotPasswordResponseData>(response);
+};
+
+export const resetPassword = async (
+  payload: ResetPasswordRequest
+): Promise<ApiEnvelope<ResetPasswordResponseData>> => {
+  const response = await apiClient.post(AUTH_ENDPOINTS.RESET_PASSWORD, payload);
+  return toEnvelope<ResetPasswordResponseData>(response);
 };
 
 export const useLogin = () => {
@@ -173,6 +193,33 @@ export const useConfirmEmail = () => {
     mutationFn: confirmEmail,
     onSuccess: (envelope) => {
       notifySuccess(envelope.message || 'Email confirmé avec succès.');
+    },
+    onError: (error: MutationError) => {
+      notifyError(getErrorMessage(error));
+    },
+  });
+};
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: forgotPassword,
+    onSuccess: (envelope) => {
+      notifySuccess(
+        envelope.message ||
+          'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.'
+      );
+    },
+    onError: (error: MutationError) => {
+      notifyError(getErrorMessage(error));
+    },
+  });
+};
+
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: resetPassword,
+    onSuccess: (envelope) => {
+      notifySuccess(envelope.message || 'Mot de passe réinitialisé avec succès.');
     },
     onError: (error: MutationError) => {
       notifyError(getErrorMessage(error));
