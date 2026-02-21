@@ -145,11 +145,11 @@ const ResetPasswordPage = () => {
             </p>
           )}
 
-          <div className="pt-4 flex justify-center">
+          <div className="flex justify-center">
             <button
               type="submit"
               disabled={resetPasswordMutation.isPending}
-              style={{ backgroundColor: COLORS.primary }}
+              style={{ backgroundColor: COLORS.primary, marginTop: "-5px" }}
               className="submit-btn"
             >
               {resetPasswordMutation.isPending ? "Traitement..." : "Connexion"}

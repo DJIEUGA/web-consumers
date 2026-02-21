@@ -1,14 +1,14 @@
-import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { useConfirmEmail } from '@/features/auth/services/auth.service.ts';
-import { Button, Card, CardContent, CardTitle } from '@/components/ui';
-import logo from '@/assets/logo.png';
+import { useConfirmEmail } from "@/features/auth/services/auth.service.ts";
+import { Button, Card, CardContent, CardTitle } from "@/components/ui";
+import logo from "@/assets/logo.png";
 
 const EmailVerificationPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams.get("token");
   const confirmMutation = useConfirmEmail();
   const hasToken = Boolean(token);
 
@@ -23,54 +23,55 @@ const EmailVerificationPage = () => {
   const getContent = () => {
     if (!hasToken) {
       return {
-        title: 'Vérifiez votre e-mail',
-        message: 'Un email de confirmation a été envoyé à votre adresse.',
+        title: "Vérifiez votre e-mail",
+        message: "Un email de confirmation a été envoyé à votre adresse.",
         helper:
           "Cliquez sur le lien dans l'email pour activer votre compte et commencer à générer du contenu.",
-        footer: 'Si vous ne trouvez pas l’email, vérifiez votre dossier spam ou courrier indésirable.',
+        footer:
+          "Si vous ne trouvez pas l’email, vérifiez votre dossier spam ou courrier indésirable.",
       };
     }
 
     if (confirmMutation.isPending) {
       return {
-        title: 'Vérification en cours',
-        message: 'Nous validons votre e-mail en ce moment.',
-        helper: 'Veuillez patienter quelques secondes pendant la confirmation.',
-        footer: 'Vous serez redirigé ensuite vers votre espace.',
+        title: "Vérification en cours",
+        message: "Nous validons votre e-mail en ce moment.",
+        helper: "Veuillez patienter quelques secondes pendant la confirmation.",
+        footer: "Vous serez redirigé ensuite vers votre espace.",
       };
     }
 
     if (confirmMutation.isSuccess) {
       return {
-        title: 'Adresse confirmée',
-        message: confirmMutation.data?.message || 'Votre e-mail a été confirmé avec succès.',
-        helper: 'Votre compte est maintenant actif.',
-        footer: 'Vous pouvez continuer et accéder à votre espace.',
+        title: "Adresse confirmée",
+        message:
+          confirmMutation.data?.message ||
+          "Votre e-mail a été confirmé avec succès.",
+        helper: "Votre compte est maintenant actif.",
+        footer: "Vous pouvez continuer et accéder à votre espace.",
       };
     }
 
     return {
-      title: 'Lien invalide',
+      title: "Lien invalide",
       message:
         confirmMutation.error?.message ||
-        'Impossible de confirmer votre e-mail avec ce lien.',
-      helper: 'Le lien peut être expiré ou déjà utilisé.',
-      footer: 'Essayez de demander un nouvel email de confirmation.',
+        "Impossible de confirmer votre e-mail avec ce lien.",
+      helper: "Le lien peut être expiré ou déjà utilisé.",
+      footer: "Essayez de demander un nouvel email de confirmation.",
     };
   };
 
   const content = getContent();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-100 px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex justify-center">
-          <img src={logo} alt="Jobty" className="h-12 w-auto" />
-        </div>
-
-        <Card className="rounded-3xl border-zinc-200 bg-white shadow-sm">
+    <div className="connexion-container">
+        <Card className="connexion-card">
           <CardContent className="flex flex-col items-center px-9 pb-9 pt-10 text-center">
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-cyan-100">
+            <div className="flex justify-center" style={{marginBottom: "20px"}} >
+              <img src={logo} alt="Jobty" className="h-12 w-auto" />
+            </div>
+            <div className=" flex h-14 w-14 items-center justify-center rounded-full bg-cyan-100" style={{marginBottom: "20px"}}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -80,31 +81,34 @@ const EmailVerificationPage = () => {
                 className="h-6 w-6 text-cyan-600"
                 aria-hidden="true"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75m19.5 0v.243a2.25 2.25 0 0 1-.97 1.858l-7.5 5.25a2.25 2.25 0 0 1-2.56 0l-7.5-5.25a2.25 2.25 0 0 1-.97-1.858V6.75" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15A2.25 2.25 0 0 0 2.25 6.75m19.5 0v.243a2.25 2.25 0 0 1-.97 1.858l-7.5 5.25a2.25 2.25 0 0 1-2.56 0l-7.5-5.25a2.25 2.25 0 0 1-.97-1.858V6.75"
+                />
               </svg>
             </div>
 
-            <CardTitle className="mb-2 text-[32px] font-semibold tracking-tight text-slate-900">
+            <CardTitle style={{marginBottom: "10px"}} className="text-[32px] font-semibold tracking-tight text-slate-900">
               {content.title}
             </CardTitle>
 
-            <p className="mb-4 text-base text-slate-500">{content.message}</p>
+            <div style={{ marginBottom: "20px" }} className="w-3/4" >
+              <p style={{ marginBottom: "20px" }} className="text-base text-slate-500">{content.message}</p>
 
-            <p className="mb-3 text-sm leading-relaxed text-slate-400">{content.helper}</p>
-            <p className="mb-8 text-xs leading-relaxed text-slate-400">{content.footer}</p>
+              <p style={{ marginBottom: "10px" }} className="text-sm leading-relaxed text-slate-400">
+              {content.helper}
+              </p>
+              <p className="text-xs leading-relaxed text-slate-400">
+              {content.footer}
+              </p>
+            </div>
 
-            <div className="w-full space-y-3">
+            <div className="flex justify-center">
               <Button
-                onClick={() => navigate('/')}
-                className="h-11 w-full rounded-full bg-cyan-500 text-sm text-white hover:bg-cyan-600"
-              >
-                Allez à la page d’accueil
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => navigate('/')}
-                className="h-11 w-full rounded-full border-cyan-500 text-sm text-cyan-600 hover:bg-cyan-50"
+                variant="default"
+                onClick={() => navigate("/")}
+                className="submit-btn h-11 rounded-full border-cyan-500 text-sm text-cyan-600 bg-[#3DC7C9]"
               >
                 Allez à la page d’accueil
               </Button>
@@ -112,7 +116,6 @@ const EmailVerificationPage = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
   );
 };
 

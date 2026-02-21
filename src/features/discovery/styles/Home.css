@@ -284,11 +284,11 @@
   }
 
   .action-buttons {
-    flex-direction: column;
-    width: 100%;
+    flex-direction: row;
   }
 
-  .action-btn {
-    width: 100%;
+  .action-buttons .action-btn {
+    gap: 12px;
+    min-width: 120px;
   }
 }
