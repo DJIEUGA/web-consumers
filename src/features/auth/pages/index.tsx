@@ -366,7 +366,6 @@ export const Connexion = () => {
         <div className="connexion-logo">
           <img src={logo} alt="Jobty" />
         </div>
-
         {/* Titre */}
         <h1 className="connexion-title">
           <span className="title-prefix">

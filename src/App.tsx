@@ -71,7 +71,6 @@ function App() {
             <Route path="/auth/confirm" element={<EmailVerificationPage />} />
             <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
             <Route path="/auth/password/reset" element={<ResetPasswordPage />} />
-            <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/localisation" element={<Localisation />} />

@@ -1,130 +1,161 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { useResetPassword } from '@/features/auth/services/auth.service';
-import logo from '@/assets/logo.png';
+import { useResetPassword } from "@/features/auth/services/auth.service";
+import logo from "@/assets/logo.png";
+import { FiEye, FiEyeOff, FiKey, FiLock } from "react-icons/fi";
+import { COLORS } from "@/styles/colors";
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') ?? '';
+  const initialToken = searchParams.get("token") ?? "";
+
   const resetPasswordMutation = useResetPassword();
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [token, setToken] = useState(initialToken);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const isTokenMissing = useMemo(() => token.trim().length === 0, [token]);
 
   useEffect(() => {
-    if (!resetPasswordMutation.isSuccess) {
-      return;
-    }
+    if (!resetPasswordMutation.isSuccess) return;
 
     const timeoutId = window.setTimeout(() => {
-      navigate('/connexion');
+      navigate("/connexion");
     }, 2000);
 
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    return () => window.clearTimeout(timeoutId);
   }, [navigate, resetPasswordMutation.isSuccess]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (isTokenMissing) {
-      setValidationError('Le lien est invalide ou expiré.');
+      setValidationError("Le token de réinitialisation est requis.");
       return;
     }
 
-    if (password.length < 8) {
-      setValidationError('Le mot de passe doit contenir au moins 8 caractères.');
+    if (password.length < 6) {
+      setValidationError(
+        "Le mot de passe doit contenir au moins 6 caractères.",
+      );
+      return;
+    }
+
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setValidationError(
+        "Le mot de passe doit contenir au moins une lettre et un chiffre.",
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      setValidationError('Les mots de passe ne correspondent pas.');
+      setValidationError("Les mots de passe ne correspondent pas.");
       return;
     }
 
     setValidationError(null);
-    resetPasswordMutation.mutate(
-      { token, password },
-      {
-        onSuccess: () => {
-          setPassword('');
-          setConfirmPassword('');
-        },
-      }
-    );
+    resetPasswordMutation.mutate({ token, password });
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#eaf3f5] px-4 py-8">
-      <div
-        className="max-w-full rounded-4xl border border-[#e8eaef] bg-[#f7f7f8] px-6 pb-7 pt-7 shadow-[0_6px_14px_rgba(15,23,42,0.06)]"
-        style={{ width: '469px', height: '507px' }}
-      >
-        <div className="flex h-full flex-col">
-        <div className="mt-2 mb-7 flex justify-center">
-          <img src={logo} alt="Jobty" className="h-11 w-auto" />
+    <div className="connexion-container">
+      <div className="connexion-card">
+        <div className="connexion-logo">
+          <img src={logo} alt="Jobty" className="w-auto" />
         </div>
 
-        <h1 className="mb-3 text-center text-[18px] font-semibold leading-tight text-[#101828]">
-          Nouveau mot de passe
-        </h1>
+        <h1 className="connexion-title">Nouveau mot de passe</h1>
 
-        <p className="mx-auto mb-5 max-w-64 text-center text-[12px] leading-normal text-[#a0a8b8]">
-          Entrez votre nouveau mot de passe pour finaliser la réinitialisation
+        <p className="connexion-subtitle mb-6 text-center text-xs text-[#8a8fa3]">
+          Choisissez un nouveau mot de passe sécurisé
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          <input
-            type="password"
-            placeholder="Nouveau mot de passe"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="new-password"
-            className="h-11 w-full rounded-full border border-transparent bg-[#ececef] px-4 text-[12px] text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:border-[#b9edf0] focus:ring-2 focus:ring-[#d9f6f8]"
-            required
-          />
+        <form onSubmit={handleSubmit} className="connexion-form">
+          <div className="w-3/4 self-center-safe">
+            <label className="form-input-group relative">
+              <FiKey className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#46c6cb]" />
+              <input
+                type="text"
+                placeholder="Token de réinitialisation"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                style={{ paddingLeft: "40px" }}
+                className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
+                required
+              />
+            </label>
+          </div>
+          <div className="w-3/4 self-center-safe">
+            <label className="form-input-group relative">
+              <FiLock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#46c6cb]" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Entrer nouveau mot de passe"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                style={{ paddingLeft: "40px" }}
+                className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FiEyeOff className="text-[#46c6cb]" /> : <FiEye className="text-[#46c6cb]" />}
+              </button>
+            </label>
+          </div>
 
-          <input
-            type="password"
-            placeholder="Confirmer le mot de passe"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            autoComplete="new-password"
-            className="h-11 w-full rounded-full border border-transparent bg-[#ececef] px-4 text-[12px] text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:border-[#b9edf0] focus:ring-2 focus:ring-[#d9f6f8]"
-            required
-          />
+          <div className="w-3/4 self-center-safe">
+            <label className="form-input-group relative">
+              <FiLock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#46c6cb]" />
 
-          {validationError && <p className="text-center text-xs text-red-500">{validationError}</p>}
-
-          {isTokenMissing && !validationError && (
-            <p className="text-center text-xs text-red-500">Le token de réinitialisation est manquant.</p>
+              <input
+               type={showPassword ? "text" : "password"}
+                placeholder="Confirmer nouveau mot de passe"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                style={{ paddingLeft: "40px" }}
+                className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
+                required
+              />
+            </label>
+          </div>
+          <div className="flex flex-col justify-center items-center">
+            <p className="text-center text-[#9aa3b2]">
+              Le mot de passe doit contenir :
+            </p>
+            <ul className="px-4 text-[12px] text-[#9aa3b2] list-disc">
+              <li>Au moins 6 caractères</li>
+              <li>Au moins une lettre</li>
+              <li>Au moins un chiffre</li>
+            </ul>
+          </div>
+          {validationError && (
+            <p className="text-center text-xs text-red-500">
+              {validationError}
+            </p>
           )}
 
-          <div className="flex justify-center pt-1">
+          <div className="pt-4 flex justify-center">
             <button
               type="submit"
-              disabled={resetPasswordMutation.isPending || isTokenMissing}
-              className="h-10 min-w-52 rounded-full bg-[#39c2c8] px-5 text-[12px] font-medium text-white transition-colors hover:bg-[#2db3b9] disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={resetPasswordMutation.isPending}
+              style={{ backgroundColor: COLORS.primary }}
+              className="submit-btn"
             >
-              {resetPasswordMutation.isPending ? 'Réinitialisation...' : 'Réinitialiser le mot de passe'}
+              {resetPasswordMutation.isPending ? "Traitement..." : "Connexion"}
             </button>
           </div>
         </form>
-
-        <button
-          type="button"
-          onClick={() => navigate('/connexion')}
-          className="mt-4 w-full text-center text-[11px] text-[#9aa3b2] transition-colors hover:text-[#667085]"
-        >
-          Retour à la connexion
-        </button>
-        </div>
       </div>
     </div>
   );
