@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-// import { toast } from 'sonner';
+import { toast } from 'sonner';
 
 import apiClient from '@/api/axios';
 import { useAuthStore } from '@/stores/auth.store';
@@ -18,11 +18,11 @@ import type {
 } from '@/types/api';
 
 const AUTH_ENDPOINTS = {
-  LOGIN: '/api/v1/auth/login',
-  REGISTER: '/api/v1/auth/register',
-  CONFIRM: '/api/v1/auth/confirm',
-  FORGOT_PASSWORD: '/api/v1/auth/password/forgot',
-  RESET_PASSWORD: '/api/v1/auth/password/reset',
+  LOGIN: '/auth/login',
+  REGISTER: '/auth/register',
+  CONFIRM: '/auth/confirm',
+  FORGOT_PASSWORD: '/auth/password/forgot',
+  RESET_PASSWORD: '/auth/password/reset',
 } as const;
 
 type MutationError = {
@@ -36,11 +36,23 @@ type MutationError = {
 
 const toEnvelope = <T>(value: unknown): ApiEnvelope<T> => {
   if (value && typeof value === 'object') {
-    const asEnvelope = value as ApiEnvelope<T>;
+    const asEnvelope = value as any;
+    
+    // If response has success and data, return as-is
     if ('success' in asEnvelope && 'data' in asEnvelope) {
-      return asEnvelope;
+      return asEnvelope as ApiEnvelope<T>;
+    }
+    
+    // If response has success but no data field (e.g., confirmation endpoint)
+    // Add empty data object to satisfy ApiEnvelope type
+    if ('success' in asEnvelope) {
+      return {
+        ...asEnvelope,
+        data: asEnvelope.data || ({} as T),
+      } as ApiEnvelope<T>;
     }
 
+    // Check if response is nested under data property
     const maybeResponse = value as { data?: ApiEnvelope<T> };
     if (maybeResponse.data && 'success' in maybeResponse.data) {
       return maybeResponse.data;
@@ -59,7 +71,7 @@ const getErrorMessage = (error: MutationError): string => {
 };
 
 const notifySuccess = (message: string) => {
-  // toast.success(message);
+  toast.success(message);
   useUIStore.getState().addNotification({
     type: 'success',
     title: 'Succès',
@@ -68,7 +80,7 @@ const notifySuccess = (message: string) => {
 };
 
 const notifyError = (message: string) => {
-  // toast.error(message);
+  toast.error(message);
   useUIStore.getState().addNotification({
     type: 'error',
     title: 'Erreur',
@@ -129,7 +141,6 @@ export const useLogin = () => {
 
       if (token) {
         authStore.setToken(token);
-        localStorage.setItem('jobty_token', token);
       }
 
       if (user) {

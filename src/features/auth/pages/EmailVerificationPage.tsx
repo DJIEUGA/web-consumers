@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useConfirmEmail } from "@/features/auth/services/auth.service.ts";
@@ -11,14 +11,28 @@ const EmailVerificationPage = () => {
   const token = searchParams.get("token");
   const confirmMutation = useConfirmEmail();
   const hasToken = Boolean(token);
+  const hasConfirmedRef = useRef(false);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || hasConfirmedRef.current) {
       return;
     }
 
+    hasConfirmedRef.current = true;
     confirmMutation.mutate(token);
-  }, [confirmMutation, token]);
+  }, [token]);
+
+  useEffect(() => {
+    if (!confirmMutation.isSuccess) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      navigate("/connexion");
+    }, 2500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [confirmMutation.isSuccess, navigate]);
 
   const getContent = () => {
     if (!hasToken) {
@@ -48,7 +62,7 @@ const EmailVerificationPage = () => {
           confirmMutation.data?.message ||
           "Votre e-mail a été confirmé avec succès.",
         helper: "Votre compte est maintenant actif.",
-        footer: "Vous pouvez continuer et accéder à votre espace.",
+        footer: "Redirection vers la page de connexion...",
       };
     }
 
@@ -108,7 +122,7 @@ const EmailVerificationPage = () => {
               <Button
                 variant="default"
                 onClick={() => navigate("/")}
-                className="submit-btn h-11 rounded-full border-cyan-500 text-sm text-cyan-600 bg-[#3DC7C9]"
+                className="confirm-submit-btn h-11 rounded-full border-cyan-500 text-sm text-cyan-600 bg-[#3DC7C9]"
               >
                 Allez à la page d’accueil
               </Button>

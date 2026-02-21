@@ -72,6 +72,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -395,6 +396,7 @@
 }
 
 /* Bouton submit */
+.confirm-submit-btn,
 .submit-btn {
   padding: 16px 32px;
   border: none;
@@ -413,11 +415,16 @@
 
 .submit-btn:hover {
   transform: translateY(-2px);
-  color: #3DC7C9;
   box-shadow: 0 6px 20px rgba(61, 199, 201, 0.4);
 }
 
-.submit-btn:active {
+.confirm-submit-btn:hover {
+  color: #3DC7C9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(61, 199, 201, 0.4);
+}
+
+.submit-btn:active, .confirm-submit-btn:active {
   transform: translateY(0);
 }
 

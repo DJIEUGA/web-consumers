@@ -66,8 +66,8 @@ export const Connexion = () => {
         role: apiRole,
         profileData: {
           // Only collect country, city for visiteur
-          ...(signupData.pays && { country: signupData.pays }),
-          ...(signupData.ville && { city: signupData.ville }),
+          ...(signupData.country && { country: signupData.country }),
+          ...(signupData.city && { city: signupData.city }),
         },
       };
     }
@@ -77,13 +77,14 @@ export const Connexion = () => {
       return {
         role: apiRole,
         profileData: {
-          country: signupData.pays,
-          city: signupData.ville,
-          phoneNumber: signupData.telephone,
-          bio: signupData.description,
-          // specialite can be used as skills list
-          skills: signupData.specialite ? [signupData.specialite] : [],
-          // Additional fields like hourlyRate could be added to form later
+          country: signupData.country,
+          city: signupData.city,
+          phoneNumber: signupData.phoneNumber,
+          bio: signupData.bio,
+          skills: signupData.specialization ? [signupData.specialization] : [], // specialite can be used as skills list
+          sector: signupData.sector,
+          experienceYears: signupData.experienceYears,
+
         },
       };
     }
@@ -93,12 +94,14 @@ export const Connexion = () => {
       return {
         role: apiRole,
         profileData: {
-          companyName: signupData.nomEntreprise,
-          country: signupData.pays,
-          city: signupData.ville,
-          industry: signupData.secteur,
-          description: signupData.description,
-          // Additional fields like registrationNumber, websiteUrl could be added to form later
+          companyName: signupData.companyName,
+          country: signupData.country,
+          city: signupData.city,
+          sector: signupData.sector,
+          bio: signupData.bio,
+          phoneNumber: signupData.phoneNumber,
+          experienceYears: signupData.experienceYears,
+          specialization: signupData.specialization
         },
       };
     }
@@ -114,19 +117,19 @@ export const Connexion = () => {
 
   // États pour le formulaire d'inscription
   const [signupData, setSignupData] = useState({
-    nom: "",
-    prenom: "",
+    lastName: "",
+    firstName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    telephone: "",
-    ville: "",
-    pays: "",
-    secteur: "",
-    specialite: "",
-    nomEntreprise: "",
-    anneesExperience: "",
-    description: "",
+    phoneNumber: "",
+    city: "",
+    country: "",
+    sector: "",
+    specialization: "",
+    companyName: "",
+    experienceYears: "",
+    bio: "",
   });
 
   // Listes de pays africains
@@ -256,7 +259,7 @@ export const Connexion = () => {
   const handleSignupStep2Submit = (e) => {
     e.preventDefault();
 
-    if (signupData.description.length < 50) {
+    if (signupData.bio.length < 50) {
       notify.error(
         "Erreur de validation",
         "La description doit contenir au moins 50 caractères",
@@ -273,14 +276,18 @@ export const Connexion = () => {
   const handleFinalSubmit = () => {
     // Map form state to RegisterRequest payload
     const registrationPayload = {
-      firstName: signupData.prenom,
-      lastName: signupData.nom,
+      firstName: signupData.firstName,
+      lastName: signupData.lastName,
       email: signupData.email,
       password: signupData.password,
       role: roleMapping[selectedRole],
       // Add optional fields if they have values
-      ...(signupData.pays && { country: signupData.pays }),
-      ...(signupData.ville && { city: signupData.ville }),
+      ...(signupData.country && { country: signupData.country }),
+      ...(signupData.city && { city: signupData.city }),
+      ...(signupData.sector && { sector: signupData.sector }),
+      ...(signupData.specialization && { skills: [signupData.specialization] }),
+      ...(signupData.experienceYears && { experienceYears: signupData.experienceYears }),
+      ...(signupData.bio && { bio: signupData.bio }),
     };
 
     registerMutation.mutate(registrationPayload, {
@@ -295,21 +302,21 @@ export const Connexion = () => {
             },
           );
 
-          // Trigger profile update in background (non-blocking)
-          // Do NOT await this, just fire and forget
-          const profileUpdateData = buildProfileUpdateData();
-          if (
-            profileUpdateData &&
-            profileUpdateData.profileData &&
-            Object.keys(profileUpdateData.profileData).length > 0
-          ) {
-            profileUpdateMutation.mutate(profileUpdateData, {
-              onSuccess: () => {},
-              onError: () => {},
-            });
-          }
+          // // Trigger profile update in background (non-blocking)
+          // // Do NOT await this, just fire and forget
+          // const profileUpdateData = buildProfileUpdateData();
+          // if (
+          //   profileUpdateData &&
+          //   profileUpdateData.profileData &&
+          //   Object.keys(profileUpdateData.profileData).length > 0
+          // ) {
+          //   profileUpdateMutation.mutate(profileUpdateData, {
+          //     onSuccess: () => {},
+          //     onError: () => {},
+          //   });
+          // }
 
-          // Reset form and redirect to login
+          // Reset form and route to confirmation info page
           setIsLogin(true);
           setSignupStep(1);
           setLoginData({ email: signupData.email, password: "" });
@@ -337,19 +344,19 @@ export const Connexion = () => {
     setSignupStep(1);
     setLoginData({ email: "", password: "" });
     setSignupData({
-      nom: "",
-      prenom: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
-      telephone: "",
-      ville: "",
-      pays: "",
-      secteur: "",
-      specialite: "",
-      nomEntreprise: "",
-      anneesExperience: "",
-      description: "",
+      phoneNumber: "",
+      city: "",
+      country: "",
+      sector: "",
+      specialization: "",
+      companyName: "",
+      experienceYears: "",
+      bio: "",
     });
   };
 
@@ -588,9 +595,9 @@ export const Connexion = () => {
                       <input
                         type="text"
                         id="nom"
-                        name="nom"
+                        name="lastName"
                         placeholder="Votre nom"
-                        value={signupData.nom}
+                        value={signupData.lastName}
                         onChange={handleSignupChange}
                         required
                       />
@@ -603,9 +610,9 @@ export const Connexion = () => {
                       <input
                         type="text"
                         id="prenom"
-                        name="prenom"
+                        name="firstName"
                         placeholder="Votre prénom"
-                        value={signupData.prenom}
+                        value={signupData.firstName}
                         onChange={handleSignupChange}
                         required
                       />
@@ -638,15 +645,15 @@ export const Connexion = () => {
                         </label>
                         <select
                           id="pays-client"
-                          name="pays"
-                          value={signupData.pays}
+                          name="country"
+                          value={signupData.country}
                           onChange={handleSignupChange}
                           required
                         >
                           <option value="">Sélectionnez votre pays</option>
-                          {paysAfricains.map((pays, index) => (
-                            <option key={index} value={pays}>
-                              {pays}
+                          {paysAfricains.map((country, index) => (
+                            <option key={index} value={country}>
+                              {country}
                             </option>
                           ))}
                         </select>
@@ -662,7 +669,7 @@ export const Connexion = () => {
                           id="ville-client"
                           name="ville"
                           placeholder="Dakar"
-                          value={signupData.ville}
+                          value={signupData.city}
                           onChange={handleSignupChange}
                           required
                         />
@@ -777,9 +784,9 @@ export const Connexion = () => {
                     <input
                       type="tel"
                       id="telephone"
-                      name="telephone"
+                      name="phoneNumber"
                       placeholder="+221 XX XXX XX XX"
-                      value={signupData.telephone}
+                      value={signupData.phoneNumber}
                       onChange={handleSignupChange}
                       required
                     />
@@ -791,16 +798,16 @@ export const Connexion = () => {
                       <FiMapPin /> Pays
                     </label>
                     <select
-                      id="pays"
-                      name="pays"
-                      value={signupData.pays}
+                      id="country"
+                      name="country"
+                      value={signupData.country}
                       onChange={handleSignupChange}
                       required
                     >
                       <option value="">Sélectionnez votre pays</option>
-                      {paysAfricains.map((pays, index) => (
-                        <option key={index} value={pays}>
-                          {pays}
+                      {paysAfricains.map((country, index) => (
+                        <option key={index} value={country}>
+                          {country}
                         </option>
                       ))}
                     </select>
@@ -808,15 +815,15 @@ export const Connexion = () => {
 
                   {/* Ville */}
                   <div className="form-group">
-                    <label htmlFor="ville">
+                    <label htmlFor="city">
                       <FiMapPin /> Ville
                     </label>
                     <input
                       type="text"
-                      id="ville"
-                      name="ville"
+                      id="city"
+                      name="city"
                       placeholder="Dakar"
-                      value={signupData.ville}
+                      value={signupData.city}
                       onChange={handleSignupChange}
                       required
                     />
@@ -831,9 +838,9 @@ export const Connexion = () => {
                       <input
                         type="text"
                         id="nomEntreprise"
-                        name="nomEntreprise"
+                        name="companyName"
                         placeholder="Nom de votre entreprise"
-                        value={signupData.nomEntreprise}
+                        value={signupData.companyName}
                         onChange={handleSignupChange}
                         required
                       />
@@ -847,8 +854,8 @@ export const Connexion = () => {
                     </label>
                     <select
                       id="secteur"
-                      name="secteur"
-                      value={signupData.secteur}
+                      name="sector"
+                      value={signupData.sector}
                       onChange={handleSignupChange}
                       required
                     >
@@ -869,19 +876,19 @@ export const Connexion = () => {
                     <input
                       type="text"
                       id="specialite"
-                      name="specialite"
+                      name="specialization"
                       placeholder={
                         selectedRole === "freelance"
                           ? "Ex: Développeur Full-Stack"
                           : "Ex: Construction de bâtiments"
                       }
-                      value={signupData.specialite}
+                      value={signupData.specialization}
                       onChange={handleSignupChange}
                       required
                     />
                     <small className="input-hint">
                       Précisez votre spécialité dans le secteur{" "}
-                      {signupData.secteur || "sélectionné"}
+                      {signupData.sector || "sélectionné"}
                     </small>
                   </div>
 
@@ -896,11 +903,11 @@ export const Connexion = () => {
                     <input
                       type="number"
                       id="anneesExperience"
-                      name="anneesExperience"
+                      name="experienceYears"
                       placeholder="Ex: 5"
                       min="0"
                       max="50"
-                      value={signupData.anneesExperience}
+                      value={signupData.experienceYears}
                       onChange={handleSignupChange}
                       required
                     />
@@ -916,20 +923,20 @@ export const Connexion = () => {
                     </label>
                     <textarea
                       id="description"
-                      name="description"
+                      name="bio"
                       placeholder={
                         selectedRole === "freelance"
                           ? "Présentez-vous brièvement, vos compétences, votre parcours..."
                           : "Décrivez votre entreprise, vos services, votre mission..."
                       }
                       rows={4}
-                      value={signupData.description}
+                      value={signupData.bio}
                       onChange={handleSignupChange}
                       required
                       minLength={50}
                     />
                     <small className="input-hint">
-                      Minimum 50 caractères ({signupData.description.length}/50)
+                      Minimum 50 caractères ({signupData.bio.length}/50)
                     </small>
                   </div>
                   <button
