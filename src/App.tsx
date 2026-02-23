@@ -69,7 +69,7 @@ function App() {
             <Route path="/decouverte" element={<Decouverte />} />
             <Route path="/connexion" element={<Connexion />} />
             <Route path="/auth/confirm" element={<EmailVerificationPage />} />
-            <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/auth/password/reset" element={<ResetPasswordPage />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/portfolio" element={<Portfolio />} />

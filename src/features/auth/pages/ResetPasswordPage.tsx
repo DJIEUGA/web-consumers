@@ -39,9 +39,9 @@ const ResetPasswordPage = () => {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       setValidationError(
-        "Le mot de passe doit contenir au moins 6 caractères.",
+        "Le mot de passe doit contenir au moins 8 caractères.",
       );
       return;
     }
@@ -59,7 +59,7 @@ const ResetPasswordPage = () => {
     }
 
     setValidationError(null);
-    resetPasswordMutation.mutate({ token, password });
+    resetPasswordMutation.mutate({ token, newPassword: confirmPassword });
   };
 
   return (
@@ -98,7 +98,7 @@ const ResetPasswordPage = () => {
                 placeholder="Entrer nouveau mot de passe"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
+                autoComplete="password"
                 style={{ paddingLeft: "40px" }}
                 className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
                 required
@@ -122,7 +122,7 @@ const ResetPasswordPage = () => {
                 placeholder="Confirmer nouveau mot de passe"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
+                autoComplete="password"
                 style={{ paddingLeft: "40px" }}
                 className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
                 required
@@ -134,7 +134,7 @@ const ResetPasswordPage = () => {
               Le mot de passe doit contenir :
             </p>
             <ul className="px-4 text-[12px] text-[#9aa3b2] list-disc">
-              <li>Au moins 6 caractères</li>
+              <li>Au moins 8 caractères</li>
               <li>Au moins une lettre</li>
               <li>Au moins un chiffre</li>
             </ul>

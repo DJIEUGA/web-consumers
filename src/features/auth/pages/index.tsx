@@ -505,7 +505,7 @@ export const Connexion = () => {
                 <input type="checkbox" />
                 <span>Se souvenir de moi</span>
               </label>
-              <a href="/mot-de-passe-oublie" className="forgot-password">
+              <a href="/forgot-password" className="forgot-password">
                 Mot de passe oublié ?
               </a>
             </div>
