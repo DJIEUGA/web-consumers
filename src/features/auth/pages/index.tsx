@@ -81,9 +81,10 @@ export const Connexion = () => {
           city: signupData.city,
           phoneNumber: signupData.phoneNumber,
           bio: signupData.bio,
-          skills: signupData.specialization ? [signupData.specialization] : [], // specialite can be used as skills list
+          skills: signupData.specialization ? [signupData.specialization] : [],
           sector: signupData.sector,
           experienceYears: signupData.experienceYears,
+          specialization: signupData.specialization
 
         },
       };
@@ -215,6 +216,7 @@ export const Connexion = () => {
 
   const handleSignupChange = (e) => {
     const { name, value } = e.target;
+    console.log("selected values: ", name, value);
     setSignupData({
       ...signupData,
       [name]: value,
@@ -284,8 +286,11 @@ export const Connexion = () => {
       // Add optional fields if they have values
       ...(signupData.country && { country: signupData.country }),
       ...(signupData.city && { city: signupData.city }),
+      ...(signupData.phoneNumber && { phoneNumber: signupData.phoneNumber }),
       ...(signupData.sector && { sector: signupData.sector }),
       ...(signupData.specialization && { skills: [signupData.specialization] }),
+      ...(signupData.specialization && { specialization: signupData.specialization}),
+      ...(signupData.companyName && { companyName: signupData.companyName }),
       ...(signupData.experienceYears && { experienceYears: signupData.experienceYears }),
       ...(signupData.bio && { bio: signupData.bio }),
     };
@@ -860,9 +865,9 @@ export const Connexion = () => {
                       required
                     >
                       <option value="">Sélectionnez votre secteur</option>
-                      {secteursActivite.map((secteur, index) => (
-                        <option key={index} value={secteur}>
-                          {secteur}
+                      {secteursActivite.map((sector, index) => (
+                        <option key={index} value={sector}>
+                          {sector}
                         </option>
                       ))}
                     </select>
