@@ -175,6 +175,11 @@
   color: #1f2c2d;
 }
 
+.profile-field input:focus {
+  outline: none;
+  border-color: #3DC7C9;
+}
+
 .profile-field textarea {
   min-height: 90px;
   resize: vertical;

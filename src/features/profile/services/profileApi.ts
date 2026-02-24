@@ -3,19 +3,20 @@
  * Handles all user profile-related API calls
  */
 
-import { apiGet, apiPost, apiPut, apiPatch, apiUpload } from '../../../services/apiClient';
-import { 
-  PROFILE_ENDPOINTS, 
-  UserProfileUpdateDto, 
-  ProProfileUpdateDto, 
-  EnterpriseProfileUpdateDto 
-} from '../../../api/profileEndpoints';
-
-/**
- * Generic API response & error placeholders
- * Replace with real types when available
- */
-export type ApiResponse<T = unknown> = T;
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiPatch,
+  apiUpload,
+  ApiResponse
+} from "../../../services/apiClient";
+import {
+  PROFILE_ENDPOINTS,
+  UserProfileUpdateDto,
+  ProProfileUpdateDto,
+  EnterpriseProfileUpdateDto,
+} from "../../../api/profileEndpoints";
 
 /**
  * Profile update payload
@@ -32,10 +33,12 @@ export type KycPayload = Record<string, File | string | Blob>;
  * Password update payload
  */
 export interface UpdatePasswordPayload {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
+  email: string;
+  currPwd: string;
+  newPwd: string;
 }
+
+
 
 /**
  * Get current user's profile
@@ -48,7 +51,7 @@ export const getProfile = async (): Promise<ApiResponse> => {
  * Get profile by user ID
  */
 export const getProfileById = async (userId: string): Promise<ApiResponse> => {
-  const path = PROFILE_ENDPOINTS.BY_ID.replace(':id', userId);
+  const path = PROFILE_ENDPOINTS.BY_ID.replace(":id", userId);
   return apiGet(path);
 };
 
@@ -56,7 +59,7 @@ export const getProfileById = async (userId: string): Promise<ApiResponse> => {
  * Update user profile
  */
 export const updateProfile = async (
-  profileData: UpdateProfilePayload
+  profileData: UpdateProfilePayload,
 ): Promise<ApiResponse> => {
   return apiPut(PROFILE_ENDPOINTS.ME, profileData);
 };
@@ -66,7 +69,7 @@ export const updateProfile = async (
  */
 export const uploadAvatar = async (file: File): Promise<ApiResponse> => {
   const formData = new FormData();
-  formData.append('avatar', file);
+  formData.append("avatar", file);
 
   return apiUpload(PROFILE_ENDPOINTS.AVATAR, formData);
 };
@@ -85,19 +88,12 @@ export const uploadKYC = async (kycData: KycPayload): Promise<ApiResponse> => {
 };
 
 /**
- * Verify email
- */
-export const verifyEmail = async (token: string): Promise<ApiResponse> => {
-  return apiPost(PROFILE_ENDPOINTS.VERIFY_EMAIL, { token });
-};
-
-/**
  * Update password
  */
 export const updatePassword = async (
-  passwordData: UpdatePasswordPayload
+  passwordData: UpdatePasswordPayload,
 ): Promise<ApiResponse> => {
-  return apiPost(PROFILE_ENDPOINTS.CHANGE_PASSWORD, passwordData);
+  return apiPatch(PROFILE_ENDPOINTS.CHANGE_PASSWORD, passwordData);
 };
 
 /**
@@ -112,7 +108,7 @@ export const deleteAccount = async (password: string): Promise<ApiResponse> => {
  * PATCH /api/v1/profiles/me/standard
  */
 export const updateStandardProfile = async (
-  profileData: UserProfileUpdateDto
+  profileData: UserProfileUpdateDto,
 ): Promise<ApiResponse> => {
   return apiPatch(PROFILE_ENDPOINTS.STANDARD, profileData);
 };
@@ -122,7 +118,7 @@ export const updateStandardProfile = async (
  * PATCH /api/v1/profiles/me/pro
  */
 export const updateProProfile = async (
-  profileData: ProProfileUpdateDto
+  profileData: ProProfileUpdateDto,
 ): Promise<ApiResponse> => {
   return apiPatch(PROFILE_ENDPOINTS.PRO, profileData);
 };
@@ -132,7 +128,7 @@ export const updateProProfile = async (
  * PATCH /api/v1/profiles/me/enterprise
  */
 export const updateEnterpriseProfile = async (
-  profileData: EnterpriseProfileUpdateDto
+  profileData: EnterpriseProfileUpdateDto,
 ): Promise<ApiResponse> => {
   return apiPatch(PROFILE_ENDPOINTS.ENTERPRISE, profileData);
 };
@@ -143,7 +139,6 @@ export default {
   updateProfile,
   uploadAvatar,
   uploadKYC,
-  verifyEmail,
   updatePassword,
   deleteAccount,
   updateStandardProfile,

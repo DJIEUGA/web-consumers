@@ -6,6 +6,9 @@ import {
   type UseQueryOptions,
   type UseQueryResult,
 } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { useUIStore } from '../../../stores/ui.store';
 
 import {
   getProfile,
@@ -16,14 +19,65 @@ import {
   updateEnterpriseProfile,
   uploadAvatar,
   uploadKYC,
-  verifyEmail,
   updatePassword,
   deleteAccount,
 } from '../services/profileApi';
 
-type Profile = unknown;
-type ApiError = unknown;
+type Profile = Record<string, any>;
+type ApiError = Record<string, any>;
 type Variables = unknown;
+
+type MutationResponse = {
+  success?: boolean;
+  message?: string;
+};
+
+const getResponseMessage = (
+  response: MutationResponse | undefined,
+  fallback: string,
+): string => {
+  return response?.message || fallback;
+};
+
+const getErrorMessage = (error: ApiError): string => {
+  return (
+    error?.data?.message ||
+    error?.message ||
+    'Une erreur est survenue. Veuillez reessayer.'
+  );
+};
+
+const notifySuccess = (message: string) => {
+  toast.success(message);
+  useUIStore.getState().addNotification({
+    type: 'success',
+    title: 'Succes',
+    message,
+  });
+};
+
+const notifyError = (message: string) => {
+  toast.error(message);
+  useUIStore.getState().addNotification({
+    type: 'error',
+    title: 'Erreur',
+    message,
+  });
+};
+
+const handleMutationFeedback = (
+  data: MutationResponse,
+  successFallback: string,
+  errorFallback: string,
+): boolean => {
+  if (data?.success === false) {
+    notifyError(getResponseMessage(data, errorFallback));
+    return false;
+  }
+
+  notifySuccess(getResponseMessage(data, successFallback));
+  return true;
+};
 
 export const useProfileQuery = (
   options?: UseQueryOptions<Profile, ApiError>
@@ -55,19 +109,26 @@ export const useProfileByIdQuery = (
 /**
  * Update user profile
  */
-export const useUpdateProfileMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
+export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updateProfile,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, undefined, undefined);
     },
-    onError: (error, variables) => {
-      options?.onError?.(error, variables, undefined, undefined);
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -75,19 +136,26 @@ export const useUpdateProfileMutation = (
 /**
  * Update standard profile (ROLE_CUSTOMER)
  */
-export const useUpdateStandardProfileMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
+export const useUpdateStandardProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updateStandardProfile,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, undefined, undefined);
     },
-    onError: (error, variables) => {
-      options?.onError?.(error, variables, undefined, undefined);
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -95,19 +163,26 @@ export const useUpdateStandardProfileMutation = (
 /**
  * Update pro profile (ROLE_PRO)
  */
-export const useUpdateProProfileMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
+export const useUpdateProProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updateProProfile,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, undefined, undefined);
     },
-    onError: (error, variables) => {
-      options?.onError?.(error, variables, undefined, undefined);
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -115,19 +190,26 @@ export const useUpdateProProfileMutation = (
 /**
  * Update enterprise profile (ROLE_ENTERPRISE)
  */
-export const useUpdateEnterpriseProfileMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
+export const useUpdateEnterpriseProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updateEnterpriseProfile,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, undefined, undefined);
     },
-    onError: (error, variables) => {
-      options?.onError?.(error, variables, undefined, undefined);
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -135,16 +217,26 @@ export const useUpdateEnterpriseProfileMutation = (
 /**
  * Upload avatar
  */
-export const useUploadAvatarMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
+export const useUploadAvatarMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: uploadAvatar,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Avatar mis a jour avec succes.',
+        "Impossible de televerser l'avatar.",
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, undefined, undefined);
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -152,33 +244,26 @@ export const useUploadAvatarMutation = (
 /**
  * Upload KYC documents
  */
-export const useUploadKYCMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
+export const useUploadKYCMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: uploadKYC,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Documents KYC televerses avec succes.',
+        'Impossible de televerser les documents KYC.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, undefined, undefined);
     },
-  });
-};
-
-/**
- * Verify email
- */
-export const useVerifyEmailMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
-  const queryClient = useQueryClient();
-
-  return useMutation<Profile, ApiError, Variables, unknown>({
-    mutationFn: verifyEmail,
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, undefined, undefined);
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -186,13 +271,27 @@ export const useVerifyEmailMutation = (
 /**
  * Change password
  */
-export const useChangePasswordMutation = (
-  options?: UseMutationOptions<Profile, ApiError, Variables, unknown>
-) => {
+export const useChangePasswordMutation = () => {
+  const queryClient = useQueryClient();
+
   return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updatePassword,
-    onSuccess: (data, variables) => {
-      options?.onSuccess?.(data, variables, undefined, undefined);
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Mot de passe mis a jour avec succes.',
+        'Impossible de mettre a jour le mot de passe.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      // Invalidate profile queries as password change might affect session
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -200,16 +299,26 @@ export const useChangePasswordMutation = (
 /**
  * Delete account
  */
-export const useDeleteAccountMutation = (
-  options?: UseMutationOptions<Profile, ApiError, string, unknown>
-) => {
+export const useDeleteAccountMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<Profile, ApiError, string, unknown>({
     mutationFn: deleteAccount,
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Compte supprime avec succes.',
+        'Impossible de supprimer le compte.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.clear();
-      options?.onSuccess?.(data, variables, undefined, undefined);
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -223,7 +332,6 @@ export default {
   useUpdateEnterpriseProfileMutation,
   useUploadAvatarMutation,
   useUploadKYCMutation,
-  useVerifyEmailMutation,
   useChangePasswordMutation,
   useDeleteAccountMutation,
 };

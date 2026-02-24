@@ -21,7 +21,6 @@ export const PROFILE_ENDPOINTS = {
   // Common actions
   AVATAR: '/profiles/me/avatar',
   KYC: '/profiles/me/kyc',
-  VERIFY_EMAIL: '/auth/confirm',
   CHANGE_PASSWORD: '/auth/password/change',
   DELETE: '/profiles/me/delete',
 
