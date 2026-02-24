@@ -216,7 +216,6 @@ export const Connexion = () => {
 
   const handleSignupChange = (e) => {
     const { name, value } = e.target;
-    console.log("selected values: ", name, value);
     setSignupData({
       ...signupData,
       [name]: value,
