@@ -198,7 +198,7 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
   // Only fetch profile when drawer is open to avoid unnecessary API calls
   const { data: profileData, isLoading } = useProfileQuery({
     enabled: open,
-    queryKey: [],
+    queryKey: []
   });
 
   const updateProfileMutation = useUpdateProfileMutation();

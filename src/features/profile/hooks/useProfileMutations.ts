@@ -32,6 +32,10 @@ type MutationResponse = {
   message?: string;
 };
 
+type MutationContext = {
+  previousProfile?: Profile;
+};
+
 const getResponseMessage = (
   response: MutationResponse | undefined,
   fallback: string,
@@ -79,6 +83,87 @@ const handleMutationFeedback = (
   return true;
 };
 
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const patchCurrentProfileCache = (
+  current: Profile | undefined,
+  patch: Record<string, unknown>,
+): Profile | undefined => {
+  if (!current || !isObjectRecord(current) || !Object.keys(patch).length) {
+    return current;
+  }
+
+  const hasLevelOneData = isObjectRecord(current.data);
+  const levelOne = hasLevelOneData
+    ? (current.data as Record<string, unknown>)
+    : (current as Record<string, unknown>);
+
+  const hasLevelTwoData = isObjectRecord(levelOne.data);
+  const levelTwo = hasLevelTwoData
+    ? (levelOne.data as Record<string, unknown>)
+    : levelOne;
+
+  const mergedPayload = {
+    ...levelTwo,
+    ...patch,
+  };
+
+  if (hasLevelTwoData) {
+    const nextLevelOne = {
+      ...levelOne,
+      data: mergedPayload,
+    };
+
+    if (hasLevelOneData) {
+      return {
+        ...(current as Record<string, unknown>),
+        data: nextLevelOne,
+      } as Profile;
+    }
+
+    return nextLevelOne as Profile;
+  }
+
+  if (hasLevelOneData) {
+    return {
+      ...(current as Record<string, unknown>),
+      data: mergedPayload,
+    } as Profile;
+  }
+
+  return mergedPayload as Profile;
+};
+
+const applyOptimisticProfilePatch = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+  variables: unknown,
+): Promise<MutationContext> => {
+  await queryClient.cancelQueries({
+    queryKey: ['profile', 'current'],
+    exact: true,
+  });
+
+  const previousProfile = queryClient.getQueryData<Profile>(['profile', 'current']);
+
+  if (isObjectRecord(variables)) {
+    queryClient.setQueryData<Profile | undefined>(['profile', 'current'], (current) =>
+      patchCurrentProfileCache(current, variables),
+    );
+  }
+
+  return { previousProfile };
+};
+
+const refreshProfileQueries = (queryClient: ReturnType<typeof useQueryClient>) => {
+  queryClient.invalidateQueries({ queryKey: ['profile'] });
+  queryClient.refetchQueries({
+    queryKey: ['profile', 'current'],
+    exact: true,
+    type: 'active',
+  });
+};
+
 export const useProfileQuery = (
   options?: UseQueryOptions<Profile, ApiError>
 ): UseQueryResult<Profile, ApiError> => {
@@ -112,8 +197,9 @@ export const useProfileByIdQuery = (
 export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, Variables, unknown>({
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateProfile,
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
     onSuccess: (data) => {
       const isSuccess = handleMutationFeedback(
         data,
@@ -125,9 +211,12 @@ export const useUpdateProfileMutation = () => {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refreshProfileQueries(queryClient);
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
       notifyError(getErrorMessage(error));
     },
   });
@@ -139,8 +228,9 @@ export const useUpdateProfileMutation = () => {
 export const useUpdateStandardProfileMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, Variables, unknown>({
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateStandardProfile,
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
     onSuccess: (data) => {
       const isSuccess = handleMutationFeedback(
         data,
@@ -152,9 +242,12 @@ export const useUpdateStandardProfileMutation = () => {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refreshProfileQueries(queryClient);
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
       notifyError(getErrorMessage(error));
     },
   });
@@ -166,8 +259,9 @@ export const useUpdateStandardProfileMutation = () => {
 export const useUpdateProProfileMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, Variables, unknown>({
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateProProfile,
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
     onSuccess: (data) => {
       const isSuccess = handleMutationFeedback(
         data,
@@ -179,9 +273,12 @@ export const useUpdateProProfileMutation = () => {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refreshProfileQueries(queryClient);
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
       notifyError(getErrorMessage(error));
     },
   });
@@ -193,8 +290,9 @@ export const useUpdateProProfileMutation = () => {
 export const useUpdateEnterpriseProfileMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, Variables, unknown>({
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateEnterpriseProfile,
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
     onSuccess: (data) => {
       const isSuccess = handleMutationFeedback(
         data,
@@ -206,9 +304,12 @@ export const useUpdateEnterpriseProfileMutation = () => {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refreshProfileQueries(queryClient);
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
       notifyError(getErrorMessage(error));
     },
   });
@@ -233,7 +334,7 @@ export const useUploadAvatarMutation = () => {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refreshProfileQueries(queryClient);
     },
     onError: (error) => {
       notifyError(getErrorMessage(error));
@@ -260,7 +361,7 @@ export const useUploadKYCMutation = () => {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refreshProfileQueries(queryClient);
     },
     onError: (error) => {
       notifyError(getErrorMessage(error));
@@ -287,8 +388,7 @@ export const useChangePasswordMutation = () => {
         return;
       }
 
-      // Invalidate profile queries as password change might affect session
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      refreshProfileQueries(queryClient);
     },
     onError: (error) => {
       notifyError(getErrorMessage(error));

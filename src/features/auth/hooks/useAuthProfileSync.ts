@@ -92,7 +92,8 @@ export const useAuthProfileSync = () => {
 
   const { data: profileData } = useProfileQuery({
     enabled: isHydrated && isAuthenticated,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
     queryKey: ['profile', 'current'],
   });

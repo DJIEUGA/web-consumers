@@ -4,7 +4,7 @@
  * Runs asynchronously without blocking the UX
  */
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   updateStandardProfile, 
   updateProProfile, 
@@ -23,6 +23,8 @@ export type ProfileUpdateData = UserProfileUpdateDto | ProProfileUpdateDto | Ent
  * Does not affect UX — errors are logged but not shown to user
  */
 export const useBackgroundProfileUpdate = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: { role: string; profileData: ProfileUpdateData }) => {
       const { role, profileData } = data;
@@ -44,6 +46,14 @@ export const useBackgroundProfileUpdate = () => {
       if (error?.response) {
         console.warn('API response:', error.response);
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.refetchQueries({
+        queryKey: ['profile', 'current'],
+        exact: true,
+        type: 'active',
+      });
     },
   });
 };
