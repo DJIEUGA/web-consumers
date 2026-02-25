@@ -116,6 +116,28 @@ html {
   background: var(--turquoise-light);
 }
 
+.profil-public-back-btn {
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  color: var(--gray-800);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.profil-public-back-btn:hover {
+  border-color: var(--turquoise);
+  color: var(--turquoise);
+  background: var(--turquoise-light);
+}
+
 .profil-public-burger-btn {
   width: 40px;
   height: 40px;

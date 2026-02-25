@@ -7,6 +7,7 @@ import {
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import logo from '../../../../assets/logo.png';
 import { useAuthStore } from '../../../../stores/auth.store';
+import { resolveAvatarUrl } from '@/utils/avatar';
 import '../../styles/search/style.css';
 
 function SearchResults() {
@@ -18,9 +19,7 @@ function SearchResults() {
   const [menuOpen, setMenuOpen] = useState(false);
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
   const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
-  const authAvatarUrl =
-    authUser?.avatar ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+  const authAvatarUrl = resolveAvatarUrl(authUser);
 
   const goToAuthShortcut = () => {
     navigate(authShortcutRoute, {

@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { useProfileQuery } from '@/features/profile/hooks/useProfileMutations';
 import { DashboardProfile, ROLE_LABELS } from '../types/profile.types';
+import { resolveAvatarUrl } from '@/utils/avatar';
 
 type ProfilePayload = Record<string, any>;
 
@@ -25,9 +27,6 @@ const getProfilePayload = (profile: unknown): ProfilePayload => {
   return ((dataLevel as any)?.data ?? dataLevel) as ProfilePayload;
 };
 
-const buildFallbackAvatar = (seed: string): string =>
-  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed || 'jobty-user')}`;
-
 const normalizeActionButtonType = (
   value: unknown,
 ): DashboardProfile['actionButtonType'] => {
@@ -42,7 +41,8 @@ const normalizeActionButtonType = (
 };
 
 export const useDashboardProfile = () => {
-  const { user: authUser, role, isAuthenticated } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { user: authUser, role, isAuthenticated, updateUser } = useAuthStore();
   const { data: profileData, isLoading } = useProfileQuery({
     enabled: isAuthenticated,
     queryKey: ['profile', 'current'],
@@ -51,36 +51,36 @@ export const useDashboardProfile = () => {
   const profile = useMemo(() => {
     const payload = getProfilePayload(profileData);
 
-    // Auth store is the source of truth for session identity
+    // Prefer API payload; use auth store as fallback for session continuity
     const userId =
-      toStringValue(authUser?.id) ||
       toStringValue(payload.userId) ||
       toStringValue(payload.id) ||
+      toStringValue(authUser?.id) ||
       '';
     
     const firstName =
-      toStringValue(authUser?.firstName) ||
       toStringValue(payload.firstName) ||
       toStringValue(payload.prenom) ||
+      toStringValue(authUser?.firstName) ||
       '';
 
     const lastName =
-      toStringValue(authUser?.lastName) ||
       toStringValue(payload.lastName) ||
       toStringValue(payload.nom) ||
+      toStringValue(authUser?.lastName) ||
       '';
 
     const username = toStringValue(payload.username) || null;
 
     const email =
-      toStringValue(authUser?.email) ||
       toStringValue(payload.email) ||
+      toStringValue(authUser?.email) ||
       '';
 
     const userRole =
+      toStringValue(payload.role) ||
       toStringValue(authUser?.role) ||
       toStringValue(role) ||
-      toStringValue(payload.role) ||
       '';
 
     // Contact information
@@ -118,11 +118,17 @@ export const useDashboardProfile = () => {
       ROLE_LABELS[userRole] ||
       'Utilisateur';
 
-    const avatarUrl =
-      toStringValue(authUser?.avatar) ||
-      toStringValue(payload.avatarUrl) ||
-      toStringValue(payload.avatar) ||
-      buildFallbackAvatar(`${firstName}-${lastName}-${email}`);
+    const avatarUrl = resolveAvatarUrl(
+      {
+        ...payload,
+        avatar: payload.avatar || toStringValue(authUser?.avatar),
+        id: userId,
+        email,
+        firstName,
+        lastName,
+      },
+      `${firstName}-${lastName}-${email}`,
+    );
 
     const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Utilisateur';
 
@@ -167,6 +173,52 @@ export const useDashboardProfile = () => {
 
     return dashboardProfile;
   }, [authUser, profileData, role]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !profile.avatarUrl) return;
+    if (toStringValue(authUser?.avatar)) return;
+
+    updateUser({ avatar: profile.avatarUrl });
+
+    queryClient.setQueryData(['profile', 'current'], (current: unknown) => {
+      if (!current || typeof current !== 'object') return current;
+
+      const root = current as Record<string, unknown>;
+      const levelOne =
+        root.data && typeof root.data === 'object'
+          ? (root.data as Record<string, unknown>)
+          : root;
+      const levelTwo =
+        levelOne.data && typeof levelOne.data === 'object'
+          ? (levelOne.data as Record<string, unknown>)
+          : levelOne;
+
+      if (toStringValue(levelTwo.avatarUrl) || toStringValue(levelTwo.avatar)) {
+        return current;
+      }
+
+      const nextPayload = {
+        ...levelTwo,
+        avatarUrl: profile.avatarUrl,
+      };
+
+      if (levelOne.data && typeof levelOne.data === 'object') {
+        const nextLevelOne = { ...levelOne, data: nextPayload };
+
+        if (root.data && typeof root.data === 'object') {
+          return { ...root, data: nextLevelOne };
+        }
+
+        return nextLevelOne;
+      }
+
+      if (root.data && typeof root.data === 'object') {
+        return { ...root, data: nextPayload };
+      }
+
+      return nextPayload;
+    });
+  }, [authUser?.avatar, isAuthenticated, profile.avatarUrl, queryClient, updateUser]);
 
   return {
     profile,

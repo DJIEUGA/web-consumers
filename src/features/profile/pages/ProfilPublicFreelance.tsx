@@ -4,7 +4,7 @@ import {
   FiMenu, FiX, FiUser, FiMapPin, FiDollarSign, FiStar,
   FiMessageCircle, FiBriefcase, FiCheckCircle, FiCalendar,
   FiClock, FiEye, FiHeart, FiShare2, FiAward, FiTrendingUp,
-  FiLink, FiImage, FiMoreVertical, FiShield, FiChevronsRight,
+  FiLink, FiImage, FiMoreVertical, FiShield, FiChevronsRight, FiChevronLeft,
   FiCamera, FiEdit3
 } from 'react-icons/fi';
 import { FaHandshake, FaFacebookF, FaTwitter, FaLinkedinIn, FaWhatsapp } from 'react-icons/fa';
@@ -73,6 +73,15 @@ function ProfilPublicFreelance() {
     navigate(authShortcutRoute, {
       state: !isAuthenticated ? { from: location.pathname } : undefined,
     });
+  };
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/marketplace');
   };
 
   const rawIdentifier = identifier || freelanceId || id || '';
@@ -367,6 +376,9 @@ function ProfilPublicFreelance() {
               <img src={logo} alt="Jobty" />
             </div>
             <div className="profil-public-header-actions">
+              <button className="profil-public-back-btn" onClick={handleBack}>
+                <FiChevronLeft /> Retour
+              </button>
               <button className="profil-public-auth-btn" onClick={handleAuthShortcutClick}>
                 <FiChevronsRight /> {authShortcutLabel}
               </button>
@@ -399,6 +411,9 @@ function ProfilPublicFreelance() {
               <img src={logo} alt="Jobty" />
             </div>
             <div className="profil-public-header-actions">
+              <button className="profil-public-back-btn" onClick={handleBack}>
+                <FiChevronLeft /> Retour
+              </button>
               <button className="profil-public-auth-btn" onClick={handleAuthShortcutClick}>
                 <FiChevronsRight /> {authShortcutLabel}
               </button>
@@ -437,6 +452,9 @@ function ProfilPublicFreelance() {
           </div>
 
           <div className="profil-public-header-actions">
+            <button className="profil-public-back-btn" onClick={handleBack}>
+              <FiChevronLeft /> Retour
+            </button>
             <button className="profil-public-auth-btn" onClick={handleAuthShortcutClick}>
               <FiChevronsRight /> {authShortcutLabel}
             </button>

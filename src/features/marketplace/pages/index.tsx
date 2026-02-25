@@ -29,6 +29,7 @@ import { mapPublicProfileToFreelanceCard } from '../utils/profileMapper';
 import type { PublicProfile } from '../types/publicProfile.d';
 import { EmptyState, ErrorState } from '@/components/ui';
 import { parseApiError, getErrorDescription } from '@/utils/errorHandler';
+import { resolveAvatarUrl } from '@/utils/avatar';
 import { useAuthStore } from '@/stores/auth.store';
 import './Marketplace.css';
 
@@ -41,9 +42,7 @@ export const Marketplace = () =>{
   const [menuOpen, setMenuOpen] = useState(false);
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
   const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
-  const authAvatarUrl =
-    authUser?.avatar ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+  const authAvatarUrl = resolveAvatarUrl(authUser);
 
   const goToAuthShortcut = () => {
     navigate(authShortcutRoute, {

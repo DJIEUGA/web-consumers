@@ -9,6 +9,7 @@ import {
 import { toast } from 'sonner';
 
 import { useUIStore } from '../../../stores/ui.store';
+import { useAuthStore } from '../../../stores/auth.store';
 
 import {
   getProfile,
@@ -35,6 +36,9 @@ type MutationResponse = {
 type MutationContext = {
   previousProfile?: Profile;
 };
+
+const toStringValue = (value: unknown): string =>
+  value === null || value === undefined ? '' : String(value).trim();
 
 const getResponseMessage = (
   response: MutationResponse | undefined,
@@ -67,6 +71,31 @@ const notifyError = (message: string) => {
     title: 'Erreur',
     message,
   });
+};
+
+const persistAvatarToAuthStore = (variables: unknown, responseData?: unknown) => {
+  const source = isObjectRecord(variables)
+    ? variables
+    : isObjectRecord(responseData)
+      ? responseData
+      : null;
+
+  if (!source) return;
+
+  const nestedData = isObjectRecord(source.data)
+    ? (source.data as Record<string, unknown>)
+    : null;
+
+  const avatarCandidate =
+    toStringValue(source.avatarUrl) ||
+    toStringValue(source.avatar) ||
+    toStringValue(nestedData?.avatarUrl) ||
+    toStringValue(nestedData?.avatar) ||
+    '';
+
+  if (!avatarCandidate) return;
+
+  useAuthStore.getState().updateUser({ avatar: avatarCandidate });
 };
 
 const handleMutationFeedback = (
@@ -170,7 +199,8 @@ export const useProfileQuery = (
   return useQuery<Profile, ApiError>({
     queryKey: ['profile', 'current'],
     queryFn: getProfile,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 0,
+    refetchOnMount: true,
     ...options,
   });
 };
@@ -200,7 +230,7 @@ export const useUpdateProfileMutation = () => {
   return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateProfile,
     onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       const isSuccess = handleMutationFeedback(
         data,
         'Profil mis a jour avec succes.',
@@ -211,6 +241,7 @@ export const useUpdateProfileMutation = () => {
         return;
       }
 
+      persistAvatarToAuthStore(variables, data);
       refreshProfileQueries(queryClient);
     },
     onError: (error, _variables, context) => {
@@ -231,7 +262,7 @@ export const useUpdateStandardProfileMutation = () => {
   return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateStandardProfile,
     onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       const isSuccess = handleMutationFeedback(
         data,
         'Profil mis a jour avec succes.',
@@ -242,6 +273,7 @@ export const useUpdateStandardProfileMutation = () => {
         return;
       }
 
+      persistAvatarToAuthStore(variables, data);
       refreshProfileQueries(queryClient);
     },
     onError: (error, _variables, context) => {
@@ -262,7 +294,7 @@ export const useUpdateProProfileMutation = () => {
   return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateProProfile,
     onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       const isSuccess = handleMutationFeedback(
         data,
         'Profil mis a jour avec succes.',
@@ -273,6 +305,7 @@ export const useUpdateProProfileMutation = () => {
         return;
       }
 
+      persistAvatarToAuthStore(variables, data);
       refreshProfileQueries(queryClient);
     },
     onError: (error, _variables, context) => {
@@ -293,7 +326,7 @@ export const useUpdateEnterpriseProfileMutation = () => {
   return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateEnterpriseProfile,
     onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       const isSuccess = handleMutationFeedback(
         data,
         'Profil mis a jour avec succes.',
@@ -304,6 +337,7 @@ export const useUpdateEnterpriseProfileMutation = () => {
         return;
       }
 
+      persistAvatarToAuthStore(variables, data);
       refreshProfileQueries(queryClient);
     },
     onError: (error, _variables, context) => {

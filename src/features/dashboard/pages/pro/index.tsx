@@ -130,11 +130,11 @@ function ProDashboard() {
       photo: profile.avatarUrl,
       nom: profile.lastName,
       prenom: profile.firstName,
-      secteur: profile.sector,
-      specialite: profile.specialization,
+      sector: profile.sector,
+      specialization: profile.specialization,
       ville: profile.city,
       pays: profile.country,
-      tarifHoraire: profile.hourlyRate || 15000,
+      tarifHoraire: profile.hourlyRate || 0,
       tags: profile.skills?.length ? profile.skills : DEFAULT_SKILL_TAGS,
       disponible: profile.available,
       typeBouton: mapActionButtonToFormType(profile.actionButtonType),
@@ -153,8 +153,8 @@ function ProDashboard() {
         photo: profile.avatarUrl,
         nom: profile.lastName,
         prenom: profile.firstName,
-        secteur: profile.sector,
-        specialite: profile.specialization,
+        sector: profile.sector,
+        specialization: profile.specialization,
         ville: profile.city,
         pays: profile.country,
         tarifHoraire: profile.hourlyRate || 15000,
@@ -742,7 +742,7 @@ function ProDashboard() {
                         Secteur d'activité (pour référencement uniquement)
                       </label>
                       <select
-                        value={carteForm.secteur}
+                        value={carteForm.sector}
                         disabled
                       >
                         <option>Informatique</option>
@@ -756,7 +756,7 @@ function ProDashboard() {
                       <label>Spécialité (affichée sur la carte) *</label>
                       <input
                         type="text"
-                        value={carteForm.specialite}
+                        value={carteForm.specialization}
                         readOnly
                         disabled
                         placeholder="Ex: Développeur Full Stack"
@@ -907,7 +907,7 @@ function ProDashboard() {
                         {carteForm.prenom} {carteForm.nom}
                       </h3>
                       <p className="marketplace-specialite">
-                        {carteForm.specialite}
+                        {carteForm.specialization}
                       </p>
                       <div className="marketplace-location">
                         <FiMapPin /> {carteForm.ville}, {carteForm.pays}

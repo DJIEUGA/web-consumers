@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useAuthStore, type User } from '@/stores/auth.store';
 import { useProfileQuery } from '@/features/profile/hooks/useProfileMutations';
+import { resolveAvatarUrl } from '@/utils/avatar';
 
 const toStringValue = (value: unknown): string =>
   value === null || value === undefined ? '' : String(value);
@@ -58,13 +59,26 @@ const mapProfileToUser = (
       toStringValue(payload.nom) ||
       fallback?.lastName ||
       undefined,
-    avatar:
-      toStringValue(payload.avatarUrl) ||
-      toStringValue(payload.avatar) ||
-      toStringValue(nestedUser.avatarUrl) ||
-      toStringValue(nestedUser.avatar) ||
-      fallback?.avatar ||
-      undefined,
+    avatar: resolveAvatarUrl(
+      {
+        avatar: toStringValue(payload.avatar) || toStringValue(nestedUser.avatar),
+        avatarUrl:
+          toStringValue(payload.avatarUrl) || toStringValue(nestedUser.avatarUrl),
+        id,
+        email,
+        firstName:
+          toStringValue(nestedUser.firstName) ||
+          toStringValue(payload.firstName) ||
+          toStringValue(payload.prenom) ||
+          fallback?.firstName,
+        lastName:
+          toStringValue(nestedUser.lastName) ||
+          toStringValue(payload.lastName) ||
+          toStringValue(payload.nom) ||
+          fallback?.lastName,
+      },
+      `${id}-${email}`,
+    ),
   };
 };
 

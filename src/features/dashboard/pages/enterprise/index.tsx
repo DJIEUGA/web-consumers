@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogoutMutation } from '../../../../features/auth/hooks/useAuthMutations';
+import { useUpdateEnterpriseProfileMutation } from '../../../../features/profile/hooks/useProfileMutations';
 import { 
   FiMenu, FiX, FiUser, FiBell, FiSettings, FiLogOut,
   FiDollarSign, FiBriefcase, FiCheckCircle, FiStar,
@@ -38,6 +39,7 @@ import './css/style.css';
 function EnterpriseDashboard() {
   const navigate = useNavigate();
   const logoutMutation = useLogoutMutation();
+  const updateEnterpriseProfileMutation = useUpdateEnterpriseProfileMutation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
@@ -290,8 +292,29 @@ const performanceServices = [
     setCarteForm({ ...carteForm, tags: carteForm.tags.filter(t => t !== tagToRemove) });
   };
 
+  const mapFormTypeToActionButton = (formType) => {
+    return formType === 'contacter' ? 'CONTACT' : 'COLLABORATE';
+  };
+
   const handleSaveCarte = () => {
-    alert('Carte professionnelle mise à jour avec succès !');
+    updateEnterpriseProfileMutation.mutate(
+      {
+        avatarUrl: carteForm.photo,
+        available: carteForm.disponible,
+        actionButtonType: mapFormTypeToActionButton(carteForm.typeBouton),
+        companyName: `${carteForm.prenom} ${carteForm.nom}`.trim(),
+        sector: carteForm.secteur,
+        specialization: carteForm.specialite,
+        city: carteForm.ville,
+        country: carteForm.pays,
+      },
+      {
+        onSuccess: (data) => {
+          if (data?.success === false) return;
+          alert('Carte professionnelle mise à jour avec succès !');
+        },
+      },
+    );
   };
 
   const renderStars = (note) => {
@@ -672,7 +695,12 @@ const performanceServices = [
 
                   <div className="dash-form-actions">
                     <button type="button" className="dash-btn-secondary">Annuler</button>
-                    <button type="button" className="dash-btn-primary" onClick={handleSaveCarte}>
+                    <button
+                      type="button"
+                      className="dash-btn-primary"
+                      onClick={handleSaveCarte}
+                      disabled={updateEnterpriseProfileMutation.isPending}
+                    >
                       <FiSave /> Enregistrer les modifications
                     </button>
                   </div>

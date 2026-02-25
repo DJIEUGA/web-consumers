@@ -27,6 +27,7 @@ import {
   useUpdateStandardProfileMutation,
   useUploadAvatarMutation,
 } from "../../features/profile/hooks/useProfileMutations";
+import { resolveAvatarUrl } from "@/utils/avatar";
 import "./ProfileDrawer.css";
 import "../../features/auth/styles/Connexion.css"
 
@@ -44,7 +45,7 @@ type ProfileFormState = {
   city: string;
   sector: string;
   specialization: string;
-  experienceYears: string;
+  experienceYears: number;
   phoneNumber: string;
   bio: string;
   skills: string;
@@ -63,7 +64,7 @@ const emptyForm: ProfileFormState = {
   city: "",
   sector: "",
   specialization: "",
-  experienceYears: "",
+  experienceYears: 0,
   phoneNumber: "",
   bio: "",
   skills: "",
@@ -160,31 +161,38 @@ const transformProfileToForm = (
 
   return {
     firstName: toStringValue(
-      user.firstName ?? payload.firstName ?? payload.prenom,
+      payload.firstName ?? payload.prenom ?? user.firstName,
     ),
-    lastName: toStringValue(user.lastName ?? payload.lastName ?? payload.nom),
+    lastName: toStringValue(payload.lastName ?? payload.nom ?? user.lastName),
     username: toStringValue(
-      user.username ?? payload.username ?? payload.pseudo,
+      payload.username ?? payload.pseudo ?? user.username,
     ),
     verified: Boolean(user.verified ?? payload.verified),
-    email: toStringValue(user.email ?? payload.email),
+    email: toStringValue(payload.email ?? user.email),
     country: toStringValue(payload.country ?? payload.pays),
     city: toStringValue(payload.city ?? payload.ville),
     sector: toStringValue(payload.sector ?? payload.secteur),
     specialization: toStringValue(payload.specialization ?? payload.specialite),
-    experienceYears: toStringValue(
-      payload.experienceYears ?? payload.anneeExperience,
+    experienceYears: Number(
+      toStringValue(payload.experienceYears ?? payload.anneeExperience) || "0"
     ),
     phoneNumber: toStringValue(
-      user.phoneNumber ?? payload.phoneNumber ?? payload.telephone,
+      payload.phoneNumber ?? payload.telephone ?? user.phoneNumber,
     ),
     bio: toStringValue(payload.description ?? payload.bio),
     skills: toSkillsString(
-      user.skills ?? payload.skills ?? payload.competences,
+      payload.skills ?? payload.competences ?? user.skills,
     ),
     hourlyRate: toStringValue(payload.hourlyRate ?? payload.tarifHoraire),
     averageRating: toStringValue(payload.averageRating ?? payload.noteMoyenne),
-    avatarUrl: toStringValue(payload.avatarUrl ?? payload.avatar),
+    avatarUrl: resolveAvatarUrl({
+      avatar: payload.avatar ?? user.avatar,
+      avatarUrl: payload.avatarUrl ?? user.avatarUrl,
+      id: user.id ?? payload.id ?? payload.userId,
+      email: user.email ?? payload.email,
+      firstName: user.firstName ?? payload.firstName ?? payload.prenom,
+      lastName: user.lastName ?? payload.lastName ?? payload.nom,
+    }),
   };
 };
 
@@ -198,7 +206,7 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
   // Only fetch profile when drawer is open to avoid unnecessary API calls
   const { data: profileData, isLoading } = useProfileQuery({
     enabled: open,
-    queryKey: []
+    queryKey: ['profile', 'current'],
   });
 
   const updateProfileMutation = useUpdateProfileMutation();
@@ -219,7 +227,6 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
     newPassword: "",
     confirmPassword: "",
   });
-  const hasInitializedRef = useRef(false);
 
   /**
    * Memoized payload extraction to prevent unnecessary transformations
@@ -235,22 +242,18 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
   );
 
   /**
-   * Initialize form once when profile data is first loaded
-   * Using ref to avoid redundant syncs after drawer close/reopen
+   * Keep form synced with latest API payload while drawer is open
    */
   useEffect(() => {
     if (!profileData || !open) return;
 
-    if (!hasInitializedRef.current) {
-      console.log("🔍 ProfileDrawer - Raw API data:", profileData);
-      console.log("🔍 ProfileDrawer - Extracted payload:", payload);
-      console.log("🔍 ProfileDrawer - Transformed form:", transformedForm);
+    console.log("🔍 ProfileDrawer - Raw API data:", profileData);
+    console.log("🔍 ProfileDrawer - Extracted payload:", payload);
+    console.log("🔍 ProfileDrawer - Transformed form:", transformedForm);
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setForm(transformedForm);
-      setSkillTags(toSkillsTags(transformedForm.skills));
-      hasInitializedRef.current = true;
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setForm(transformedForm);
+    setSkillTags(toSkillsTags(transformedForm.skills));
   }, [profileData, open, transformedForm, payload]);
 
   /**
@@ -495,7 +498,6 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
       newPassword: "",
       confirmPassword: "",
     });
-    hasInitializedRef.current = false; // Reset initialization flag for next open
     onClose();
   }, [onClose]);
 
