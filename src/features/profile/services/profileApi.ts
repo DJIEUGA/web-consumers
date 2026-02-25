@@ -115,12 +115,12 @@ export const updateStandardProfile = async (
 
 /**
  * Update professional profile (ROLE_PRO - Freelance)
- * PATCH /api/v1/profiles/me/pro
+ * PATCH /api/v1/profiles/me/profile/card
  */
 export const updateProProfile = async (
   profileData: ProProfileUpdateDto,
 ): Promise<ApiResponse> => {
-  return apiPatch(PROFILE_ENDPOINTS.PRO, profileData);
+  return apiPatch(PROFILE_ENDPOINTS.PRO_CARD, profileData);
 };
 
 /**

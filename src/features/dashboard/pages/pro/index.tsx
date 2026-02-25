@@ -74,8 +74,6 @@ import {
 } from "../../hooks/useDashboardData";
 import "./css/style.css";
 
-const DEFAULT_SKILL_TAGS = ["React", "Node.js", "MongoDB", "UI/UX"];
-
 function ProDashboard() {
   const navigate = useNavigate();
   const logoutMutation = useLogoutMutation();
@@ -87,6 +85,7 @@ function ProDashboard() {
   const [parametresSubTab, setParametresSubTab] = useState("notifications");
   const [pubSubTab, setPubSubTab] = useState("actives");
   const [analyticsSubTab, setAnalyticsSubTab] = useState("apercu");
+  const [cardSaveStatusMessage, setCardSaveStatusMessage] = useState("");
 
   // Fetch dashboard data from hooks (safe defaults)
   const { profile, isLoading: isProfileLoading } = useDashboardProfile();
@@ -124,6 +123,23 @@ function ProDashboard() {
     return formType === "contacter" ? "CONTACT" : "COLLABORATE";
   };
 
+  const isMissingValue = (value: unknown) =>
+    value === null || value === undefined || String(value).trim() === "";
+
+  const missingCardInfo = useMemo(
+    () => ({
+      photo: isMissingValue(profile.avatarUrl),
+      prenom: isMissingValue(profile.firstName),
+      nom: isMissingValue(profile.lastName),
+      sector: isMissingValue(profile.sector),
+      specialization: isMissingValue(profile.specialization),
+      ville: isMissingValue(profile.city),
+      pays: isMissingValue(profile.country),
+      tarifHoraire: profile.hourlyRate === null || profile.hourlyRate === undefined,
+    }),
+    [profile]
+  );
+
   // Initialize carteForm from profile data (memoized)
   const initialCarteForm = useMemo(
     () => ({
@@ -134,8 +150,8 @@ function ProDashboard() {
       specialization: profile.specialization,
       ville: profile.city,
       pays: profile.country,
-      tarifHoraire: profile.hourlyRate || 0,
-      tags: profile.skills?.length ? profile.skills : DEFAULT_SKILL_TAGS,
+      tarifHoraire: profile.hourlyRate ?? "",
+      tags: Array.isArray(profile.skills) ? profile.skills : [],
       disponible: profile.available,
       typeBouton: mapActionButtonToFormType(profile.actionButtonType),
     }),
@@ -157,8 +173,8 @@ function ProDashboard() {
         specialization: profile.specialization,
         ville: profile.city,
         pays: profile.country,
-        tarifHoraire: profile.hourlyRate || 15000,
-        tags: profile.skills?.length ? profile.skills : DEFAULT_SKILL_TAGS,
+        tarifHoraire: profile.hourlyRate ?? "",
+        tags: Array.isArray(profile.skills) ? profile.skills : [],
         disponible: profile.available,
         typeBouton: mapActionButtonToFormType(profile.actionButtonType),
       });
@@ -166,6 +182,14 @@ function ProDashboard() {
     // Only re-run when a new profile loads (userId changes) to avoid cascading updates
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile.userId]);
+
+  useEffect(() => {
+    setCarteForm((prev) => ({
+      ...prev,
+      disponible: profile.available,
+      typeBouton: mapActionButtonToFormType(profile.actionButtonType),
+    }));
+  }, [profile.available, profile.actionButtonType]);
 
   // Données du freelance (card data) - merged from API and form
   const freelance = {
@@ -439,12 +463,41 @@ function ProDashboard() {
   };
 
   const handleSaveCarte = () => {
-    updateProProfileMutation.mutate({
-      actionButtonType: mapFormTypeToActionButton(carteForm.typeBouton),
-      isAvailable: carteForm.disponible,
-      available: carteForm.disponible,
-      avatarUrl: carteForm.photo,
-    });
+    setCardSaveStatusMessage("");
+    updateProProfileMutation.mutate(
+      {
+        actionButtonType: mapFormTypeToActionButton(carteForm.typeBouton),
+        isAvailable: carteForm.disponible,
+        available: carteForm.disponible,
+        avatarUrl: carteForm.photo,
+        sector: carteForm.sector,
+        specialization: carteForm.specialization,
+        city: carteForm.ville,
+        country: carteForm.pays,
+        skills: carteForm.tags,
+        hourlyRate:
+          carteForm.tarifHoraire === "" || carteForm.tarifHoraire === null
+            ? undefined
+            : Number(carteForm.tarifHoraire),
+      },
+      {
+        onSuccess: (data: any) => {
+          if (data?.success === false) {
+            setCardSaveStatusMessage(
+              "Card updates could not be saved. Please try again."
+            );
+            return;
+          }
+
+          setCardSaveStatusMessage("Card updates saved successfully.");
+        },
+        onError: () => {
+          setCardSaveStatusMessage(
+            "Card updates could not be saved. Please try again."
+          );
+        },
+      }
+    );
   };
 
   const renderStars = (note) => {
@@ -706,6 +759,11 @@ function ProDashboard() {
                         }
                         placeholder="https://..."
                       />
+                      {missingCardInfo.photo && (
+                        <p className="dash-form-hint">
+                          Avatar URL could not be loaded from API.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -721,6 +779,11 @@ function ProDashboard() {
                           readOnly
                           disabled
                         />
+                        {missingCardInfo.prenom && (
+                          <p className="dash-form-hint">
+                            First name could not be loaded from API.
+                          </p>
+                        )}
                       </div>
                       <div className="dash-form-group">
                         <label>Nom *</label>
@@ -730,6 +793,11 @@ function ProDashboard() {
                           readOnly
                           disabled
                         />
+                        {missingCardInfo.nom && (
+                          <p className="dash-form-hint">
+                            Last name could not be loaded from API.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -751,6 +819,11 @@ function ProDashboard() {
                         <option>Rédaction</option>
                         <option>Photographie</option>
                       </select>
+                      {missingCardInfo.sector && (
+                        <p className="dash-form-hint">
+                          Sector could not be loaded from API.
+                        </p>
+                      )}
                     </div>
                     <div className="dash-form-group">
                       <label>Spécialité (affichée sur la carte) *</label>
@@ -761,6 +834,11 @@ function ProDashboard() {
                         disabled
                         placeholder="Ex: Développeur Full Stack"
                       />
+                      {missingCardInfo.specialization && (
+                        <p className="dash-form-hint">
+                          Specialization could not be loaded from API.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -776,6 +854,11 @@ function ProDashboard() {
                           readOnly
                           disabled
                         />
+                        {missingCardInfo.ville && (
+                          <p className="dash-form-hint">
+                            City could not be loaded from API.
+                          </p>
+                        )}
                       </div>
                       <div className="dash-form-group">
                         <label>Pays *</label>
@@ -785,6 +868,11 @@ function ProDashboard() {
                           readOnly
                           disabled
                         />
+                        {missingCardInfo.pays && (
+                          <p className="dash-form-hint">
+                            Country could not be loaded from API.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -800,6 +888,11 @@ function ProDashboard() {
                         readOnly
                         disabled
                       />
+                      {missingCardInfo.tarifHoraire && (
+                        <p className="dash-form-hint">
+                          Hourly rate could not be loaded from API.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -887,6 +980,13 @@ function ProDashboard() {
                       <FiSave /> Enregistrer les modifications
                     </button>
                   </div>
+                  {updateProProfileMutation.isPending && (
+                    <p className="dash-form-hint">Saving card updates...</p>
+                  )}
+                  {!updateProProfileMutation.isPending &&
+                    cardSaveStatusMessage && (
+                      <p className="dash-form-hint">{cardSaveStatusMessage}</p>
+                    )}
                 </form>
 
                 {/* Aperçu de la carte */}
@@ -930,7 +1030,9 @@ function ProDashboard() {
                             À partir de
                           </span>
                           <span className="marketplace-tarif-value">
-                            {parseInt(carteForm.tarifHoraire.toString())} FCFA/h
+                            {carteForm.tarifHoraire
+                              ? `${parseInt(carteForm.tarifHoraire.toString())} FCFA/h`
+                              : "Tarif indisponible"}
                           </span>
                         </div>
                       </div>

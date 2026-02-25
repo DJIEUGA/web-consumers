@@ -39,6 +39,7 @@ export interface RegisterRequest {
   password: string;
   firstName?: string;
   lastName?: string;
+  gender: 'MALE' | 'FEMALE';
   role?: string;
 }
 

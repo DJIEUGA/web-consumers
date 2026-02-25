@@ -22,6 +22,7 @@ export interface PublicProfile {
   topSkills: string[];
   premium: boolean;
   verified: boolean;
+  actionButtonType?: 'CONTACT' | 'COLLABORATE' |  null;
 }
 
 export interface PublicProfilesResponse {

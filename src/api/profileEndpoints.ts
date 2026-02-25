@@ -16,6 +16,7 @@ export const PROFILE_ENDPOINTS = {
   // Role-specific update endpoints
   STANDARD: '/profiles/me/standard', // ROLE_CUSTOMER (Visiteur)
   PRO: '/profiles/me/pro', // ROLE_PRO (Freelance)
+  PRO_CARD: '/profiles/me/profile/card', // ROLE_PRO card settings
   ENTERPRISE: '/profiles/me/enterprise', // ROLE_ENTERPRISE
 
   // Common actions
@@ -54,8 +55,13 @@ export interface ProProfileUpdateDto {
   phoneNumber?: string;
   bio?: string;
   avatarUrl?: string;
+  sector?: string;
+  specialization?: string;
   skills?: string[];
   hourlyRate?: number;
+  available?: boolean;
+  isAvailable?: boolean;
+  actionButtonType?: 'CONTACT' | 'COLLABORATE' | 'HIRE';
   latitude?: number;
   longitude?: number;
 }

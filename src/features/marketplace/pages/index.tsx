@@ -641,7 +641,7 @@ export const Marketplace = () =>{
                       });
                     }}
                   >
-                    Contacter
+                    {freelance.actionLabel || 'Contacter'}
                   </button>
                 </div>
               </div>

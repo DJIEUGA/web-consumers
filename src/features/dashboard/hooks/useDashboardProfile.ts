@@ -104,7 +104,10 @@ export const useDashboardProfile = () => {
     const kycStatus = (payload.kycStatus || 'NOT_SUBMITTED') as DashboardProfile['kycStatus'];
 
     // Availability & premium
-    const available = toBooleanValue(payload.available, true);
+    const available = toBooleanValue(
+      payload.available ?? payload.isAvailable,
+      true,
+    );
     const premium = toBooleanValue(payload.premium);
 
     // Action button type

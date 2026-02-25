@@ -5,6 +5,16 @@
 
 import type { PublicProfile } from '../types/publicProfile.d';
 
+const getActionButtonLabel = (actionButtonType: PublicProfile['actionButtonType']) => {
+  const normalized = String(actionButtonType ?? '').trim().toUpperCase();
+  
+  if (normalized === 'COLLABORATE') return 'Collaborer';
+  if (normalized === 'HIRE') return 'Recruter';
+  if (normalized === 'CONTACT') return 'Contacter';
+
+  return 'Contacter';
+};
+
 /**
  * Transforms a PublicProfile from API to FreelanceCard data structure
  */
@@ -27,6 +37,8 @@ export const mapPublicProfileToFreelanceCard = (profile: PublicProfile) => {
     skills: profile.topSkills || [],
     projectsCompletes: 0,
     projectsEnCours: 0,
+    actionButtonType: profile.actionButtonType,
+    actionLabel: getActionButtonLabel(profile.actionButtonType),
   };
 };
 

@@ -120,6 +120,7 @@ export const Connexion = () => {
   const [signupData, setSignupData] = useState({
     lastName: "",
     firstName: "",
+    gender: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -279,6 +280,7 @@ export const Connexion = () => {
     const registrationPayload = {
       firstName: signupData.firstName,
       lastName: signupData.lastName,
+      gender: signupData.gender as "MALE" | "FEMALE",
       email: signupData.email,
       password: signupData.password,
       role: roleMapping[selectedRole],
@@ -350,6 +352,7 @@ export const Connexion = () => {
     setSignupData({
       firstName: "",
       lastName: "",
+      gender: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -621,6 +624,24 @@ export const Connexion = () => {
                         required
                       />
                     </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="form-group">
+                    <label htmlFor="signup-gender">
+                      <FiUser /> Genre
+                    </label>
+                    <select
+                      id="signup-gender"
+                      name="gender"
+                      value={signupData.gender}
+                      onChange={handleSignupChange}
+                      required
+                    >
+                      <option value="">Sélectionnez votre genre</option>
+                      <option value="MALE">Homme</option>
+                      <option value="FEMALE">Femme</option>
+                    </select>
                   </div>
 
                   {/* Email */}

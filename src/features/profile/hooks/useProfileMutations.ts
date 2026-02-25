@@ -98,6 +98,53 @@ const persistAvatarToAuthStore = (variables: unknown, responseData?: unknown) =>
   useAuthStore.getState().updateUser({ avatar: avatarCandidate });
 };
 
+const persistUserIdentityToAuthStore = (
+  variables: unknown,
+  responseData?: unknown,
+) => {
+  const source = isObjectRecord(responseData)
+    ? responseData
+    : isObjectRecord(variables)
+      ? variables
+      : null;
+
+  if (!source) return;
+
+  const nestedData = isObjectRecord(source.data)
+    ? (source.data as Record<string, unknown>)
+    : null;
+
+  const firstNameCandidate =
+    toStringValue(source.firstName) ||
+    toStringValue(source.prenom) ||
+    toStringValue(nestedData?.firstName) ||
+    toStringValue(nestedData?.prenom) ||
+    '';
+
+  const lastNameCandidate =
+    toStringValue(source.lastName) ||
+    toStringValue(source.nom) ||
+    toStringValue(nestedData?.lastName) ||
+    toStringValue(nestedData?.nom) ||
+    '';
+
+  const avatarCandidate =
+    toStringValue(source.avatarUrl) ||
+    toStringValue(source.avatar) ||
+    toStringValue(nestedData?.avatarUrl) ||
+    toStringValue(nestedData?.avatar) ||
+    '';
+
+  const patch: Record<string, string> = {};
+  if (firstNameCandidate) patch.firstName = firstNameCandidate;
+  if (lastNameCandidate) patch.lastName = lastNameCandidate;
+  if (avatarCandidate) patch.avatar = avatarCandidate;
+
+  if (!Object.keys(patch).length) return;
+
+  useAuthStore.getState().updateUser(patch);
+};
+
 const handleMutationFeedback = (
   data: MutationResponse,
   successFallback: string,
@@ -164,6 +211,31 @@ const patchCurrentProfileCache = (
   return mergedPayload as Profile;
 };
 
+const syncPublicProfileCaches = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  patch: Record<string, unknown>,
+) => {
+  const userId = toStringValue(useAuthStore.getState().user?.id);
+
+  if (userId && Object.keys(patch).length) {
+    queryClient.setQueryData<Profile | undefined>(['publicProfile', userId], (current) =>
+      patchCurrentProfileCache(current, patch),
+    );
+  }
+
+  queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
+  queryClient.invalidateQueries({ queryKey: ['publicProfiles'] });
+  queryClient.invalidateQueries({ queryKey: ['searchPublicProfiles'] });
+  queryClient.invalidateQueries({ queryKey: ['publicProfilesBySector'] });
+  queryClient.invalidateQueries({ queryKey: ['publicProfilesByLocation'] });
+
+  queryClient.refetchQueries({ queryKey: ['publicProfile'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['publicProfiles'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['searchPublicProfiles'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['publicProfilesBySector'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['publicProfilesByLocation'], type: 'active' });
+};
+
 const applyOptimisticProfilePatch = async (
   queryClient: ReturnType<typeof useQueryClient>,
   variables: unknown,
@@ -186,11 +258,27 @@ const applyOptimisticProfilePatch = async (
 
 const refreshProfileQueries = (queryClient: ReturnType<typeof useQueryClient>) => {
   queryClient.invalidateQueries({ queryKey: ['profile'] });
+  queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
   queryClient.refetchQueries({
     queryKey: ['profile', 'current'],
     exact: true,
     type: 'active',
   });
+};
+
+const syncProfileAcrossApp = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  variables: unknown,
+  data?: unknown,
+) => {
+  const patch = isObjectRecord(variables)
+    ? (variables as Record<string, unknown>)
+    : {};
+
+  persistAvatarToAuthStore(variables, data);
+  persistUserIdentityToAuthStore(variables, data);
+  refreshProfileQueries(queryClient);
+  syncPublicProfileCaches(queryClient, patch);
 };
 
 export const useProfileQuery = (
@@ -241,8 +329,7 @@ export const useUpdateProfileMutation = () => {
         return;
       }
 
-      persistAvatarToAuthStore(variables, data);
-      refreshProfileQueries(queryClient);
+      syncProfileAcrossApp(queryClient, variables, data);
     },
     onError: (error, _variables, context) => {
       if (context?.previousProfile) {
@@ -273,8 +360,7 @@ export const useUpdateStandardProfileMutation = () => {
         return;
       }
 
-      persistAvatarToAuthStore(variables, data);
-      refreshProfileQueries(queryClient);
+      syncProfileAcrossApp(queryClient, variables, data);
     },
     onError: (error, _variables, context) => {
       if (context?.previousProfile) {
@@ -305,8 +391,7 @@ export const useUpdateProProfileMutation = () => {
         return;
       }
 
-      persistAvatarToAuthStore(variables, data);
-      refreshProfileQueries(queryClient);
+      syncProfileAcrossApp(queryClient, variables, data);
     },
     onError: (error, _variables, context) => {
       if (context?.previousProfile) {
@@ -337,8 +422,7 @@ export const useUpdateEnterpriseProfileMutation = () => {
         return;
       }
 
-      persistAvatarToAuthStore(variables, data);
-      refreshProfileQueries(queryClient);
+      syncProfileAcrossApp(queryClient, variables, data);
     },
     onError: (error, _variables, context) => {
       if (context?.previousProfile) {

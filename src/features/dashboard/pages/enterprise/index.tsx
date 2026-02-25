@@ -57,6 +57,14 @@ function EnterpriseDashboard() {
   const { data: collaborations } = useCollaborations();
   const { data: campagnesPub } = useAdCampaigns();
   const { data: analyticsDataFromHook } = useAnalytics();
+
+  const mapActionButtonToFormType = (apiType: unknown): 'contacter' | 'collaborer' => {
+    if (apiType === 0 || apiType === '0') return 'contacter';
+    if (apiType === 1 || apiType === '1') return 'collaborer';
+
+    const normalized = String(apiType ?? '').trim().toUpperCase();
+    return normalized === 'CONTACT' ? 'contacter' : 'collaborer';
+  };
   
   // Formulaire Carte Pro
   const [carteForm, setCarteForm] = useState(() => ({
@@ -69,8 +77,8 @@ function EnterpriseDashboard() {
     pays: dashboardProfile.country || 'Côte d\'Ivoire',
     tarifHoraire: 15000,
     tags: ['React', 'Node.js', 'MongoDB', 'UI/UX'],
-    disponible: true,
-    typeBouton: 'collaborer' // 'contacter' ou 'collaborer'
+    disponible: dashboardProfile.available,
+    typeBouton: mapActionButtonToFormType(dashboardProfile.actionButtonType), // 'contacter' ou 'collaborer'
   }));
 
   // Données du freelance
@@ -300,6 +308,7 @@ const performanceServices = [
     updateEnterpriseProfileMutation.mutate(
       {
         avatarUrl: carteForm.photo,
+        isAvailable: carteForm.disponible,
         available: carteForm.disponible,
         actionButtonType: mapFormTypeToActionButton(carteForm.typeBouton),
         companyName: `${carteForm.prenom} ${carteForm.nom}`.trim(),
