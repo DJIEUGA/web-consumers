@@ -37,11 +37,26 @@ import {
 } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
 import logo from '../../../assets/logo.png';
+import { useAuthStore } from '../../../stores/auth.store';
 import '../styles/JobAlerte.css';
 
 export const JobAlerte = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
+  const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [menuOpen, setMenuOpen] = useState(false);
+  const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
+  const authAvatarUrl =
+    authUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+
+  const goToAuthShortcut = () => {
+    navigate(authShortcutRoute, {
+      state: !isAuthenticated ? { from: '/job-alerte' } : undefined,
+    });
+  };
   const [currentStep, setCurrentStep] = useState(1);
   const [showTicketPopup, setShowTicketPopup] = useState(false);
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
@@ -247,8 +262,16 @@ export const JobAlerte = () => {
           </nav>
 
           <div className="header-actions">
-            <div className="profile-icon" onClick={() => navigate('/connexion')}>
-              <FiUser />
+            <div className="profile-icon" onClick={goToAuthShortcut}>
+              {isAuthenticated ? (
+                <img
+                  src={authAvatarUrl}
+                  alt="Profil"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <FiUser />
+              )}
               <span className="notification-badge">0</span>
             </div>
             <button className="burger-btn" onClick={toggleMenu} aria-label="Menu">
@@ -273,7 +296,7 @@ export const JobAlerte = () => {
           <a href="/localisation" onClick={(e) => { e.preventDefault(); navigate('/localisation'); closeMenu(); }}>Localisation</a>
           <a href="/job-alerte" className="active" onClick={(e) => { e.preventDefault(); navigate('/job-alerte'); closeMenu(); }}>Job alerte</a>
           <a href="/job-experience" onClick={(e) => { e.preventDefault(); navigate('/job-experience'); closeMenu(); }}>Job expérience</a>
-          <button className="sidebar-connexion-btn" onClick={() => { navigate('/connexion'); closeMenu(); }}>Connexion</button>
+          <button className="sidebar-connexion-btn" onClick={() => { goToAuthShortcut(); closeMenu(); }}>{authShortcutLabel}</button>
         </nav>
       </div>
 

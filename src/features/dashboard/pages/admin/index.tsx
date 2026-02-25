@@ -259,6 +259,9 @@ function AdminDashboard() {
             {activeTab === 'config' && 'Configuration plateforme'}
           </h1>
           <div className="admin-header-actions">
+            <button className="admin-public-btn" onClick={() => navigate('/decouverte')}>
+              <FiGlobe /> Site public
+            </button>
             <button className="admin-notif-btn">
               <FiBell />
               <span className="admin-notif-badge">15</span>
@@ -556,6 +559,9 @@ function AdminDashboard() {
                     <tr>
                       <th>
                         <input type="checkbox" />
+                        <button className="admin-public-btn" onClick={() => navigate('/decouverte')}>
+                          <FiGlobe /> Site public
+                        </button>
                       </th>
                       <th>Utilisateur</th>
                       <th>Type</th>

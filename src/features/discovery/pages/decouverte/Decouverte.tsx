@@ -40,11 +40,26 @@ import { FaWhatsapp } from 'react-icons/fa';
 import mapboxgl from 'mapbox-gl';
 import { COLORS } from '../../../../styles/colors';
 import logo from '../../../../assets/logo.png';
+import { useAuthStore } from '../../../../stores/auth.store';
 import '../../styles/decouverte/style.css';
 
 export const Decouverte = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
+  const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [menuOpen, setMenuOpen] = useState(false);
+  const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
+  const authAvatarUrl =
+    authUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+
+  const goToAuthShortcut = () => {
+    navigate(authShortcutRoute, {
+      state: !isAuthenticated ? { from: '/decouverte' } : undefined,
+    });
+  };
   const mapContainer = useRef(null);
   const map = useRef(null);
 
@@ -356,9 +371,17 @@ export const Decouverte = () => {
           <div className="header-actions">
             <div 
               className="profile-icon"
-              onClick={() => navigate('/connexion')}
+              onClick={goToAuthShortcut}
             >
-              <FiUser />
+              {isAuthenticated ? (
+                <img
+                  src={authAvatarUrl}
+                  alt="Profil"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <FiUser />
+              )}
               <span className="notification-badge">0</span>
             </div>
 
@@ -427,9 +450,9 @@ export const Decouverte = () => {
           </a>
           <button 
             className="sidebar-connexion-btn"
-            onClick={() => { navigate('/connexion'); closeMenu(); }}
+            onClick={() => { goToAuthShortcut(); closeMenu(); }}
           >
-            Connexion
+            {authShortcutLabel}
           </button>
         </nav>
       </div>
@@ -541,7 +564,7 @@ export const Decouverte = () => {
           <button 
             className="jobeur-button"
             style={{ backgroundColor: COLORS.primary }}
-            onClick={() => navigate('/connexion')}
+            onClick={goToAuthShortcut}
           >
             Devenir jobeur maintenant
           </button>

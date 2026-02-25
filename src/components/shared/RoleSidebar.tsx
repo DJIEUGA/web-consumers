@@ -14,9 +14,12 @@ import {
   FiUser,
   FiImage,
   FiFileText,
+  FiCompass,
+  FiGlobe,
 } from "react-icons/fi";
 import { FaBalanceScale, FaUserShield, FaHandshake, FaBullhorn } from "react-icons/fa";
 import type { UserRole } from "@/stores/auth.store";
+import { useAuthStore } from "@/stores/auth.store";
 import logo from "../../assets/logo.png";
 
 type SidebarVariant = "admin" | "dash";
@@ -108,7 +111,10 @@ const RoleSidebar: React.FC<RoleSidebarProps> = ({
   userExtra,
 }) => {
   const navigate = useNavigate();
+  const authUserId = useAuthStore((state) => state.user?.id);
   const items = roleItems[role] ?? customerItems;
+  const canOpenPublicProfile =
+    (role === "ROLE_PRO" || role === "ROLE_ENTERPRISE") && Boolean(authUserId);
 
   const prefix = variant === "dash" ? "dash" : "admin";
   const sidebarClass = `${prefix}-sidebar`;
@@ -160,6 +166,15 @@ const RoleSidebar: React.FC<RoleSidebarProps> = ({
               {item.icon} {item.label}
             </button>
           ))}
+
+          {canOpenPublicProfile && (
+            <button
+              className={navItemClass}
+              onClick={() => navigate(`/profiles/${encodeURIComponent(String(authUserId))}`)}
+            >
+              <FiUser /> Mon profil public
+            </button>
+          )}
         </nav>
 
         <button className={logoutClass} onClick={onLogout} disabled={isLoggingOut}>

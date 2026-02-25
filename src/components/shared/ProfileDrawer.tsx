@@ -89,6 +89,51 @@ const getProfilePayload = (profile: unknown): Record<string, unknown> => {
 const toStringValue = (value: unknown): string =>
   value === null || value === undefined ? "" : String(value);
 
+const toSkillsString = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === "string") return item.trim();
+        if (item && typeof item === "object") {
+          const candidate =
+            (item as Record<string, unknown>).name ??
+            (item as Record<string, unknown>).label ??
+            (item as Record<string, unknown>).skill;
+          return toStringValue(candidate).trim();
+        }
+        return toStringValue(item).trim();
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return toSkillsString(parsed);
+        }
+      } catch {
+        return trimmed;
+      }
+    }
+
+    return trimmed;
+  }
+
+  return toStringValue(value).trim();
+};
+
+const toSkillsTags = (value: unknown): string[] =>
+  toSkillsString(value)
+    .split(/[;,|]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 const notifyError = (message: string) => {
   toast.error(message);
   useUIStore.getState().addNotification({
@@ -134,9 +179,9 @@ const transformProfileToForm = (
       user.phoneNumber ?? payload.phoneNumber ?? payload.telephone,
     ),
     bio: toStringValue(payload.description ?? payload.bio),
-    skills: Array.isArray(payload.skills)
-      ? payload.skills.join(", ")
-      : toStringValue(payload.skills),
+    skills: toSkillsString(
+      user.skills ?? payload.skills ?? payload.competences,
+    ),
     hourlyRate: toStringValue(payload.hourlyRate ?? payload.tarifHoraire),
     averageRating: toStringValue(payload.averageRating ?? payload.noteMoyenne),
     avatarUrl: toStringValue(payload.avatarUrl ?? payload.avatar),
@@ -148,7 +193,7 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
   onClose,
 }) => {
   const navigate = useNavigate();
-  const { role } = useAuthStore();
+  const { role, updateUser } = useAuthStore();
 
   // Only fetch profile when drawer is open to avoid unnecessary API calls
   const { data: profileData, isLoading } = useProfileQuery({
@@ -165,6 +210,8 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
   const changePasswordMutation = useChangePasswordMutation();
 
   const [form, setForm] = useState<ProfileFormState>(emptyForm);
+  const [skillTags, setSkillTags] = useState<string[]>([]);
+  const [skillsInput, setSkillsInput] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [activeTab, setActiveTab] = useState<"profile" | "security">("profile");
   const [passwordForm, setPasswordForm] = useState({
@@ -201,6 +248,7 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(transformedForm);
+      setSkillTags(toSkillsTags(transformedForm.skills));
       hasInitializedRef.current = true;
     }
   }, [profileData, open, transformedForm, payload]);
@@ -214,6 +262,33 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
       setForm((prev) => ({ ...prev, [key]: value }));
     },
     [],
+  );
+
+  const updateSkillsFromTags = useCallback((tags: string[]) => {
+    setSkillTags(tags);
+    setForm((prev) => ({
+      ...prev,
+      skills: tags.join(", "),
+    }));
+  }, []);
+
+  const handleAddSkillTag = useCallback(() => {
+    const trimmed = skillsInput.trim();
+    if (!trimmed) return;
+    if (skillTags.includes(trimmed)) {
+      setSkillsInput("");
+      return;
+    }
+
+    updateSkillsFromTags([...skillTags, trimmed]);
+    setSkillsInput("");
+  }, [skillsInput, skillTags, updateSkillsFromTags]);
+
+  const handleRemoveSkillTag = useCallback(
+    (tagToRemove: string) => {
+      updateSkillsFromTags(skillTags.filter((tag) => tag !== tagToRemove));
+    },
+    [skillTags, updateSkillsFromTags],
   );
 
   /**
@@ -248,15 +323,17 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
 
           const updated = getProfilePayload(data);
           if (updated?.avatarUrl || updated?.avatar) {
+            const nextAvatar = toStringValue(updated.avatarUrl ?? updated.avatar);
             setForm((prev) => ({
               ...prev,
-              avatarUrl: toStringValue(updated.avatarUrl ?? updated.avatar),
+              avatarUrl: nextAvatar,
             }));
+            updateUser({ avatar: nextAvatar || undefined });
           }
         },
       });
     },
-    [uploadAvatarMutation],
+    [updateUser, uploadAvatarMutation],
   );
 
   /**
@@ -285,6 +362,15 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
         avatarUrl: form.avatarUrl,
       };
 
+      const syncAuthUser = () => {
+        updateUser({
+          firstName: form.firstName || undefined,
+          lastName: form.lastName || undefined,
+          email: form.email || undefined,
+          avatar: form.avatarUrl || undefined,
+        });
+      };
+
       if (role === "ROLE_PRO") {
         updateProProfileMutation.mutate({
           ...basePayload,
@@ -295,25 +381,46 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
                 .filter(Boolean)
             : [],
           hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : undefined,
+        }, {
+          onSuccess: (data: MutationResponse) => {
+            if (data?.success === false) return;
+            syncAuthUser();
+          },
         });
         return;
       }
 
       if (role === "ROLE_CUSTOMER") {
-        updateStandardProfileMutation.mutate(basePayload);
+        updateStandardProfileMutation.mutate(basePayload, {
+          onSuccess: (data: MutationResponse) => {
+            if (data?.success === false) return;
+            syncAuthUser();
+          },
+        });
         return;
       }
 
       if (role === "ROLE_ENTERPRISE") {
-        updateEnterpriseProfileMutation.mutate(basePayload);
+        updateEnterpriseProfileMutation.mutate(basePayload, {
+          onSuccess: (data: MutationResponse) => {
+            if (data?.success === false) return;
+            syncAuthUser();
+          },
+        });
         return;
       }
 
-      updateProfileMutation.mutate(basePayload);
+      updateProfileMutation.mutate(basePayload, {
+        onSuccess: (data: MutationResponse) => {
+          if (data?.success === false) return;
+          syncAuthUser();
+        },
+      });
     },
     [
       form,
       role,
+      updateUser,
       updateProfileMutation,
       updateProProfileMutation,
       updateStandardProfileMutation,
@@ -567,14 +674,35 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
                 <>
                   <div className="profile-field">
                     <label>Competences (tags)</label>
-                    <input
-                      type="text"
-                      value={form.skills}
-                      onChange={(event) =>
-                        handleChange("skills", event.target.value)
-                      }
-                      placeholder="UI, UX, Branding"
-                    />
+                    <div className="profile-tags-input">
+                      <div className="profile-tags-list">
+                        {skillTags.map((tag) => (
+                          <span key={tag} className="profile-tag-item">
+                            {tag}
+                            <button
+                              type="button"
+                              aria-label={`Supprimer ${tag}`}
+                              onClick={() => handleRemoveSkillTag(tag)}
+                            >
+                              <FiX />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <input
+                        type="text"
+                        value={skillsInput}
+                        onChange={(event) => setSkillsInput(event.target.value)}
+                        onBlur={handleAddSkillTag}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === ",") {
+                            event.preventDefault();
+                            handleAddSkillTag();
+                          }
+                        }}
+                        placeholder="Ajouter un tag..."
+                      />
+                    </div>
                   </div>
                   <div className="profile-field">
                     <label>Tarif horaire</label>

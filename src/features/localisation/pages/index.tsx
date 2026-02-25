@@ -31,11 +31,26 @@ import {
 } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
 import logo from '../../../assets/logo.png';
+import { useAuthStore } from '../../../stores/auth.store';
 import '../styles/localisation/style.css';
 
 export const Localisation = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
+  const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [menuOpen, setMenuOpen] = useState(false);
+  const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
+  const authAvatarUrl =
+    authUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+
+  const goToAuthShortcut = () => {
+    navigate(authShortcutRoute, {
+      state: !isAuthenticated ? { from: '/localisation' } : undefined,
+    });
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -254,9 +269,17 @@ export const Localisation = () => {
           <div className="header-actions">
             <div 
               className="profile-icon"
-              onClick={() => navigate('/connexion')}
+              onClick={goToAuthShortcut}
             >
-              <FiUser />
+              {isAuthenticated ? (
+                <img
+                  src={authAvatarUrl}
+                  alt="Profil"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <FiUser />
+              )}
               <span className="notification-badge">0</span>
             </div>
 
@@ -304,9 +327,9 @@ export const Localisation = () => {
           </a>
           <button 
             className="sidebar-connexion-btn"
-            onClick={() => { navigate('/connexion'); closeMenu(); }}
+            onClick={() => { goToAuthShortcut(); closeMenu(); }}
           >
-            Connexion
+            {authShortcutLabel}
           </button>
         </nav>
       </div>

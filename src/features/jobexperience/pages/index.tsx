@@ -21,13 +21,28 @@ import {
 import { FaFacebookF, FaInstagram, FaWhatsapp, FaGraduationCap } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
 import logo from '../../../assets/logo.png';
+import { useAuthStore } from '../../../stores/auth.store';
 import '../styles/jobexperience/style.css';
 
 export const JobExperience = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
+  const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('profils');
   const [favorites, setFavorites] = useState([]);
+  const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
+  const authAvatarUrl =
+    authUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+
+  const goToAuthShortcut = () => {
+    navigate(authShortcutRoute, {
+      state: !isAuthenticated ? { from: '/job-experience' } : undefined,
+    });
+  };
   
   const [filters, setFilters] = useState({
     search: '',
@@ -399,8 +414,16 @@ export const JobExperience = () => {
           </nav>
 
           <div className="jobexp-header-actions">
-            <div className="jobexp-profile-icon" onClick={() => navigate('/connexion')}>
-              <FiUser />
+            <div className="jobexp-profile-icon" onClick={goToAuthShortcut}>
+              {isAuthenticated ? (
+                <img
+                  src={authAvatarUrl}
+                  alt="Profil"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <FiUser />
+              )}
               <span className="jobexp-notif-badge">0</span>
             </div>
             <button className="jobexp-burger-btn" onClick={toggleMenu} aria-label="Menu">
@@ -425,7 +448,7 @@ export const JobExperience = () => {
           <a href="/localisation" onClick={(e) => { e.preventDefault(); navigate('/localisation'); closeMenu(); }}>Localisation</a>
           <a href="/job-alerte" onClick={(e) => { e.preventDefault(); navigate('/job-alerte'); closeMenu(); }}>Job alerte</a>
           <a href="/job-experience" className="active" onClick={(e) => { e.preventDefault(); navigate('/job-experience'); closeMenu(); }}>Job expérience</a>
-          <button className="jobexp-connexion-btn" onClick={() => { navigate('/connexion'); closeMenu(); }}>Connexion</button>
+          <button className="jobexp-connexion-btn" onClick={() => { goToAuthShortcut(); closeMenu(); }}>{authShortcutLabel}</button>
         </nav>
       </div>
 
@@ -743,7 +766,7 @@ export const JobExperience = () => {
             <p>Créez votre profil et montrez vos compétences aux entreprises qui recrutent</p>
             <button 
               className="jobexp-cta-btn"
-              onClick={() => navigate('/connexion')}
+              onClick={goToAuthShortcut}
               style={{ backgroundColor: COLORS.primary }}
             >
               Créer mon profil
@@ -758,7 +781,7 @@ export const JobExperience = () => {
             <p>Publiez vos offres de stage ou d'emploi et trouvez les meilleurs talents</p>
             <button 
               className="jobexp-cta-btn"
-              onClick={() => navigate('/connexion')}
+              onClick={goToAuthShortcut}
               style={{ backgroundColor: COLORS.secondary }}
             >
               Publier une offre

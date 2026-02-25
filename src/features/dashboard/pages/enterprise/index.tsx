@@ -370,6 +370,9 @@ const performanceServices = [
             {activeTab === 'analytics' && 'Analytics'}
           </h1>
           <div className="dash-header-actions">
+            <button className="dash-public-btn" onClick={() => navigate('/decouverte')}>
+              <FiGlobe /> Site public
+            </button>
             <button className="dash-notif-btn">
               <FiBell />
               <span className="dash-notif-badge">{statsData?.messagesNonLus || mockStats.messagesNonLus || 0}</span>

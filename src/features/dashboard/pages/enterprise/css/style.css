@@ -244,6 +244,34 @@
   gap: 12px;
 }
 
+.dash-public-btn {
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  color: var(--gray-700);
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dash-public-btn:hover {
+  border-color: var(--turquoise);
+  color: var(--turquoise);
+  background: var(--turquoise-light);
+}
+
+@media (max-width: 768px) {
+  .dash-public-btn {
+    display: none;
+  }
+}
+
 .dash-notif-btn {
   position: relative;
   width: 40px;

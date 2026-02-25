@@ -13,6 +13,7 @@ export const mapPublicProfileToFreelanceCard = (profile: PublicProfile) => {
 
   return {
     id: profile.userId,
+    username: profile.username || '',
     nom: fullName,
     profession: profile.specialization || 'Professionnel',
     photo: profile.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName}`,

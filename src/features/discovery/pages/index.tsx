@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/logo.png';
+import { useAuthStore } from '../../../stores/auth.store';
 import '../styles/Home.css';
 import SearchBar from '../../../components/shared/SearchBar';
 
 export const Home = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [searchQuery, setSearchQuery] = useState('');
   const [placeholderText, setPlaceholderText] = useState('lieux, secteur d\'activité, ville, quartier...');
+  const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
+
+  const goToAuthShortcut = () => {
+    navigate(authShortcutRoute, {
+      state: !isAuthenticated ? { from: '/' } : undefined,
+    });
+  };
 
   // Animation du placeholder
   useEffect(() => {
@@ -67,7 +78,7 @@ export const Home = () => {
 
           <div className="action-buttons">
             <button className="action-btn" onClick={() => navigate('/decouverte')}>Découvrir</button>
-            <button className="action-btn" onClick={() => navigate('/connexion')}>Connexion</button>
+            <button className="action-btn" onClick={goToAuthShortcut}>{authShortcutLabel}</button>
           </div>
 
         </div>

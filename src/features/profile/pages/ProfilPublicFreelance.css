@@ -88,6 +88,34 @@ html {
   display: block;  /* ← Ajoutez ceci pour éviter l'espace sous l'image */
 }
 
+.profil-public-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profil-public-auth-btn {
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  color: var(--gray-800);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.profil-public-auth-btn:hover {
+  border-color: var(--turquoise);
+  color: var(--turquoise);
+  background: var(--turquoise-light);
+}
+
 .profil-public-burger-btn {
   width: 40px;
   height: 40px;
@@ -202,6 +230,93 @@ html {
 
 .profil-public-main {
   padding-top: 80px;
+}
+
+.profil-public-loading-main,
+.profil-public-empty-main {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.profil-loading-card,
+.profil-empty-card {
+  width: 100%;
+  max-width: 840px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 28px;
+}
+
+.profil-loading-line,
+.profil-loading-box {
+  background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+  background-size: 220% 100%;
+  animation: profilShimmer 1.25s infinite;
+}
+
+.profil-loading-line {
+  height: 14px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.profil-loading-line-lg {
+  height: 20px;
+  width: 45%;
+}
+
+.profil-loading-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.profil-loading-box {
+  height: 130px;
+  border-radius: var(--radius-md);
+}
+
+@keyframes profilShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.profil-empty-card {
+  text-align: center;
+}
+
+.profil-empty-icon {
+  font-size: 42px;
+  color: var(--violet);
+  margin-bottom: 14px;
+}
+
+.profil-empty-card h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.profil-empty-card p {
+  color: var(--gray-600);
+  margin-bottom: 20px;
+}
+
+.profil-empty-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* ========================================
@@ -1362,6 +1477,11 @@ html {
 }
 
 @media (max-width: 768px) {
+  .profil-public-auth-btn {
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
   .profil-public-burger-btn {
     display: flex;
   }

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../../../features/auth/hooks/useAuthMutations";
+import { useUpdateProProfileMutation } from "../../../../features/profile/hooks/useProfileMutations";
 import {
   FiMenu,
   FiX,
@@ -73,9 +74,12 @@ import {
 } from "../../hooks/useDashboardData";
 import "./css/style.css";
 
+const DEFAULT_SKILL_TAGS = ["React", "Node.js", "MongoDB", "UI/UX"];
+
 function ProDashboard() {
   const navigate = useNavigate();
   const logoutMutation = useLogoutMutation();
+  const updateProProfileMutation = useUpdateProProfileMutation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("apercu");
@@ -85,7 +89,7 @@ function ProDashboard() {
   const [analyticsSubTab, setAnalyticsSubTab] = useState("apercu");
 
   // Fetch dashboard data from hooks (safe defaults)
-  const { profile } = useDashboardProfile();
+  const { profile, isLoading: isProfileLoading } = useDashboardProfile();
   const { data: statsData } = useStatsOverview();
   const { data: transactions = [] } = useTransactions();
   const { data: services = [] } = useServices();
@@ -93,18 +97,6 @@ function ProDashboard() {
   const { data: collaborations = [] } = useCollaborations();
   const { data: campagnesPub = [] } = useAdCampaigns();
   const { data: analyticsDataFromHook } = useAnalytics();
-
-  const dashboardProfile = {
-    firstName: "",
-    lastName: "",
-    subtitle: "",
-    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aminata",
-    sector: "Informatique",
-    specialization: "Développeuse Full Stack",
-    city: "Abidjan",
-    country: "Côte d'Ivoire",
-    ...profile,
-  };
 
   const stats = {
     messagesNonLus: 0,
@@ -115,29 +107,74 @@ function ProDashboard() {
     ...statsData,
   };
 
-  // Formulaire Carte Pro
-  const [carteForm, setCarteForm] = useState({
-    photo: dashboardProfile.avatarUrl,
-    nom: dashboardProfile.lastName,
-    prenom: dashboardProfile.firstName,
-    secteur: dashboardProfile.sector,
-    specialite: dashboardProfile.specialization,
-    ville: dashboardProfile.city,
-    pays: dashboardProfile.country,
-    tarifHoraire: 15000,
-    tags: ["React", "Node.js", "MongoDB", "UI/UX"],
-    disponible: true,
-    typeBouton: "collaborer",
-  });
+  // Map actionButtonType from API to form button type
+  const mapActionButtonToFormType = (
+    apiType: unknown
+  ): "contacter" | "collaborer" => {
+    if (apiType === 0 || apiType === "0") return "contacter";
+    if (apiType === 1 || apiType === "1") return "collaborer";
 
-  // Données du freelance (card data)
+    const normalized = String(apiType ?? "").trim().toUpperCase();
+    return normalized === "CONTACT" ? "contacter" : "collaborer";
+  };
+
+  const mapFormTypeToActionButton = (
+    formType: string
+  ): "CONTACT" | "COLLABORATE" => {
+    return formType === "contacter" ? "CONTACT" : "COLLABORATE";
+  };
+
+  // Initialize carteForm from profile data (memoized)
+  const initialCarteForm = useMemo(
+    () => ({
+      photo: profile.avatarUrl,
+      nom: profile.lastName,
+      prenom: profile.firstName,
+      secteur: profile.sector,
+      specialite: profile.specialization,
+      ville: profile.city,
+      pays: profile.country,
+      tarifHoraire: profile.hourlyRate || 15000,
+      tags: profile.skills?.length ? profile.skills : DEFAULT_SKILL_TAGS,
+      disponible: profile.available,
+      typeBouton: mapActionButtonToFormType(profile.actionButtonType),
+    }),
+    [profile]
+  );
+
+  // Formulaire Carte Pro - state can be edited by user
+  const [carteForm, setCarteForm] = useState(initialCarteForm);
+
+  // Update carteForm when profile loads/changes
+  // This syncs external API data to local editable form state (intentional pattern)
+  useEffect(() => {
+    if (!isProfileLoading && profile.userId) {
+      setCarteForm({
+        photo: profile.avatarUrl,
+        nom: profile.lastName,
+        prenom: profile.firstName,
+        secteur: profile.sector,
+        specialite: profile.specialization,
+        ville: profile.city,
+        pays: profile.country,
+        tarifHoraire: profile.hourlyRate || 15000,
+        tags: profile.skills?.length ? profile.skills : DEFAULT_SKILL_TAGS,
+        disponible: profile.available,
+        typeBouton: mapActionButtonToFormType(profile.actionButtonType),
+      });
+    }
+    // Only re-run when a new profile loads (userId changes) to avoid cascading updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.userId]);
+
+  // Données du freelance (card data) - merged from API and form
   const freelance = {
-    id: 1,
+    id: profile.userId || "1",
     ...carteForm,
-    note: 4.8,
-    nbAvis: 47,
-    verified: true,
-    plan: "gratuit",
+    note: profile.averageRating || 0,
+    nbAvis: profile.reviewCount || 0,
+    verified: profile.verified,
+    plan: profile.premium ? "premium" : "gratuit",
   };
 
   // Mock transactions structure (TODO: restructure when backend implements /transactions/by-type endpoint)
@@ -401,21 +438,13 @@ function ProDashboard() {
     setCarteForm({ ...carteForm, [field]: value });
   };
 
-  const handleTagAdd = (tag) => {
-    if (!carteForm.tags.includes(tag) && tag.trim()) {
-      setCarteForm({ ...carteForm, tags: [...carteForm.tags, tag.trim()] });
-    }
-  };
-
-  const handleTagRemove = (tagToRemove) => {
-    setCarteForm({
-      ...carteForm,
-      tags: carteForm.tags.filter((t) => t !== tagToRemove),
-    });
-  };
-
   const handleSaveCarte = () => {
-    alert("Carte professionnelle mise à jour avec succès !");
+    updateProProfileMutation.mutate({
+      actionButtonType: mapFormTypeToActionButton(carteForm.typeBouton),
+      isAvailable: carteForm.disponible,
+      available: carteForm.disponible,
+      avatarUrl: carteForm.photo,
+    });
   };
 
   const renderStars = (note) => {
@@ -471,15 +500,15 @@ function ProDashboard() {
         onLogout={handleLogout}
         isLoggingOut={logoutMutation.isPending}
         user={{
-          firstName: dashboardProfile.firstName,
-          lastName: dashboardProfile.lastName,
-          subtitle: dashboardProfile.subtitle,
-          photo: dashboardProfile.avatarUrl,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          subtitle: profile.subtitle,
+          photo: profile.avatarUrl,
         }}
         userExtra={
           <div className="dash-user-rating">
             {renderStars(freelance.note)}
-            <span>{freelance.note}</span>
+            <span>{freelance.note.toFixed(1)}</span>
           </div>
         }
       />
@@ -503,12 +532,15 @@ function ProDashboard() {
             {activeTab === "analytics" && "Analytics"}
           </h1>
           <div className="dash-header-actions">
+            <button className="dash-public-btn" onClick={() => navigate('/decouverte')}>
+              <FiGlobe /> Site public
+            </button>
             <button className="dash-notif-btn">
               <FiBell />
               <span className="dash-notif-badge">{stats.messagesNonLus}</span>
             </button>
             <button className="dash-profile-btn" onClick={openProfile}>
-              <img src={dashboardProfile.avatarUrl} alt="" />
+              <img src={profile.avatarUrl} alt="" />
             </button>
           </div>
         </header>
@@ -660,13 +692,24 @@ function ProDashboard() {
                       <div className="dash-photo-preview">
                         <img src={carteForm.photo} alt="Aperçu" />
                       </div>
-                      <button type="button" className="dash-btn-secondary">
-                        <FiCamera /> Modifier la photo
+                      <button type="button" className="dash-btn-secondary" disabled>
+                        <FiCamera /> Aperçu avatar
                       </button>
+                    </div>
+                    <div className="dash-form-group" style={{ marginTop: "12px" }}>
+                      <label>URL de l'avatar</label>
+                      <input
+                        type="url"
+                        value={carteForm.photo}
+                        onChange={(e) =>
+                          handleCarteFormChange("photo", e.target.value)
+                        }
+                        placeholder="https://..."
+                      />
                     </div>
                   </div>
 
-                  {/* Informations de base */}
+                  {/* Informations de base (lecture seule) */}
                   <div className="dash-form-section">
                     <h3>Informations de base</h3>
                     <div className="dash-form-grid">
@@ -675,9 +718,8 @@ function ProDashboard() {
                         <input
                           type="text"
                           value={carteForm.prenom}
-                          onChange={(e) =>
-                            handleCarteFormChange("prenom", e.target.value)
-                          }
+                          readOnly
+                          disabled
                         />
                       </div>
                       <div className="dash-form-group">
@@ -685,26 +727,23 @@ function ProDashboard() {
                         <input
                           type="text"
                           value={carteForm.nom}
-                          onChange={(e) =>
-                            handleCarteFormChange("nom", e.target.value)
-                          }
+                          readOnly
+                          disabled
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Spécialisation */}
+                  {/* Spécialisation (lecture seule) */}
                   <div className="dash-form-section">
-                    <h3>Spécialisation</h3>
+                    <h3>Spécialisation (lecture seule)</h3>
                     <div className="dash-form-group">
                       <label>
                         Secteur d'activité (pour référencement uniquement)
                       </label>
                       <select
                         value={carteForm.secteur}
-                        onChange={(e) =>
-                          handleCarteFormChange("secteur", e.target.value)
-                        }
+                        disabled
                       >
                         <option>Informatique</option>
                         <option>Design</option>
@@ -718,26 +757,24 @@ function ProDashboard() {
                       <input
                         type="text"
                         value={carteForm.specialite}
-                        onChange={(e) =>
-                          handleCarteFormChange("specialite", e.target.value)
-                        }
+                        readOnly
+                        disabled
                         placeholder="Ex: Développeur Full Stack"
                       />
                     </div>
                   </div>
 
-                  {/* Localisation */}
+                  {/* Localisation (lecture seule) */}
                   <div className="dash-form-section">
-                    <h3>Localisation</h3>
+                    <h3>Localisation (lecture seule)</h3>
                     <div className="dash-form-grid">
                       <div className="dash-form-group">
                         <label>Ville *</label>
                         <input
                           type="text"
                           value={carteForm.ville}
-                          onChange={(e) =>
-                            handleCarteFormChange("ville", e.target.value)
-                          }
+                          readOnly
+                          disabled
                         />
                       </div>
                       <div className="dash-form-group">
@@ -745,32 +782,30 @@ function ProDashboard() {
                         <input
                           type="text"
                           value={carteForm.pays}
-                          onChange={(e) =>
-                            handleCarteFormChange("pays", e.target.value)
-                          }
+                          readOnly
+                          disabled
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Tarif */}
+                  {/* Tarif (lecture seule) */}
                   <div className="dash-form-section">
-                    <h3>Tarif</h3>
+                    <h3>Tarif (lecture seule)</h3>
                     <div className="dash-form-group">
                       <label>Tarif horaire (FCFA) *</label>
                       <input
                         type="number"
                         value={carteForm.tarifHoraire}
-                        onChange={(e) =>
-                          handleCarteFormChange("tarifHoraire", e.target.value)
-                        }
+                        readOnly
+                        disabled
                       />
                     </div>
                   </div>
 
-                  {/* Tags de référencement */}
+                  {/* Tags de référencement (lecture seule) */}
                   <div className="dash-form-section">
-                    <h3>Tags de référencement</h3>
+                    <h3>Tags de référencement (lecture seule)</h3>
                     <p className="dash-form-hint">
                       Ces tags ne sont pas visibles sur votre carte mais aident
                       au classement
@@ -780,26 +815,9 @@ function ProDashboard() {
                         {carteForm.tags.map((tag, index) => (
                           <span key={index} className="dash-tag-item">
                             {tag}
-                            <button
-                              type="button"
-                              onClick={() => handleTagRemove(tag)}
-                            >
-                              <FiX />
-                            </button>
                           </span>
                         ))}
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Ajouter un tag..."
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleTagAdd((e.target as HTMLInputElement).value);
-                            (e.target as HTMLInputElement).value = "";
-                          }
-                        }}
-                      />
                     </div>
                   </div>
 
@@ -864,6 +882,7 @@ function ProDashboard() {
                       type="button"
                       className="dash-btn-primary"
                       onClick={handleSaveCarte}
+                      disabled={updateProProfileMutation.isPending}
                     >
                       <FiSave /> Enregistrer les modifications
                     </button>

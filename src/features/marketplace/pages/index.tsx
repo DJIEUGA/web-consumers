@@ -29,12 +29,27 @@ import { mapPublicProfileToFreelanceCard } from '../utils/profileMapper';
 import type { PublicProfile } from '../types/publicProfile.d';
 import { EmptyState, ErrorState } from '@/components/ui';
 import { parseApiError, getErrorDescription } from '@/utils/errorHandler';
+import { useAuthStore } from '@/stores/auth.store';
 import './Marketplace.css';
 
 export const Marketplace = () =>{
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
+  const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [searchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
+  const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
+  const authAvatarUrl =
+    authUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+
+  const goToAuthShortcut = () => {
+    navigate(authShortcutRoute, {
+      state: !isAuthenticated ? { from: '/marketplace' } : undefined,
+    });
+  };
   
   // États des filtres
   const [filters, setFilters] = useState({
@@ -356,9 +371,17 @@ export const Marketplace = () =>{
           <div className="header-actions">
             <div 
               className="profile-icon"
-              onClick={() => navigate('/connexion')}
+              onClick={goToAuthShortcut}
             >
-              <FiUser />
+              {isAuthenticated ? (
+                <img
+                  src={authAvatarUrl}
+                  alt="Profil"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <FiUser />
+              )}
               <span className="notification-badge">0</span>
             </div>
 
@@ -408,9 +431,9 @@ export const Marketplace = () =>{
           </a>
           <button 
             className="sidebar-connexion-btn"
-            onClick={() => { navigate('/connexion'); closeMenu(); }}
+            onClick={() => { goToAuthShortcut(); closeMenu(); }}
           >
-            Connexion
+            {authShortcutLabel}
           </button>
         </nav>
       </div>
@@ -605,7 +628,19 @@ export const Marketplace = () =>{
 
                   <button 
                     className="contact-btn"
-                     onClick={() => navigate(`/profil-freelance/${freelance.id}`)}
+                    onClick={() => {
+                      const identifier =
+                        freelance.username && String(freelance.username).trim()
+                          ? String(freelance.username).trim()
+                          : String(freelance.id);
+
+                      navigate(`/profiles/${encodeURIComponent(identifier)}`, {
+                        state: {
+                          userId: String(freelance.id),
+                          username: freelance.username || null,
+                        },
+                      });
+                    }}
                   >
                     Contacter
                   </button>

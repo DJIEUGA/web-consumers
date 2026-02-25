@@ -8,6 +8,7 @@
  */
 export interface PublicProfile {
   userId: string;
+  username?: string | null;
   firstName: string;
   lastName: string;
   avatarUrl: string | null;

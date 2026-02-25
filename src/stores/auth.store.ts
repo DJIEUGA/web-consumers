@@ -73,6 +73,60 @@ const storage = {
  */
 const TOKEN_EXPIRY_DURATION = 60 * 60 * 1000; // 1 hour
 
+const toStringValue = (value: unknown): string =>
+  value === null || value === undefined ? "" : String(value);
+
+const normalizeUser = (
+  incomingUser: unknown,
+  incomingRole?: string | null,
+): User | null => {
+  if (!incomingUser || typeof incomingUser !== "object") return null;
+
+  const rawUser = incomingUser as Record<string, unknown>;
+  const nestedUser =
+    rawUser.user && typeof rawUser.user === "object"
+      ? (rawUser.user as Record<string, unknown>)
+      : {};
+
+  const id =
+    toStringValue(rawUser.id) ||
+    toStringValue(rawUser.userId) ||
+    toStringValue(nestedUser.id);
+
+  const email =
+    toStringValue(rawUser.email) ||
+    toStringValue(nestedUser.email);
+
+  const role =
+    toStringValue(rawUser.role) ||
+    toStringValue(nestedUser.role) ||
+    toStringValue(incomingRole);
+
+  if (!id || !email || !role) return null;
+
+  return {
+    id,
+    email,
+    role: role as UserRole,
+    firstName:
+      toStringValue(rawUser.firstName) ||
+      toStringValue(rawUser.prenom) ||
+      toStringValue(nestedUser.firstName) ||
+      undefined,
+    lastName:
+      toStringValue(rawUser.lastName) ||
+      toStringValue(rawUser.nom) ||
+      toStringValue(nestedUser.lastName) ||
+      undefined,
+    avatar:
+      toStringValue(rawUser.avatar) ||
+      toStringValue(rawUser.avatarUrl) ||
+      toStringValue(nestedUser.avatar) ||
+      toStringValue(nestedUser.avatarUrl) ||
+      undefined,
+  };
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -110,11 +164,14 @@ export const useAuthStore = create<AuthState>()(
         storage.set("jwt_token", token);
         storage.set("jwt_token_expiry", expiry.toString());
 
+        const normalizedUser = normalizeUser(user, role);
+        const normalizedRole = normalizedUser?.role || role;
+
         set({
-          role,
+          role: normalizedRole,
           token,
           tokenExpiry: expiry,
-          user,
+          user: normalizedUser,
           isAuthenticated: true,
           isLoading: false,
           error: null,

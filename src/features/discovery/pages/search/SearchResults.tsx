@@ -6,12 +6,27 @@ import {
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import logo from '../../../../assets/logo.png';
+import { useAuthStore } from '../../../../stores/auth.store';
 import '../../styles/search/style.css';
 
 function SearchResults() {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
+  const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [searchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
+  const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
+  const authAvatarUrl =
+    authUser?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authUser?.id || authUser?.email || 'jobty-user')}`;
+
+  const goToAuthShortcut = () => {
+    navigate(authShortcutRoute, {
+      state: !isAuthenticated ? { from: '/search' } : undefined,
+    });
+  };
   
   const [filters, setFilters] = useState({
     search: searchParams.get('q') || '',
@@ -307,8 +322,16 @@ const ResultListItem = ({ result }) => (
           </nav>
 
           <div className="search-header-actions">
-            <div className="search-profile-icon" onClick={() => navigate('/connexion')}>
-              <FiUser />
+            <div className="search-profile-icon" onClick={goToAuthShortcut}>
+              {isAuthenticated ? (
+                <img
+                  src={authAvatarUrl}
+                  alt="Profil"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <FiUser />
+              )}
             </div>
             <button className="search-burger-btn" onClick={toggleMenu}>
               <FiMenu />
@@ -332,7 +355,7 @@ const ResultListItem = ({ result }) => (
           <a href="/localisation" onClick={(e) => { e.preventDefault(); navigate('/localisation'); closeMenu(); }}>Localisation</a>
           <a href="/job-alerte" onClick={(e) => { e.preventDefault(); navigate('/job-alerte'); closeMenu(); }}>Job alerte</a>
           <a href="/job-experience" onClick={(e) => { e.preventDefault(); navigate('/job-experience'); closeMenu(); }}>Job expérience</a>
-          <button className="search-connexion-btn" onClick={() => { navigate('/connexion'); closeMenu(); }}>Connexion</button>
+          <button className="search-connexion-btn" onClick={() => { goToAuthShortcut(); closeMenu(); }}>{authShortcutLabel}</button>
         </nav>
       </div>
 

@@ -136,6 +136,9 @@ const CustomerDashboard = () => {
             {activeTab === "projets" && "Gestion des projets"}
           </h1>
           <div className="admin-header-actions">
+            <button className="admin-public-btn" onClick={() => navigate('/decouverte')}>
+              <FiGlobe /> Site public
+            </button>
             <button className="admin-notif-btn">
               <FiBell />
               <span className="admin-notif-badge">15</span>

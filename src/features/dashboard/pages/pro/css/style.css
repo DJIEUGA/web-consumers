@@ -244,6 +244,34 @@
   gap: 12px;
 }
 
+.dash-public-btn {
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  color: var(--gray-700);
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dash-public-btn:hover {
+  border-color: var(--turquoise);
+  color: var(--turquoise);
+  background: var(--turquoise-light);
+}
+
+@media (max-width: 768px) {
+  .dash-public-btn {
+    display: none;
+  }
+}
+
 .dash-notif-btn {
   position: relative;
   width: 40px;
@@ -693,6 +721,7 @@
   display: grid;
   grid-template-columns: 1fr 400px;
   gap: 28px;
+  align-items: start;
 }
 
 .dash-carte-form {
@@ -788,52 +817,68 @@
 }
 
 .dash-tags-input {
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  min-height: 80px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  padding: 10px 12px;
+  min-height: 74px;
 }
 
 .dash-tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
 .dash-tag-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--turquoise);
   color: var(--white);
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .dash-tag-item button {
   background: none;
   border: none;
-  color: white;
+  color: var(--white);
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
-  font-size: 14px;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 160ms ease;
 }
 
+.dash-tag-item:hover button,
 .dash-tag-item button:hover {
-  opacity: 0.8;
+  visibility: visible;
+  opacity: 1;
 }
 
 .dash-tags-input input {
   width: 100%;
   border: none;
+  background: transparent;
   outline: none;
-  font-size: 13px;
-  padding: 4px 0;
+  font-size: 22px;
+  color: var(--gray-700);
+  padding: 2px 0 0;
+}
+
+.dash-tags-input input::placeholder {
+  color: var(--gray-600);
 }
 
 .dash-toggle {
@@ -929,7 +974,10 @@
 
 .dash-carte-apercu {
   position: sticky;
-  top: 100px;
+  top: 96px;
+  align-self: start;
+  max-height: calc(100vh - 116px);
+  overflow-y: auto;
 }
 
 .dash-carte-apercu h3 {
@@ -2762,11 +2810,7 @@
   }
 
   .dash-form-container {
-    grid-template-columns: 1fr;
-  }
-
-  .dash-carte-apercu {
-    position: static;
+    grid-template-columns: minmax(0, 1fr) 360px;
   }
 }
 
@@ -2781,6 +2825,16 @@
 
   .dash-main {
     margin-left: 0;
+  }
+
+  .dash-form-container {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-carte-apercu {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
 
   .dash-burger-btn {

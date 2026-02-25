@@ -23,6 +23,12 @@ import "./App.css";
 import UserDashboard from "./features/dashboard/pages/index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import SearchResults from "./features/discovery/pages/search/SearchResults.tsx";
+import { useAuthProfileSync } from "./features/auth/hooks/useAuthProfileSync";
+
+function AuthProfileBootstrap() {
+  useAuthProfileSync();
+  return null;
+}
 
 function App() {
   // Initialize auth from localStorage on app mount
@@ -64,6 +70,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
+          <AuthProfileBootstrap />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/decouverte" element={<Decouverte />} />
@@ -93,6 +100,10 @@ function App() {
               element={<ProfilPublicFreelance />}
             />
             <Route path="/profil/:id" element={<ProfilPublicFreelance />} />
+            <Route
+              path="/profiles/:identifier"
+              element={<ProfilPublicFreelance />}
+            />
             <Route path="/search" element={<SearchResults />} />
             <Route
               path="/dashboard"
