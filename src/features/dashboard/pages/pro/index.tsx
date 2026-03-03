@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../../../features/auth/hooks/useAuthMutations";
 import { useUpdateProProfileMutation } from "../../../../features/profile/hooks/useProfileMutations";
 import {
@@ -74,18 +74,75 @@ import {
 } from "../../hooks/useDashboardData";
 import "./css/style.css";
 
+const TAB_TO_ROUTE_SEGMENT: Record<string, string> = {
+  apercu: "overview",
+  carte: "procard",
+  services: "services",
+  posts: "realisations",
+  collaborations: "collaborations",
+  paiement: "payments",
+  facturation: "billing",
+  parametres: "settings",
+  publicite: "ads",
+  analytics: "analytics",
+};
+
+const ROUTE_SEGMENT_TO_TAB = Object.entries(TAB_TO_ROUTE_SEGMENT).reduce(
+  (acc, [tab, segment]) => {
+    acc[segment] = tab;
+    return acc;
+  },
+  {} as Record<string, string>
+);
+
+const resolveActiveTabFromPath = (pathname: string) => {
+  const segments = pathname.split("/").filter(Boolean);
+  const section = segments[2];
+  if (!section) return "apercu";
+  return ROUTE_SEGMENT_TO_TAB[section] || "apercu";
+};
+
 function ProDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const logoutMutation = useLogoutMutation();
   const updateProProfileMutation = useUpdateProProfileMutation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("apercu");
   const [paiementSubTab, setPaiementSubTab] = useState("recus");
   const [parametresSubTab, setParametresSubTab] = useState("notifications");
   const [pubSubTab, setPubSubTab] = useState("actives");
   const [analyticsSubTab, setAnalyticsSubTab] = useState("apercu");
   const [cardSaveStatusMessage, setCardSaveStatusMessage] = useState("");
+
+  const activeTab = useMemo(
+    () => resolveActiveTabFromPath(location.pathname),
+    [location.pathname]
+  );
+
+  const goToTab = (tab: string) => {
+    const segment = TAB_TO_ROUTE_SEGMENT[tab] || TAB_TO_ROUTE_SEGMENT.apercu;
+    navigate(`/dashboard/my/${segment}`);
+  };
+
+  useEffect(() => {
+    const pathname = location.pathname;
+    const isDashboardRoot = pathname === "/dashboard" || pathname === "/dashboard/";
+    const isDashboardMyRoot = pathname === "/dashboard/my" || pathname === "/dashboard/my/";
+
+    if (isDashboardRoot || isDashboardMyRoot) {
+      navigate("/dashboard/my/overview", { replace: true });
+      return;
+    }
+
+    if (pathname.startsWith("/dashboard/my/")) {
+      const segment = pathname.split("/").filter(Boolean)[2];
+      const isKnownSegment = Object.values(TAB_TO_ROUTE_SEGMENT).includes(segment);
+      if (!isKnownSegment) {
+        navigate("/dashboard/my/overview", { replace: true });
+      }
+    }
+  }, [location.pathname, navigate]);
 
   // Fetch dashboard data from hooks (safe defaults)
   const { profile, isLoading: isProfileLoading } = useDashboardProfile();
@@ -566,7 +623,7 @@ function ProDashboard() {
         open={menuOpen}
         activeTab={activeTab}
         onClose={closeMenu}
-        onTabChange={setActiveTab}
+          onTabChange={goToTab}
         onLogout={handleLogout}
         isLoggingOut={logoutMutation.isPending}
         user={{
@@ -706,7 +763,7 @@ function ProDashboard() {
                   <h2>Projets en cours</h2>
                   <button
                     className="dash-btn-outline"
-                    onClick={() => setActiveTab("collaborations")}
+                    onClick={() => goToTab("collaborations")}
                   >
                     Voir tout
                   </button>

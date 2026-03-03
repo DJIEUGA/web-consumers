@@ -1,8 +1,8 @@
 
 import React from "react";
-import AdminDashboard from "./admin";
+import AdminDashboard from "./admin/AdminDashboard";
 import EnterpriseDashboard from "./enterprise";
-import ProDashboard from "./pro";
+import ProDashboard from "./pro/ProDashboard";
 import CustomerDashboard from "./customer";
 import ModeratorDashboard from "./moderator";
 import { Navigate } from "react-router-dom";

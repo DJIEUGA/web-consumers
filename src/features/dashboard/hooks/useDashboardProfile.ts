@@ -110,6 +110,9 @@ export const useDashboardProfile = () => {
     );
     const premium = toBooleanValue(payload.premium);
 
+    // Notifications
+    const unreadNotifications = toNumberValue(payload.unreadNotifications, 0);
+
     // Action button type
     const actionButtonType = normalizeActionButtonType(payload.actionButtonType);
 
@@ -167,6 +170,9 @@ export const useDashboardProfile = () => {
       // Availability & premium
       available,
       premium,
+      
+      // Notifications
+      unreadNotifications,
       
       // Display fields
       avatarUrl,

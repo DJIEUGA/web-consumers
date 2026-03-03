@@ -106,7 +106,7 @@ function App() {
             />
             <Route path="/search" element={<SearchResults />} />
             <Route
-              path="/dashboard"
+              path="/dashboard/*"
               element={
                 <ProtectedRoute>
                   <UserDashboard />

@@ -32,6 +32,7 @@ export interface ProfileApiResponse {
   verified: boolean;
   available: boolean;
   premium: boolean;
+  unreadNotifications?: number; // Optional: backend may not provide yet
 }
 
 /**
@@ -70,6 +71,9 @@ export interface DashboardProfile {
   // Availability & premium
   available: boolean;
   premium: boolean;
+  
+  // Notifications
+  unreadNotifications: number;
   
   // Display fields
   avatarUrl: string;
