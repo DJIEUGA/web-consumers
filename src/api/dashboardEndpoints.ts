@@ -19,7 +19,7 @@ export const DASHBOARD_ENDPOINTS = {
   // Statistics
   STATS_TODAY: '/dashboard/stats/today',
   STATS_MONTH: '/dashboard/stats/month',
-  STATS_OVERVIEW: '/dashboard/stats/overview',
+  STATS_OVERVIEW: '/pro/dashboard/overview',
 
   // Transactions
   TRANSACTIONS: '/dashboard/transactions',
@@ -115,6 +115,33 @@ export interface StatsOverviewDto {
   noteMoyenne: number;
   vuesProfile: number;
   messagesNonLus: number;
+  messagesRecus?: number;
+  favoritesCount?: number;
+  ongoingProjects?: DashboardOverviewOngoingProjectDto[];
+}
+
+/**
+ * Ongoing project item from dashboard overview
+ */
+export interface DashboardOverviewOngoingProjectDto {
+  title: string;
+  clientName: string;
+  amount: number;
+  progressPercentage: number;
+  deadlineDescription: string;
+}
+
+/**
+ * Raw dashboard overview payload returned by backend endpoint
+ */
+export interface DashboardOverviewApiDataDto {
+  totalEarnings: number;
+  activeProjectsCount: number;
+  completedProjectsCount: number;
+  profileViews: number;
+  messagesReceived: number;
+  favoritesCount: number;
+  ongoingProjects: DashboardOverviewOngoingProjectDto[];
 }
 
 /**

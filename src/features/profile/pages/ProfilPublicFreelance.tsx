@@ -195,7 +195,7 @@ function ProfilPublicFreelance() {
     couverture:
       toStringValue(liveProfilePayload.coverImageUrl),
     specialite:
-      toStringValue(liveProfilePayload.specialization) || 'Freelance',
+      toStringValue(liveProfilePayload.specialty) || 'Freelance',
     secteur: toStringValue(liveProfilePayload.sector),
     ville: locationParts.ville || toStringValue(liveProfilePayload.city),
     pays: locationParts.pays || toStringValue(liveProfilePayload.country),
@@ -693,14 +693,6 @@ function ProfilPublicFreelance() {
                   <h3>Présentation</h3>
                   <p>{freelance.apropos.description}</p>
                 </div>
-                <div className="profil-apropos-item">
-                  <h3>Approche de travail</h3>
-                  <p>{freelance.apropos.approche}</p>
-                </div>
-                <div className="profil-apropos-item">
-                  <h3>Types de projets acceptés</h3>
-                  <p>{freelance.apropos.typesProjetAcceptes}</p>
-                </div>
               </div>
             </section>
 
@@ -915,7 +907,7 @@ function ProfilPublicFreelance() {
         {/* CTA FOOTER */}
         <section className="profil-cta">
           <h2>Prêt à démarrer votre projet ?</h2>
-          <p>Contactez {freelance.prenom} pour discuter de vos besoins et obtenir un devis personnalisé</p>
+          <p>Contactez <b>{freelance.prenom}</b> pour discuter de vos besoins et obtenir un devis personnalisé</p>
           <div className="profil-cta-actions">
             <button className="profil-btn-secondary" onClick={handleContactClick}>
               <FiMessageCircle /> Envoyer un message

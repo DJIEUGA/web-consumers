@@ -99,12 +99,30 @@ function ProDashboard() {
 
   const stats = {
     messagesNonLus: 0,
+    messagesRecus: 0,
+    favoritesCount: 0,
     gainsTotal: 0,
     projetsEnCours: 0,
     projetsRealises: 0,
     vuesProfile: 0,
+    ongoingProjects: [],
     ...statsData,
   };
+
+  const ongoingProjects =
+    Array.isArray(stats.ongoingProjects) && stats.ongoingProjects.length > 0
+      ? stats.ongoingProjects.map((project, index) => ({
+          id: `${project.title}-${index}`,
+          titre: project.title,
+          client: project.clientName,
+          montant: project.amount,
+          progression: project.progressPercentage,
+          prochaineLivraison: project.deadlineDescription,
+          clientPhoto:
+            "https://api.dicebear.com/7.x/avataaars/svg?seed=" +
+            encodeURIComponent(project.clientName || `client-${index}`),
+        }))
+      : collaborations.filter((c) => c.statut === "en_attente");
 
   // Map actionButtonType from API to form button type
   const mapActionButtonToFormType = (
@@ -467,7 +485,6 @@ function ProDashboard() {
     updateProProfileMutation.mutate(
       {
         actionButtonType: mapFormTypeToActionButton(carteForm.typeBouton),
-        isAvailable: carteForm.disponible,
         available: carteForm.disponible,
         avatarUrl: carteForm.photo,
         sector: carteForm.sector,
@@ -667,14 +684,18 @@ function ProDashboard() {
                       <span className="dash-activity-label">
                         Messages reçus
                       </span>
-                      <span className="dash-activity-value">23</span>
+                      <span className="dash-activity-value">
+                        {stats.messagesRecus}
+                      </span>
                     </div>
                   </div>
                   <div className="dash-activity-card">
                     <FiHeart className="dash-activity-icon" />
                     <div>
                       <span className="dash-activity-label">Favoris</span>
-                      <span className="dash-activity-value">156</span>
+                      <span className="dash-activity-value">
+                        {stats.favoritesCount}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -691,9 +712,7 @@ function ProDashboard() {
                   </button>
                 </div>
                 <div className="dash-projects-quick">
-                  {collaborations
-                    .filter((c) => c.statut === "en_attente")
-                    .map((collab) => (
+                  {ongoingProjects.map((collab) => (
                       <div key={collab.id} className="dash-project-quick-card">
                         <div className="dash-project-quick-header">
                           <img src={collab.clientPhoto} alt={collab.client} />

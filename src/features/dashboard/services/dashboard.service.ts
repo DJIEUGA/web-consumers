@@ -12,6 +12,7 @@ import {
   type StatsTodayDto,
   type StatsMonthDto,
   type StatsOverviewDto,
+  type DashboardOverviewApiDataDto,
   type DashboardAlertDto,
   type TransactionDto,
   type ProjectDto,
@@ -85,18 +86,34 @@ export async function fetchStatsMonth(): Promise<DashboardResponse<StatsMonthDto
  * @pro @enterprise
  */
 export async function fetchStatsOverview(): Promise<DashboardResponse<StatsOverviewDto>> {
-  // TODO: Backend to implement GET /dashboard/stats/overview
+  const rawResponse: unknown = await axios.get<DashboardResponse<DashboardOverviewApiDataDto>>(
+    DASHBOARD_ENDPOINTS.STATS_OVERVIEW
+  );
+
+  const directEnvelope = rawResponse as DashboardResponse<DashboardOverviewApiDataDto>;
+  const wrappedEnvelope = (rawResponse as { data?: DashboardResponse<DashboardOverviewApiDataDto> })?.data;
+
+  const envelope =
+    directEnvelope && typeof directEnvelope.success === 'boolean' && directEnvelope.data
+      ? directEnvelope
+      : wrappedEnvelope;
+
+  const payload = envelope?.data;
+
   return {
-    success: true,
+    success: envelope?.success ?? false,
+    message: envelope?.message,
     data: {
-      gainsTotal: 425000,
-      projetsEnCours: 3,
-      projetsRealises: 23,
-      noteMoyenne: 4.9,
-      vuesProfile: 1234,
-      messagesNonLus: 5,
+      gainsTotal: payload?.totalEarnings ?? 0,
+      projetsEnCours: payload?.activeProjectsCount ?? 0,
+      projetsRealises: payload?.completedProjectsCount ?? 0,
+      noteMoyenne: 0,
+      vuesProfile: payload?.profileViews ?? 0,
+      messagesNonLus: payload?.messagesReceived ?? 0,
+      messagesRecus: payload?.messagesReceived ?? 0,
+      favoritesCount: payload?.favoritesCount ?? 0,
+      ongoingProjects: payload?.ongoingProjects ?? [],
     },
-    message: 'Mock data - backend not implemented',
   };
 }
 
