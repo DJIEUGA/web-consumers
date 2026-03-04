@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../stores/auth.store';
 import '../styles/Home.css';
 import SearchBar from '../../../components/shared/SearchBar';
@@ -66,7 +66,7 @@ export const Home = () => {
           </div>
 
           <div className="logo-container">
-            <img src={logo} alt="Jobty" className="logo-image" />
+            <Logo alt="Jobty" className="logo-image" />
           </div>
 
           <SearchBar

@@ -22,7 +22,7 @@ import {
   FiFileText,
 } from "react-icons/fi";
 import { COLORS } from "../../../styles/colors";
-import logo from "../../../assets/logo.png";
+import Logo from "@/components/shared/Logo";
 import "../styles/Connexion.css";
 
 export const Connexion = () => {
@@ -378,7 +378,7 @@ export const Connexion = () => {
       <div className="connexion-card">
         {/* Logo */}
         <div className="connexion-logo">
-          <img src={logo} alt="Jobty" />
+          <Logo alt="Jobty" />
         </div>
         {/* Titre */}
         <h1 className="connexion-title">

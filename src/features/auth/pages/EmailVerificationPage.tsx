@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useConfirmEmail } from "@/features/auth/services/auth.service.ts";
 import { Button, Card, CardContent, CardTitle } from "@/components/ui";
-import logo from "@/assets/logo.png";
+import Logo from "@/components/shared/Logo";
 
 const EmailVerificationPage = () => {
   const navigate = useNavigate();
@@ -83,7 +83,7 @@ const EmailVerificationPage = () => {
         <Card className="connexion-card">
           <CardContent className="flex flex-col items-center px-9 pb-9 pt-10 text-center">
             <div className="flex justify-center" style={{marginBottom: "20px"}} >
-              <img src={logo} alt="Jobty" className="h-12 w-auto" />
+              <Logo alt="Jobty" className="h-12 w-auto" />
             </div>
             <div className=" flex h-14 w-14 items-center justify-center rounded-full bg-cyan-100" style={{marginBottom: "20px"}}>
               <svg

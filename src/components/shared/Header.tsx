@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMenu, FiUser } from 'react-icons/fi';
-import logo from '../../assets/logo.png';
+import Logo from './Logo';
 
 interface HeaderProps {
   onOpenMenu?: () => void;
@@ -14,7 +14,7 @@ const Header: React.FC<HeaderProps> = ({ onOpenMenu }) => {
     <header className="marketplace-header">
       <div className="header-content">
         <div className="header-logo" onClick={() => navigate('/')}> 
-          <img src={logo} alt="Jobty" />
+          <Logo alt="Jobty" />
         </div>
 
         <nav className="header-nav desktop-nav">

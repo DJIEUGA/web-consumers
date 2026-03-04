@@ -20,7 +20,7 @@ import {
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp, FaGraduationCap } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
-import logo from '../../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../stores/auth.store';
 import { resolveAvatarUrl } from '@/utils/avatar';
 import '../styles/jobexperience/style.css';
@@ -400,7 +400,7 @@ export const JobExperience = () => {
       <header className="jobexp-header">
         <div className="jobexp-header-content">
           <div className="jobexp-logo" onClick={() => navigate('/')}>
-            <img src={logo} alt="Jobty" />
+            <Logo alt="Jobty" />
           </div>
 
           <nav className="jobexp-nav desktop-only">
@@ -435,7 +435,7 @@ export const JobExperience = () => {
       {/* Menu mobile */}
       <div className={`jobexp-sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="jobexp-sidebar-header">
-          <img src={logo} alt="Jobty" className="jobexp-sidebar-logo" />
+          <Logo alt="Jobty" className="jobexp-sidebar-logo" />
           <button className="jobexp-close-btn" onClick={closeMenu} aria-label="Fermer">
             <FiX />
           </button>

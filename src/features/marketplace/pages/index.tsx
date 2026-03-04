@@ -23,7 +23,7 @@ import {
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
-import logo from '@/assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import { usePublicProfiles } from '../hooks/usePublicProfiles';
 import { mapPublicProfileToFreelanceCard } from '../utils/profileMapper';
 import type { PublicProfile } from '../types/publicProfile.d';
@@ -316,7 +316,7 @@ export const Marketplace = () =>{
             className="header-logo"
             onClick={() => navigate('/')}
           >
-            <img src={logo} alt="Jobty" />
+            <Logo alt="Jobty" />
           </div>
 
           {/* Navigation Desktop */}
@@ -399,7 +399,7 @@ export const Marketplace = () =>{
       {/* Menu mobile */}
       <div className={`sidebar-menu ${menuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <img src={logo} alt="Jobty" className="sidebar-logo" />
+          <Logo alt="Jobty" className="sidebar-logo" />
           <button 
             className="close-btn"
             onClick={closeMenu}

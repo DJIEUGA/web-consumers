@@ -5,7 +5,7 @@ import {
   FiMenu, FiX, FiUser, FiFilter, FiChevronLeft, FiChevronRight
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
-import logo from '../../../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../../stores/auth.store';
 import { resolveAvatarUrl } from '@/utils/avatar';
 import '../../styles/search/style.css';
@@ -308,7 +308,7 @@ const ResultListItem = ({ result }) => (
       <header className="search-header">
         <div className="search-header-content">
           <div className="search-logo" onClick={() => navigate('/')}>
-            <img src={logo} alt="Jobty" />
+            <Logo alt="Jobty" />
           </div>
 
           <nav className="search-nav desktop-only">
@@ -342,7 +342,7 @@ const ResultListItem = ({ result }) => (
       {/* SIDEBAR MOBILE */}
       <div className={`search-sidebar ${menuOpen ? 'open' : ''}`}>
         <div className="search-sidebar-header">
-          <img src={logo} alt="Jobty" className="search-sidebar-logo" />
+          <Logo alt="Jobty" className="search-sidebar-logo" />
           <button className="search-close-btn" onClick={closeMenu}>
             <FiX />
           </button>

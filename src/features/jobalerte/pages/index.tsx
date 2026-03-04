@@ -36,7 +36,7 @@ import {
   FaWhatsapp 
 } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
-import logo from '../../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../stores/auth.store';
 import { resolveAvatarUrl } from '@/utils/avatar';
 import '../styles/JobAlerte.css';
@@ -248,7 +248,7 @@ export const JobAlerte = () => {
       <header className="marketplace-header">
         <div className="header-content">
           <div className="header-logo" onClick={() => navigate('/')}>
-            <img src={logo} alt="Jobty" />
+            <Logo alt="Jobty" />
           </div>
 
           <nav className="header-nav desktop-nav">
@@ -283,7 +283,7 @@ export const JobAlerte = () => {
       {/* Menu mobile */}
       <div className={`sidebar-menu ${menuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <img src={logo} alt="Jobty" className="sidebar-logo" />
+          <Logo alt="Jobty" className="sidebar-logo" />
           <button className="close-btn" onClick={closeMenu} aria-label="Fermer">
             <FiX />
           </button>

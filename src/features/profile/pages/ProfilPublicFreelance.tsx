@@ -8,7 +8,7 @@ import {
   FiCamera, FiEdit3
 } from 'react-icons/fi';
 import { FaHandshake, FaFacebookF, FaTwitter, FaLinkedinIn, FaWhatsapp } from 'react-icons/fa';
-import logo from '../../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import {
   usePublicProfileById,
   usePublicProfiles,
@@ -373,7 +373,7 @@ function ProfilPublicFreelance() {
         <header className="profil-public-header">
           <div className="profil-public-header-content">
             <div className="profil-public-logo" onClick={() => navigate('/')}>
-              <img src={logo} alt="Jobty" />
+              <Logo alt="Jobty" />
             </div>
             <div className="profil-public-header-actions">
               <button className="profil-public-back-btn" onClick={handleBack}>
@@ -408,7 +408,7 @@ function ProfilPublicFreelance() {
         <header className="profil-public-header">
           <div className="profil-public-header-content">
             <div className="profil-public-logo" onClick={() => navigate('/')}>
-              <img src={logo} alt="Jobty" />
+              <Logo alt="Jobty" />
             </div>
             <div className="profil-public-header-actions">
               <button className="profil-public-back-btn" onClick={handleBack}>
@@ -448,7 +448,7 @@ function ProfilPublicFreelance() {
       <header className="profil-public-header">
         <div className="profil-public-header-content">
           <div className="profil-public-logo" onClick={() => navigate('/')}>
-            <img src={logo} alt="Jobty" />
+            <Logo alt="Jobty" />
           </div>
 
           <div className="profil-public-header-actions">
@@ -471,7 +471,7 @@ function ProfilPublicFreelance() {
           <div className="profil-public-overlay" onClick={closeMenu}></div>
           <div className="profil-public-sidebar">
             <div className="profil-public-sidebar-header">
-              <img src={logo} alt="Jobty" />
+              <Logo alt="Jobty" />
               <button onClick={closeMenu}><FiX /></button>
             </div>
             <nav className="profil-public-sidebar-nav">
@@ -923,7 +923,7 @@ function ProfilPublicFreelance() {
       <footer className="profil-public-footer">
         <div className="profil-public-footer-content">
           <div className="profil-public-footer-left">
-            <img src={logo} alt="Jobty" className="profil-public-footer-logo" />
+            <Logo alt="Jobty" className="profil-public-footer-logo" />
             <p>La plateforme qui connecte talents et opportunités en Afrique</p>
           </div>
           <div className="profil-public-footer-links">

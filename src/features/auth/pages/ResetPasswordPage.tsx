@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useResetPassword } from "@/features/auth/services/auth.service";
-import logo from "@/assets/logo.png";
+import Logo from "@/components/shared/Logo";
 import { FiEye, FiEyeOff, FiKey, FiLock } from "react-icons/fi";
 import { COLORS } from "@/styles/colors";
 
@@ -66,7 +66,7 @@ const ResetPasswordPage = () => {
     <div className="connexion-container">
       <div className="connexion-card">
         <div className="connexion-logo">
-          <img src={logo} alt="Jobty" className="w-auto" />
+          <Logo alt="Jobty" className="w-auto" />
         </div>
 
         <h1 className="connexion-title">Nouveau mot de passe</h1>

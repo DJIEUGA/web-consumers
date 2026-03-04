@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 
 interface Props {
   open: boolean;
@@ -13,7 +13,7 @@ const SidebarMenu: React.FC<Props> = ({ open, onClose }) => {
   return (
     <div className={`sidebar-menu ${open ? 'open' : ''}`}>
       <div className="sidebar-header">
-        <img src={logo} alt="Jobty" className="sidebar-logo" />
+        <Logo alt="Jobty" className="sidebar-logo" />
         <button className="close-btn" onClick={onClose} aria-label="Fermer">✕</button>
       </div>
 

@@ -39,7 +39,7 @@ import { HiOutlineSparkles } from 'react-icons/hi';
 import { FaWhatsapp } from 'react-icons/fa';
 import mapboxgl from 'mapbox-gl';
 import { COLORS } from '../../../../styles/colors';
-import logo from '../../../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../../stores/auth.store';
 import { resolveAvatarUrl } from '@/utils/avatar';
 import '../../styles/decouverte/style.css';
@@ -318,7 +318,7 @@ export const Decouverte = () => {
             className="header-logo"
             onClick={() => navigate('/')}
           >
-            <img src={logo} alt="Jobty" />
+            <Logo alt="Jobty" />
           </div>
 
           {/* Navigation Desktop */}
@@ -399,7 +399,7 @@ export const Decouverte = () => {
       {/* Menu burger latéral pour mobile */}
       <div className={`sidebar-menu ${menuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <img src={logo} alt="Jobty" className="sidebar-logo" />
+          <Logo alt="Jobty" className="sidebar-logo" />
           <button 
             className="close-btn"
             onClick={closeMenu}

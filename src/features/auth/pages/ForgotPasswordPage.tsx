@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useForgotPassword } from "@/features/auth/services/auth.service";
-import logo from "@/assets/logo.png";
+import Logo from "@/components/shared/Logo";
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const ForgotPasswordPage = () => {
     <div className="connexion-container">
       <div className="connexion-card">
         <div className="connexion-logo">
-          <img src={logo} alt="Jobty" className="h-11 w-auto" />
+          <Logo alt="Jobty" className="h-11 w-auto" />
         </div>
 
         <h1 className="connexion-title">Mot de passe oublié</h1>

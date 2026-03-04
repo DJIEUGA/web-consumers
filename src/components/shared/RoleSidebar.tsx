@@ -20,7 +20,7 @@ import {
 import { FaBalanceScale, FaUserShield, FaHandshake, FaBullhorn } from "react-icons/fa";
 import type { UserRole } from "@/stores/auth.store";
 import { useAuthStore } from "@/stores/auth.store";
-import logo from "../../assets/logo.png";
+import Logo from "@/components/shared/Logo";
 
 type SidebarVariant = "admin" | "dash";
 
@@ -131,8 +131,7 @@ const RoleSidebar: React.FC<RoleSidebarProps> = ({
     <>
       <aside className={`${sidebarClass} ${open ? "open" : ""}`}>
         <div className={headerClass}>
-          <img
-            src={logo}
+          <Logo
             alt="Jobty"
             className={logoClass}
             onClick={() => navigate("/")}

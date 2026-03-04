@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp, FaHandshake, FaRocket } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
-import logo from '../../../assets/logo.png';
+import Logo from '@/components/shared/Logo';
 import '../styles/collaboration/style.css';
 
 export const CollaborationSpace = ()=> {
@@ -292,7 +292,7 @@ export const CollaborationSpace = ()=> {
       <header className="collab-header">
         <div className="collab-header-content">
           <div className="collab-logo" onClick={() => navigate('/')}>
-            <img src={logo} alt="Jobty" />
+            <Logo alt="Jobty" />
           </div>
 
           <div className="collab-header-center">
@@ -757,7 +757,7 @@ export const CollaborationSpace = ()=> {
 
                 <div className="collab-contrat-card">
                   <div className="collab-contrat-header">
-                    <img src={logo} alt="Jobty" className="collab-contrat-logo" />
+                    <Logo alt="Jobty" className="collab-contrat-logo" />
                     <div>
                       <h3>Contrat de prestation Jobty</h3>
                       <span>Généré automatiquement le {new Date().toLocaleDateString('fr-FR')}</span>
