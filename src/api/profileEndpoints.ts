@@ -25,6 +25,14 @@ export const PROFILE_ENDPOINTS = {
   CHANGE_PASSWORD: '/auth/password/change',
   DELETE: '/profiles/me/delete',
 
+  // Services management (Pro)
+  SERVICES: '/profiles/me/services',
+  SERVICE_BY_ID: (id: string) => `/profiles/me/services/${id}`,
+
+  // Portfolio management (Pro)
+  PORTFOLIO: '/profiles/me/portfolio',
+  PORTFOLIO_BY_ID: (id: string) => `/profiles/me/portfolio/${id}`,
+
   // Public listing / search
   SEARCH: '/profiles',
   FOLLOW: '/profiles/:id/follow',
@@ -95,4 +103,33 @@ export interface ProfileSearchParams {
   role?: string;
   page?: number;
   pageSize?: number;
+}
+/**
+ * Service Management DTOs (Pro)
+ */
+export interface CreateServiceDto {
+  title: string;
+  imageUrl: string;
+  pricingMode: string; // e.g., "fixed", "hourly", "package"
+  price: number;
+  duration: string; // e.g., "1 day", "3 days", "1 week"
+}
+
+export interface UpdateServiceDto {
+  title: string;
+  imageUrl: string;
+  pricingMode: string;
+  price: number;
+  duration: string;
+}
+
+/**
+ * Portfolio Management DTOs (Pro)
+ */
+export interface CreatePortfolioDto {
+  title: string;
+  description: string;
+  imageUrl: string;
+  projectLink: string;
+  tools: string[];
 }

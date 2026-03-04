@@ -7,6 +7,7 @@
  */
 
 import axios from '../../../api/axios';
+import { PROFILE_ENDPOINTS } from '../../../api/profileEndpoints';
 import {
   DASHBOARD_ENDPOINTS,
   type StatsTodayDto,
@@ -33,6 +34,75 @@ interface DashboardResponse<T> {
   data: T;
   message?: string;
 }
+
+const extractEnvelope = <T>(rawResponse: unknown): DashboardResponse<T> | null => {
+  const directEnvelope = rawResponse as DashboardResponse<T>;
+  if (directEnvelope && typeof directEnvelope.success === 'boolean') {
+    return directEnvelope;
+  }
+
+  const wrappedEnvelope = (rawResponse as { data?: DashboardResponse<T> })?.data;
+  if (wrappedEnvelope && typeof wrappedEnvelope.success === 'boolean') {
+    return wrappedEnvelope;
+  }
+
+  return null;
+};
+
+const normalizeService = (service: any): ServiceDto => {
+  const id = service.id || service._id || '';
+  const title = service.title || service.titre || '';
+  const description = service.description || '';
+  const image = service.image || service.imageUrl || '';
+  const deliveryTime = service.deliveryTime || service.duration || service.delai || '';
+  const price = Number(service.price ?? service.prix ?? 0);
+
+  const rawStatus =
+    service.status || service.statut || service.isActive || service.active || service.actif;
+
+  const isServiceActive =
+    rawStatus === true ||
+    rawStatus === 'actif' ||
+    rawStatus === 'active' ||
+    rawStatus === 'published';
+
+  return {
+    id,
+    title,
+    description,
+    image,
+    deliveryTime,
+    price,
+    categorie: service.categorie || service.category || 'Général',
+    views: Number(service.views ?? service.vues ?? 0),
+    commandes: Number(service.commandes ?? service.orders ?? 0),
+    active: isServiceActive,
+    isActive: isServiceActive ? 'actif' : 'pause',
+  } as ServiceDto;
+};
+
+const normalizePortfolioItem = (post: any): PostDto => {
+  const id = post.id || post._id || '';
+  const title = post.titre || post.title || '';
+  const description = post.description || '';
+  const url = post.projectLink || post.url || '';
+  const image = post.imageUrl || post.image || (Array.isArray(post.medias) ? post.medias[0] : '');
+  const createdAt = post.createdAt || post.date || new Date().toISOString();
+
+  return {
+    id,
+    titre: title,
+    description,
+    url,
+    medias: image ? [image] : [],
+    type: image ? 'image' : 'link',
+    categorie: post.categorie || post.category || 'Portfolio',
+    date: createdAt,
+    likes: Number(post.likes ?? 0),
+    commentaires: Number(post.commentaires ?? post.comments ?? 0),
+    statut: post.statut || post.status || 'publie',
+  } as PostDto;
+};
 
 /* ========================================
  * STATISTICS
@@ -412,25 +482,22 @@ export async function fetchPayments(): Promise<DashboardResponse<PaymentDto[]>> 
  * @pro @enterprise
  */
 export async function fetchServices(): Promise<DashboardResponse<ServiceDto[]>> {
-  // TODO: Backend to implement GET /dashboard/services
+  const rawResponse: unknown = await axios.get(PROFILE_ENDPOINTS.SERVICES);
+  const envelope = extractEnvelope<any[]>(rawResponse);
+
+  if (envelope) {
+    const rows = Array.isArray(envelope.data) ? envelope.data : [];
+    return {
+      success: envelope.success,
+      message: envelope.message,
+      data: rows.map(normalizeService),
+    };
+  }
+
+  const rows = Array.isArray(rawResponse) ? rawResponse : [];
   return {
     success: true,
-    data: [
-      {
-          id: 'SVC-001',
-          titre: 'Développement Web',
-          categorie: 'Développement',
-          prix: 50000,
-          statut: 'actif',
-          vues: 234,
-          commandes: 12,
-          image: undefined,
-          actif: undefined,
-          description: undefined,
-          delai: undefined
-      },
-    ],
-    message: 'Mock data - backend not implemented',
+    data: rows.map(normalizeService),
   };
 }
 
@@ -443,25 +510,22 @@ export async function fetchServices(): Promise<DashboardResponse<ServiceDto[]>> 
  * @pro @enterprise
  */
 export async function fetchPosts(): Promise<DashboardResponse<PostDto[]>> {
-  // TODO: Backend to implement GET /dashboard/posts
+  const rawResponse: unknown = await axios.get(PROFILE_ENDPOINTS.PORTFOLIO);
+  const envelope = extractEnvelope<any[]>(rawResponse);
+
+  if (envelope) {
+    const rows = Array.isArray(envelope.data) ? envelope.data : [];
+    return {
+      success: envelope.success,
+      message: envelope.message,
+      data: rows.map(normalizePortfolioItem),
+    };
+  }
+
+  const rows = Array.isArray(rawResponse) ? rawResponse : [];
   return {
     success: true,
-    data: [
-      {
-          id: 'POST-001',
-          titre: 'Mon dernier projet',
-          categorie: 'Portfolio',
-          date: '01/01/2025',
-          likes: 45,
-          commentaires: 12,
-          statut: 'publie',
-          type: '',
-          medias: undefined,
-          url: '',
-          description: undefined
-      },
-    ],
-    message: 'Mock data - backend not implemented',
+    data: rows.map(normalizePortfolioItem),
   };
 }
 

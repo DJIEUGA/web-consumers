@@ -60,10 +60,12 @@ export const DASHBOARD_ENDPOINTS = {
   // Services (pro/enterprise)
   SERVICES: '/dashboard/services',
   SERVICE_BY_ID: '/dashboard/services/:id',
+  ME_SERVICES: '/profiles/me/services',
 
   // Posts (pro/enterprise)
   POSTS: '/dashboard/posts',
   POST_BY_ID: '/dashboard/posts/:id',
+  ME_PORTFOLIO: '/profiles/me/portfolio',
 
   // Collaborations (pro/enterprise)
   COLLABORATIONS: '/dashboard/collaborations',
@@ -294,15 +296,15 @@ export interface PaymentDto {
  */
 export interface ServiceDto {
   image: any;
-  actif: any;
-  description: ReactNode;
-  delai: ReactNode;
+  active: any;
+  description: string;
+  deliveryTime: string;
   id: string;
-  titre: string;
+  title: string;
   categorie: string;
-  prix: number;
-  statut?: 'actif' | 'pause' | 'brouillon';
-  vues?: number;
+  price: number;
+  isActive?: 'actif' | 'pause' | 'brouillon';
+  views?: number;
   commandes?: number;
 }
 

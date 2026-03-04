@@ -1173,25 +1173,25 @@ function ProDashboard() {
                       style={{ backgroundImage: `url(${service.image})` }}
                     >
                       <span
-                        className={`dash-service-status ${service.actif ? "actif" : "inactif"}`}
+                        className={`dash-service-status ${service.active ? "actif" : "inactif"}`}
                       >
-                        {service.actif ? "Actif" : "Inactif"}
+                        {service.active ? "Actif" : "Inactif"}
                       </span>
                     </div>
                     <div className="dash-service-content">
-                      <h3>{service.titre}</h3>
+                      <h3>{service.title}</h3>
                       <p>{service.description}</p>
                       <div className="dash-service-meta">
                         <span className="dash-service-prix">
-                          {service.prix} FCFA
+                          {service.price} FCFA
                         </span>
                         <span className="dash-service-delai">
-                          <FiClock /> {service.delai}
+                          <FiClock /> {service.deliveryTime}
                         </span>
                       </div>
                       <div className="dash-service-stats">
                         <span>
-                          <FiEye /> {service.vues} vues
+                          <FiEye /> {service.views} vues
                         </span>
                         <span>
                           <FiBriefcase /> {service.commandes} commandes

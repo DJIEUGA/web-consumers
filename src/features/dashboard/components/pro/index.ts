@@ -13,3 +13,4 @@ export { default as BillingTab } from "./BillingTab";
 export { default as SettingsTab } from "./SettingsTab";
 export { default as AdsTab } from "./AdsTab";
 export { default as AnalyticsTab } from "./AnalyticsTab";
+export { default as ConfirmActionModal } from "./ConfirmActionModal";
