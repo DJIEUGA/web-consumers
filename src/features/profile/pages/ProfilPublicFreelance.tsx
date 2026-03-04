@@ -248,7 +248,7 @@ function ProfilPublicFreelance() {
             service.price !== null && service.price !== undefined
               ? 'fixe'
               : 'devis',
-          delai: toStringValue(service.deliveryTime || service.delay || 'Variable'),
+          delai: toStringValue(service.duration || service.delay || 'Variable'),
           image:
             toStringValue(service.imageUrl || service.image) ||
             'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600',

@@ -292,7 +292,7 @@ export const CollaborationSpace = ()=> {
       <header className="collab-header">
         <div className="collab-header-content">
           <div className="collab-logo" onClick={() => navigate('/')}>
-            <Logo alt="Jobty" />
+            <Logo alt="Jobty"  />
           </div>
 
           <div className="collab-header-center">
