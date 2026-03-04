@@ -135,7 +135,7 @@ const RoleSidebar: React.FC<RoleSidebarProps> = ({
             alt="Jobty"
             className={logoClass}
             onClick={() => navigate("/")}
-            style={{ cursor: "pointer" }}
+            style={{ width:'120px', height: 'auto',cursor: "pointer" }}
           />
           <button className={closeClass} onClick={onClose}>
             <FiX />

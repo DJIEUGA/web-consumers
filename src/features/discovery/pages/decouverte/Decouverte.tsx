@@ -315,10 +315,9 @@ export const Decouverte = () => {
       <header className="navbar-decouverte">
         <div className="header-content">
           <div 
-            className="header-logo"
             onClick={() => navigate('/')}
           >
-            <Logo alt="Jobty" />
+            <Logo alt="Jobty" style={{width: '140px'}} />
           </div>
 
           {/* Navigation Desktop */}

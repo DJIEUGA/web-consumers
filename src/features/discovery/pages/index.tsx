@@ -66,7 +66,7 @@ export const Home = () => {
           </div>
 
           <div className="logo-container">
-            <Logo alt="Jobty" className="logo-image" />
+            <Logo alt="Jobty" style={{width: '260px'}} />
           </div>
 
           <SearchBar

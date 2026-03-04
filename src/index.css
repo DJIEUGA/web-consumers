@@ -138,6 +138,11 @@ body {
   min-height: 100vh;
 }
 
+::selection {
+  background: hsl(var(--primary) / 0.25);
+  color: hsl(var(--foreground));
+}
+
 #root {
   width: 100%;
   min-height: 100vh;

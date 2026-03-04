@@ -58,8 +58,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           onClick={action.onClick}
           style={{
             padding: '10px 24px',
-            backgroundColor: '#4f46e5',
-            color: 'white',
+            backgroundColor: '#2cc0c3',
+            color: '#fff',
             border: 'none',
             borderRadius: '8px',
             cursor: 'pointer',
@@ -68,10 +68,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             transition: 'background-color 0.2s',
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#4338ca';
+            e.currentTarget.style.backgroundColor = '#fff';
+            e.currentTarget.style.border = '1px solid #2cc0c3';
+            e.currentTarget.style.color = '#2cc0c3';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = '#4f46e5';
+            e.currentTarget.style.backgroundColor = '#2cc0c3';
+            e.currentTarget.style.borderColor = 'transparent';
+            e.currentTarget.style.border = 'none';
+            e.currentTarget.style.color = '#fff';
           }}
         >
           {action.label}

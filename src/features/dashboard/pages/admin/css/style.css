@@ -2024,9 +2024,3 @@
 html {
   scroll-behavior: smooth;
 }
-
-/* Selection */
-::selection {
-  background: var(--turquoise-light);
-  color: var(--turquoise-dark);
-}

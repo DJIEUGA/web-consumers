@@ -378,7 +378,7 @@ export const Connexion = () => {
       <div className="connexion-card">
         {/* Logo */}
         <div className="connexion-logo">
-          <Logo alt="Jobty" />
+          <Logo alt="Jobty" style={{width: '250px'}} />
         </div>
         {/* Titre */}
         <h1 className="connexion-title">

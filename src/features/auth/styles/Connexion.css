@@ -82,11 +82,11 @@
 /* Logo */
 .connexion-logo {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 5px;
 }
 
 .connexion-logo img {
-  max-width: 150px;
+  max-width: 220px;
   height: auto;
   margin: 0 auto;
 }

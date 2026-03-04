@@ -247,8 +247,8 @@ export const JobAlerte = () => {
       {/* HEADER */}
       <header className="marketplace-header">
         <div className="header-content">
-          <div className="header-logo" onClick={() => navigate('/')}>
-            <Logo alt="Jobty" />
+          <div onClick={() => navigate('/')}>
+            <Logo alt="Jobty" style={{width: '140px'}} />
           </div>
 
           <nav className="header-nav desktop-nav">

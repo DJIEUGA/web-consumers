@@ -189,11 +189,10 @@ function Portfolio() {
       {/* Header / Navigation */}
       <header className="navbar-portfolio">
         <div className="header-content">
-          <div 
-            className="header-logo"
+          <div
             onClick={() => navigate('/')}
           >
-            <Logo alt="Jobty" />
+            <Logo alt="Jobty" style={{width: '140px'}} />
           </div>
 
           {/* Navigation Desktop */}

@@ -308,7 +308,7 @@ const ResultListItem = ({ result }) => (
       <header className="search-header">
         <div className="search-header-content">
           <div className="search-logo" onClick={() => navigate('/')}>
-            <Logo alt="Jobty" />
+            <Logo alt="Jobty" style={{width: '140px'}} />
           </div>
 
           <nav className="search-nav desktop-only">
