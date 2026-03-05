@@ -298,7 +298,7 @@ export interface ServiceDto {
   image: any;
   active: any;
   description: string;
-  deliveryTime: string;
+  deliveryTime: number;
   id: string;
   title: string;
   categorie: string;

@@ -731,7 +731,7 @@ function ProfilPublicFreelance() {
                           </div>
                           <div className="profil-service-delai">
                             <FiClock />
-                            <span>{service.delai}</span>
+                            <span className='mr-4'>{service.delai} jour(s)</span>
                           </div>
                         </div>
                       </div>

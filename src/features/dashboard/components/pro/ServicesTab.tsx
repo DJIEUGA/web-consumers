@@ -25,7 +25,7 @@ interface ServiceFormData {
   imageUrl: string;
   pricingMode: string;
   price: number;
-  duration: string;
+  duration: number;
 }
 
 interface ServiceModalProps {
@@ -145,14 +145,15 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
           </div>
 
           <div className="dash-service-modal-field">
-            <label className="dash-service-modal-label">Délai de livraison</label>
+            <label className="dash-service-modal-label">Délai de livraison (en jours)</label>
             <input
-              type="text"
+              type="number"
+              min={1}
               required
               className="dash-service-modal-input"
               value={formData.duration}
-              onChange={(e) => onChange({ ...formData, duration: e.target.value })}
-              placeholder="Ex: 3 jours, 1 semaine"
+              onChange={(e) => onChange({ ...formData, duration: Number(e.target.value) })}
+              placeholder="Ex: 3"
             />
           </div>
 
@@ -200,7 +201,7 @@ const ServicesTab: React.FC = () => {
     imageUrl: "",
     pricingMode: "fixed",
     price: 0,
-    duration: "",
+    duration: 1,
   });
 
   const createMutation = useCreateService();
@@ -213,7 +214,7 @@ const ServicesTab: React.FC = () => {
       imageUrl: "",
       pricingMode: "fixed",
       price: 0,
-      duration: "",
+      duration: 1,
     });
     setIsCreateModalOpen(true);
   };
@@ -225,7 +226,7 @@ const ServicesTab: React.FC = () => {
       imageUrl: service.image || "",
       pricingMode: "fixed", // Default if not available
       price: service.price || 0,
-      duration: service.deliveryTime || "",
+      duration: service.deliveryTime || 1,
     });
     setIsEditModalOpen(true);
   };
