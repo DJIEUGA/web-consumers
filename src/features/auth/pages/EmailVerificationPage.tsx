@@ -20,7 +20,7 @@ const EmailVerificationPage = () => {
 
     hasConfirmedRef.current = true;
     confirmMutation.mutate(token);
-  }, [token]);
+  }, [confirmMutation, token]);
 
   useEffect(() => {
     if (!confirmMutation.isSuccess) {

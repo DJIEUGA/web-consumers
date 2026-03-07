@@ -24,6 +24,7 @@ import UserDashboard from "./features/dashboard/pages/index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import SearchResults from "./features/discovery/pages/search/SearchResults.tsx";
 import { useAuthProfileSync } from "./features/auth/hooks/useAuthProfileSync";
+import InstallAppPrompt from "./components/shared/InstallAppPrompt";
 
 function AuthProfileBootstrap() {
   useAuthProfileSync();
@@ -71,6 +72,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <Router>
           <AuthProfileBootstrap />
+          <InstallAppPrompt />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/decouverte" element={<Decouverte />} />
