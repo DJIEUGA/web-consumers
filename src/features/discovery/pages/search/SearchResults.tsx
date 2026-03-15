@@ -1,22 +1,136 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   FiSearch, FiChevronDown, FiMapPin, FiStar, FiCheckCircle,
-  FiMenu, FiX, FiUser, FiFilter, FiChevronLeft, FiChevronRight
+  FiMenu, FiX, FiUser, FiFilter, FiChevronLeft, FiChevronRight, FiAlertCircle
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import Logo from '@/components/shared/Logo';
+import EmptyState from '@/components/ui/EmptyState';
+import ErrorState from '@/components/ui/ErrorState';
 import { useAuthStore } from '../../../../stores/auth.store';
 import { resolveAvatarUrl } from '@/utils/avatar';
+import { usePublicProfileSearch } from '../../hooks/usePublicProfileSearch';
+import type { PublicSearchProfileItem } from '../../types/search';
+import { resolveCurrentLocation } from '../../utils/location';
+import { inferSectorFromQuery } from '../../utils/professionHints';
+import professionSectorMap from '../../data/profession-sector-map.json';
+import countryTownMap from '../../data/country-town-map.json';
 import '../../styles/search/style.css';
+
+const DEFAULT_PAGE = 0;
+const DEFAULT_SIZE = 12;
+
+interface SectorMapEntry {
+  sector: string;
+  keywords: string[];
+}
+
+interface CountryTownEntry {
+  country: string;
+  towns: string[];
+}
+
+const normalizeText = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const sortByLabel = (values: string[]): string[] =>
+  [...values].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+const readNumberParam = (value: string | null, fallback: number): number => {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const extractSmartQuery = (rawQuery: string) => {
+  const trimmed = rawQuery.trim();
+  if (!trimmed) {
+    return { query: '', inferredCity: '', inferredSector: '' };
+  }
+
+  const separators = [' à ', ' a '];
+  for (const separator of separators) {
+    const idx = trimmed.toLowerCase().lastIndexOf(separator);
+    if (idx > 0) {
+      const query = trimmed.slice(0, idx).trim();
+      const inferredCity = trimmed.slice(idx + separator.length).trim();
+      if (query && inferredCity) {
+        return { query, inferredCity, inferredSector: inferSectorFromQuery(query) };
+      }
+    }
+  }
+
+  return { query: trimmed, inferredCity: '', inferredSector: inferSectorFromQuery(trimmed) };
+};
+
+const buildFiltersFromParams = (params: URLSearchParams) => ({
+  search: params.get('q') || '',
+  secteur: params.get('sector') || '',
+  pays: params.get('country') || '',
+  ville: params.get('city') || '',
+  type: params.get('type') || '',
+  page: readNumberParam(params.get('page'), DEFAULT_PAGE),
+  size: readNumberParam(params.get('size'), DEFAULT_SIZE),
+});
+
+const buildQueryParams = (filters: {
+  search: string;
+  secteur: string;
+  pays: string;
+  ville: string;
+  type: string;
+  page: number;
+  size: number;
+}) => {
+  const params = new URLSearchParams();
+  if (filters.search.trim()) params.set('q', filters.search.trim());
+  if (filters.secteur.trim()) params.set('sector', filters.secteur.trim());
+  if (filters.pays.trim()) params.set('country', filters.pays.trim());
+  if (filters.ville.trim()) params.set('city', filters.ville.trim());
+  if (filters.type.trim()) params.set('type', filters.type.trim());
+  params.set('page', String(filters.page));
+  params.set('size', String(filters.size));
+  return params;
+};
+
+const normalizeResult = (item: PublicSearchProfileItem) => {
+  const displayName =
+    item.type === 'ENTERPRISE'
+      ? item.companyName || [item.firstName, item.lastName].filter(Boolean).join(' ').trim() || 'Entreprise'
+      : [item.firstName, item.lastName].filter(Boolean).join(' ').trim() || item.companyName || 'Freelance';
+
+  const type = item.type === 'ENTERPRISE' ? 'entreprise' : 'freelance';
+  const specialization = item.type === 'ENTERPRISE' ? item.sector || 'Entreprise' : item.specialization || item.sector || 'Professionnel';
+  const tags = [item.sector, item.specialization].filter(Boolean) as string[];
+
+  return {
+    id: item.userId,
+    type,
+    nom: displayName,
+    specialite: specialization,
+    ville: item.city || '',
+    pays: item.country || '',
+    photo: item.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${item.userId}`,
+    tags,
+    projetsCollaboration: item.reviewCount || 0,
+    note: item.averageRating || 0,
+    verified: item.verified,
+  };
+};
 
 function SearchResults() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const authUser = useAuthStore((state) => state.user);
   const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
-  const [searchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [locationResolved, setLocationResolved] = useState(false);
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
   const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
   const authAvatarUrl = resolveAvatarUrl(authUser);
@@ -26,122 +140,230 @@ function SearchResults() {
       state: !isAuthenticated ? { from: '/search' } : undefined,
     });
   };
-  
-  const [filters, setFilters] = useState({
-    search: searchParams.get('q') || '',
-    secteur: '',
-    pays: '',
-    ville: '',
-    type: '' // freelance ou entreprise
+
+  const activeFilters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
+  const [countryOverrideForTowns, setCountryOverrideForTowns] = useState<string | null>(null);
+  const selectedCountryForTowns = countryOverrideForTowns ?? activeFilters.pays;
+
+  const formResetKey = `${activeFilters.search}|${activeFilters.secteur}|${activeFilters.pays}|${activeFilters.ville}`;
+
+  useEffect(() => {
+    const hasLocationInParams = Boolean(activeFilters.pays.trim() && activeFilters.ville.trim());
+    if (hasLocationInParams) return;
+
+    let cancelled = false;
+
+    const initLocation = async () => {
+      const location = await resolveCurrentLocation(authUser || undefined);
+      if (cancelled) return;
+
+      if (location) {
+        const params = buildQueryParams({
+          search: activeFilters.search,
+          secteur: activeFilters.secteur,
+          pays: location.country,
+          ville: location.city,
+          type: activeFilters.type,
+          page: DEFAULT_PAGE,
+          size: activeFilters.size,
+        });
+        setSearchParams(params, { replace: true });
+      }
+
+      setLocationResolved(true);
+    };
+
+    initLocation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeFilters.pays,
+    activeFilters.ville,
+    activeFilters.search,
+    activeFilters.secteur,
+    activeFilters.type,
+    activeFilters.size,
+    authUser,
+    setSearchParams,
+  ]);
+
+  const requestPayload = useMemo(() => {
+    const smart = extractSmartQuery(activeFilters.search);
+    const resolvedCity = activeFilters.ville.trim() || smart.inferredCity;
+    const resolvedSector = activeFilters.secteur.trim() || smart.inferredSector;
+
+    return {
+      query: smart.query || undefined,
+      sector: resolvedSector || undefined,
+      country: activeFilters.pays.trim() || undefined,
+      city: resolvedCity || undefined,
+      page: activeFilters.page,
+      size: activeFilters.size,
+    };
+  }, [
+    activeFilters.search,
+    activeFilters.secteur,
+    activeFilters.pays,
+    activeFilters.ville,
+    activeFilters.page,
+    activeFilters.size,
+  ]);
+
+  const shouldWaitForLocation = !locationResolved && !activeFilters.pays && !activeFilters.ville;
+
+  const {
+    data: searchResponse,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = usePublicProfileSearch(requestPayload, {
+    enabled: !shouldWaitForLocation,
   });
 
-  // Données de résultats mockées
-  const results = [
-    {
-      id: 1,
-      type: 'freelance',
-      nom: 'Aïssatou Fatoumata',
-      specialite: 'Développeur front-end',
-      ville: 'Abidjan',
-      pays: 'Côte d\'Ivoire',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aissatou',
-      tags: ['UI/UX Design', 'Full Stack', 'Python'],
-      projetsCollaboration: 85,
-      note: 4.5,
-      verified: true
-    },
-    {
-      id: 2,
-      type: 'entreprise',
-      nom: 'CCA BANK',
-      secteur: 'Finance',
-      ville: 'Douala',
-      pays: 'Cameroun',
-      photo: 'https://api.dicebear.com/7.x/identicon/svg?seed=CCA',
-      tags: ['Carte visa', 'Crédit conso', 'Financement'],
-      projetsCollaboration: 15,
-      note: 4.0,
-      verified: false
-    },
-    {
-      id: 3,
-      type: 'entreprise',
-      nom: 'UBA BANK',
-      secteur: 'Finance',
-      ville: 'Abuja',
-      pays: 'Nigéria',
-      photo: 'https://api.dicebear.com/7.x/identicon/svg?seed=UBA',
-      tags: ['Prêt bancaire', 'Crédit card', 'Compte client'],
-      projetsCollaboration: 5,
-      note: 3.5,
-      verified: false
-    },
-    {
-      id: 4,
-      type: 'freelance',
-      nom: 'Kwame Mensah',
-      specialite: 'Designer UI/UX',
-      ville: 'Accra',
-      pays: 'Ghana',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kwame',
-      tags: ['Figma', 'Adobe XD', 'Prototyping'],
-      projetsCollaboration: 42,
-      note: 4.8,
-      verified: true
-    },
-    {
-      id: 5,
-      type: 'freelance',
-      nom: 'Mariama Diallo',
-      specialite: 'Développeur Mobile',
-      ville: 'Dakar',
-      pays: 'Sénégal',
-      photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mariama',
-      tags: ['React Native', 'Flutter', 'iOS'],
-      projetsCollaboration: 67,
-      note: 4.7,
-      verified: true
-    }
-  ];
+  const pros = useMemo(() => searchResponse?.data?.pros?.content ?? [], [searchResponse]);
+  const enterprises = useMemo(
+    () => searchResponse?.data?.enterprises?.content ?? [],
+    [searchResponse],
+  );
 
-  const secteurs = [
-    'Tous les secteurs',
-    'Informatique',
-    'Design',
-    'Finance',
-    'Marketing',
-    'Santé',
-    'Éducation'
-  ];
+  const secteurs = useMemo(
+    () => [
+      'Tous les secteurs',
+      ...sortByLabel((professionSectorMap as SectorMapEntry[]).map((entry) => entry.sector)),
+    ],
+    [],
+  );
 
-  const pays = [
-    'Tous les pays',
-    'Côte d\'Ivoire',
-    'Sénégal',
-    'Cameroun',
-    'Ghana',
-    'Mali',
-    'Burkina Faso',
-    'Togo',
-    'Bénin',
-    'Nigéria'
-  ];
+  const countryTownEntries = useMemo(
+    () =>
+      sortByLabel((countryTownMap as CountryTownEntry[]).map((entry) => entry.country)).map((country) => {
+        const sourceEntry = (countryTownMap as CountryTownEntry[]).find((entry) => entry.country === country);
+        return {
+          country,
+          towns: sortByLabel(sourceEntry?.towns ?? []),
+        };
+      }),
+    [],
+  );
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
+  const pays = useMemo(
+    () => ['Tous les pays', ...countryTownEntries.map((entry) => entry.country)],
+    [countryTownEntries],
+  );
+
+  const townsForSelectedCountry = useMemo(() => {
+    const selected = selectedCountryForTowns.trim();
+    if (!selected) return [];
+
+    const selectedNormalized = normalizeText(selected);
+    const match = countryTownEntries.find(
+      (entry) => normalizeText(entry.country) === selectedNormalized,
+    );
+
+    return match?.towns ?? [];
+  }, [selectedCountryForTowns, countryTownEntries]);
+
+  const normalizedPros = useMemo(() => pros.map(normalizeResult), [pros]);
+  const normalizedEnterprises = useMemo(() => enterprises.map(normalizeResult), [enterprises]);
+
+  const filteredResults = useMemo(() => {
+    if (activeFilters.type === 'freelance') return normalizedPros;
+    if (activeFilters.type === 'entreprise') return normalizedEnterprises;
+    return [...normalizedPros, ...normalizedEnterprises];
+  }, [activeFilters.type, normalizedPros, normalizedEnterprises]);
+
+  const prosPageMeta = searchResponse?.data?.pros?.page;
+  const enterprisesPageMeta = searchResponse?.data?.enterprises?.page;
+
+  const totalResults =
+    activeFilters.type === 'freelance'
+      ? (prosPageMeta?.totalElements ?? 0)
+      : activeFilters.type === 'entreprise'
+        ? (enterprisesPageMeta?.totalElements ?? 0)
+        : (prosPageMeta?.totalElements ?? 0) + (enterprisesPageMeta?.totalElements ?? 0);
+
+  const totalPages =
+    activeFilters.type === 'freelance'
+      ? (prosPageMeta?.totalPages ?? 0)
+      : activeFilters.type === 'entreprise'
+        ? (enterprisesPageMeta?.totalPages ?? 0)
+        : Math.max(prosPageMeta?.totalPages ?? 0, enterprisesPageMeta?.totalPages ?? 0);
+
+  const currentPage = activeFilters.page;
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+    const search = String(formData.get('search') || '');
+    const secteur = String(formData.get('secteur') || '');
+    const selectedPays = String(formData.get('pays') || '').trim();
+    const selectedVille = String(formData.get('ville') || '').trim();
+
+    const matchedCountry = countryTownEntries.find(
+      (entry) => normalizeText(entry.country) === normalizeText(selectedPays),
+    );
+
+    const resolvedPays = matchedCountry?.country || selectedPays;
+    const resolvedVille = (() => {
+      if (!selectedVille) return '';
+      if (!matchedCountry) return selectedVille;
+
+      const matchedTown = matchedCountry.towns.find(
+        (town) => normalizeText(town) === normalizeText(selectedVille),
+      );
+
+      return matchedTown || selectedVille;
+    })();
+
+    const params = buildQueryParams({
+      search,
+      secteur,
+      pays: resolvedPays,
+      ville: resolvedVille,
+      type: activeFilters.type,
+      page: DEFAULT_PAGE,
+      size: activeFilters.size,
+    });
+
+    setSearchParams(params);
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Logique de recherche
-    console.log('Recherche avec filtres:', filters);
+  const handleQuickTypeChange = (type: string) => {
+    const params = buildQueryParams({
+      search: activeFilters.search,
+      secteur: activeFilters.secteur,
+      pays: activeFilters.pays,
+      ville: activeFilters.ville,
+      type,
+      page: DEFAULT_PAGE,
+      size: activeFilters.size,
+    });
+    setSearchParams(params);
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    if (nextPage < 0 || nextPage >= totalPages) return;
+
+    const params = buildQueryParams({
+      search: activeFilters.search,
+      secteur: activeFilters.secteur,
+      pays: activeFilters.pays,
+      ville: activeFilters.ville,
+      type: activeFilters.type,
+      page: nextPage,
+      size: activeFilters.size,
+    });
+    setSearchParams(params);
   };
 
   const renderStars = (note) => {
     const stars = [];
-    const fullStars = Math.floor(note);
-    const hasHalfStar = note % 1 !== 0;
+    const safeNote = Number.isFinite(note) ? Math.max(0, Math.min(5, note)) : 0;
+    const fullStars = Math.floor(safeNote);
 
     for (let i = 1; i <= 5; i++) {
       if (i <= fullStars) {
@@ -149,13 +371,6 @@ function SearchResults() {
           <FiStar 
             key={i} 
             style={{ fill: '#FFD700', color: '#FFD700', fontSize: '16px' }}
-          />
-        );
-      } else if (i === fullStars + 1 && hasHalfStar) {
-        stars.push(
-          <FiStar 
-            key={i} 
-            style={{ fill: 'url(#half)', color: '#FFD700', fontSize: '16px' }}
           />
         );
       } else {
@@ -170,19 +385,69 @@ function SearchResults() {
     return stars;
   };
 
-  const filteredResults = results.filter(result => {
-    const matchSearch = result.nom.toLowerCase().includes(filters.search.toLowerCase()) ||
-                       (result.specialite && result.specialite.toLowerCase().includes(filters.search.toLowerCase()));
-    const matchSecteur = !filters.secteur || filters.secteur === '' || result.secteur === filters.secteur;
-    const matchPays = !filters.pays || filters.pays === '' || result.pays === filters.pays;
-    const matchVille = !filters.ville || result.ville.toLowerCase().includes(filters.ville.toLowerCase());
-    const matchType = !filters.type || filters.type === '' || result.type === filters.type;
-    
-    return matchSearch && matchSecteur && matchPays && matchVille && matchType;
-  });
+  const pageButtons = useMemo(() => {
+    if (totalPages <= 1) return [];
+
+    const maxButtons = 5;
+    const start = Math.max(0, currentPage - Math.floor(maxButtons / 2));
+    const end = Math.min(totalPages - 1, start + maxButtons - 1);
+    const adjustedStart = Math.max(0, end - maxButtons + 1);
+
+    const pages: number[] = [];
+    for (let i = adjustedStart; i <= end; i += 1) {
+      pages.push(i);
+    }
+    return pages;
+  }, [totalPages, currentPage]);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
   const closeMenu = () => setMenuOpen(false);
+
+  const SkeletonListItem = () => (
+    <div className="search-result-item search-skeleton-card">
+      <div className="search-card-badge search-skeleton search-skeleton-badge" />
+      <div className="search-item-main-row">
+        <div className="search-card-photo search-skeleton" />
+        <div className="search-card-info">
+          <div className="search-skeleton search-skeleton-line search-skeleton-name" />
+          <div className="search-skeleton search-skeleton-line search-skeleton-sub" />
+          <div className="search-skeleton search-skeleton-line search-skeleton-location" />
+        </div>
+        <div className="search-card-stats">
+          <div className="search-skeleton search-skeleton-stat" />
+          <div className="search-skeleton search-skeleton-stat" />
+        </div>
+        <div className="search-skeleton search-skeleton-btn" />
+      </div>
+      <div className="search-item-tags-row">
+        <div className="search-skeleton search-skeleton-tag" />
+        <div className="search-skeleton search-skeleton-tag" />
+        <div className="search-skeleton search-skeleton-tag" />
+      </div>
+    </div>
+  );
+
+  const SkeletonGridCard = () => (
+    <div className="search-result-card search-skeleton-card">
+      <div className="search-card-header">
+        <div className="search-card-photo search-skeleton" />
+        <div className="search-card-info">
+          <div className="search-skeleton search-skeleton-line search-skeleton-name" />
+          <div className="search-skeleton search-skeleton-line search-skeleton-sub" />
+          <div className="search-skeleton search-skeleton-line search-skeleton-location" />
+        </div>
+      </div>
+      <div className="search-card-tags">
+        <div className="search-skeleton search-skeleton-tag" />
+        <div className="search-skeleton search-skeleton-tag" />
+      </div>
+      <div className="search-card-stats">
+        <div className="search-skeleton search-skeleton-stat" />
+        <div className="search-skeleton search-skeleton-stat" />
+      </div>
+      <div className="search-skeleton search-skeleton-btn search-skeleton-btn-mobile" />
+    </div>
+  );
 
   // Composant pour une carte (mobile)
   const ResultCard = ({ result }) => (
@@ -234,7 +499,7 @@ function SearchResults() {
 
       <button 
         className="search-card-btn"
-        onClick={() => navigate(`/profil-freelance/${result.id}`)}
+        onClick={() => navigate(`/profiles/${result.id}`)}
       >
         Visiter profil
       </button>
@@ -287,7 +552,7 @@ const ResultListItem = ({ result }) => (
 
       <button 
         className="search-card-btn"
-        onClick={() => navigate(`/profil-freelance/${result.id}`)}
+        onClick={() => navigate(`/profiles/${result.id}`)}
       >
         Visiter profil
       </button>
@@ -364,20 +629,19 @@ const ResultListItem = ({ result }) => (
       <main className="search-main">
         {/* BARRE DE RECHERCHE ET FILTRES */}
         <section className="search-filters-section">
-          <form className="search-filters-bar" onSubmit={handleSearch}>
+          <form key={formResetKey} className="search-filters-bar" onSubmit={handleSearch}>
             <div className="search-filter-item search-input">
               <FiSearch className="search-icon" />
               <input
                 type="text"
                 name="search"
                 placeholder="Recherche"
-                value={filters.search}
-                onChange={handleFilterChange}
+                defaultValue={activeFilters.search}
               />
             </div>
 
             <div className="search-filter-item">
-              <select name="secteur" value={filters.secteur} onChange={handleFilterChange}>
+              <select name="secteur" defaultValue={activeFilters.secteur}>
                 {secteurs.map((secteur, index) => (
                   <option key={index} value={index === 0 ? '' : secteur}>{secteur}</option>
                 ))}
@@ -386,7 +650,11 @@ const ResultListItem = ({ result }) => (
             </div>
 
             <div className="search-filter-item">
-              <select name="pays" value={filters.pays} onChange={handleFilterChange}>
+              <select
+                name="pays"
+                defaultValue={activeFilters.pays}
+                onChange={(e) => setCountryOverrideForTowns(e.target.value)}
+              >
                 {pays.map((p, index) => (
                   <option key={index} value={index === 0 ? '' : p}>{p}</option>
                 ))}
@@ -398,10 +666,15 @@ const ResultListItem = ({ result }) => (
               <input
                 type="text"
                 name="ville"
-                placeholder="ville"
-                value={filters.ville}
-                onChange={handleFilterChange}
+                list="search-town-suggestions"
+                placeholder={selectedCountryForTowns ? 'Ville (choisir ou saisir)' : 'Ville'}
+                defaultValue={activeFilters.ville}
               />
+              <datalist id="search-town-suggestions">
+                {townsForSelectedCountry.map((town) => (
+                  <option key={town} value={town} />
+                ))}
+              </datalist>
             </div>
 
             <button type="submit" className="search-filter-btn">
@@ -412,20 +685,23 @@ const ResultListItem = ({ result }) => (
           {/* Filtres rapides */}
           <div className="search-quick-filters">
             <button 
-              className={`search-quick-filter ${filters.type === '' ? 'active' : ''}`}
-              onClick={() => setFilters({ ...filters, type: '' })}
+              type="button"
+              className={`search-quick-filter ${activeFilters.type === '' ? 'active' : ''}`}
+              onClick={() => handleQuickTypeChange('')}
             >
               Tous
             </button>
             <button 
-              className={`search-quick-filter ${filters.type === 'freelance' ? 'active' : ''}`}
-              onClick={() => setFilters({ ...filters, type: 'freelance' })}
+              type="button"
+              className={`search-quick-filter ${activeFilters.type === 'freelance' ? 'active' : ''}`}
+              onClick={() => handleQuickTypeChange('freelance')}
             >
               Freelances
             </button>
             <button 
-              className={`search-quick-filter ${filters.type === 'entreprise' ? 'active' : ''}`}
-              onClick={() => setFilters({ ...filters, type: 'entreprise' })}
+              type="button"
+              className={`search-quick-filter ${activeFilters.type === 'entreprise' ? 'active' : ''}`}
+              onClick={() => handleQuickTypeChange('entreprise')}
             >
               Entreprises
             </button>
@@ -435,35 +711,100 @@ const ResultListItem = ({ result }) => (
         {/* RÉSULTATS */}
         <section className="search-results-section">
           <h2 className="search-results-title">
-            {filteredResults.length} résultat{filteredResults.length > 1 ? 's' : ''} trouvé{filteredResults.length > 1 ? 's' : ''}
+            {totalResults} résultat{totalResults > 1 ? 's' : ''} trouvé{totalResults > 1 ? 's' : ''}
           </h2>
 
-          {/* Version DESKTOP (liste) */}
-          <div className="search-results-list">
-            {filteredResults.map((result) => (
-              <ResultListItem key={result.id} result={result} />
-            ))}
-          </div>
+          {(isLoading || (isFetching && !searchResponse) || shouldWaitForLocation) && (
+            <div className="search-state-wrapper">
+              <p>Chargement des résultats...</p>
+              <div className="search-results-list">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <SkeletonListItem key={`desktop-skeleton-${index}`} />
+                ))}
+              </div>
+              <div className="search-results-grid">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <SkeletonGridCard key={`mobile-skeleton-${index}`} />
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Version MOBILE (cartes) */}
-          <div className="search-results-grid">
-            {filteredResults.map((result) => (
-              <ResultCard key={result.id} result={result} />
-            ))}
-          </div>
+          {isError && (
+            <div className="search-state-wrapper">
+              <ErrorState
+                icon={<FiAlertCircle size={36} />}
+                title="Impossible de charger les résultats"
+                description="Une erreur est survenue pendant la recherche. Veuillez réessayer."
+                action={{
+                  label: 'Réessayer',
+                  onClick: () => refetch(),
+                }}
+              />
+            </div>
+          )}
 
-          {/* Pagination */}
-          <div className="search-pagination">
-            <button className="search-pagination-btn">
-              <FiChevronLeft />
-            </button>
-            <button className="search-pagination-btn active">1</button>
-            <button className="search-pagination-btn">2</button>
-            <button className="search-pagination-btn">3</button>
-            <button className="search-pagination-btn">
-              <FiChevronRight />
-            </button>
-          </div>
+          {!isError && !isLoading && !isFetching && filteredResults.length === 0 && (
+            <div className="search-state-wrapper">
+              <EmptyState
+                icon={<FiSearch size={36} />}
+                title="Aucun résultat"
+                description="Aucun profil ne correspond à vos filtres. Essayez d'élargir votre recherche."
+              />
+            </div>
+          )}
+
+          {!isError && !isLoading && !isFetching && filteredResults.length > 0 && (
+            <>
+              {/* Version DESKTOP (liste) */}
+              <div className="search-results-list">
+                {filteredResults.map((result) => (
+                  <ResultListItem key={result.id} result={result} />
+                ))}
+              </div>
+
+              {/* Version MOBILE (cartes) */}
+              <div className="search-results-grid">
+                {filteredResults.map((result) => (
+                  <ResultCard key={result.id} result={result} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="search-pagination">
+                  <button
+                    type="button"
+                    className="search-pagination-btn"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage <= 0}
+                  >
+                    <FiChevronLeft />
+                  </button>
+
+                  {pageButtons.map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={`search-pagination-btn ${page === currentPage ? 'active' : ''}`}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page + 1}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="search-pagination-btn"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages - 1}
+                  >
+                    <FiChevronRight />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </section>
       </main>
 

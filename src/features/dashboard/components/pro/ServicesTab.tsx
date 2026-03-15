@@ -23,9 +23,10 @@ import ConfirmActionModal from "./ConfirmActionModal";
 interface ServiceFormData {
   title: string;
   imageUrl: string;
+  imageFile: File | null;
   pricingMode: string;
   price: number;
-  duration: number;
+  duration: string;
 }
 
 interface ServiceModalProps {
@@ -63,20 +64,11 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const toDataUrl = (selectedFile: File) =>
-      new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Impossible de lire le fichier image"));
-        reader.readAsDataURL(selectedFile);
-      });
-
-    try {
-      const imageDataUrl = await toDataUrl(file);
-      onChange({ ...formData, imageUrl: imageDataUrl });
-    } catch {
-      onChange({ ...formData, imageUrl: "" });
-    }
+    onChange({
+      ...formData,
+      imageFile: file,
+      imageUrl: URL.createObjectURL(file),
+    });
   };
 
   return (
@@ -147,13 +139,12 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
           <div className="dash-service-modal-field">
             <label className="dash-service-modal-label">Délai de livraison (en jours)</label>
             <input
-              type="number"
-              min={1}
+                type="text"
               required
               className="dash-service-modal-input"
               value={formData.duration}
-              onChange={(e) => onChange({ ...formData, duration: Number(e.target.value) })}
-              placeholder="Ex: 3"
+                onChange={(e) => onChange({ ...formData, duration: e.target.value })}
+                placeholder="Ex: 3 jours"
             />
           </div>
 
@@ -199,9 +190,10 @@ const ServicesTab: React.FC = () => {
   const [formData, setFormData] = useState<ServiceFormData>({
     title: "",
     imageUrl: "",
+    imageFile: null,
     pricingMode: "fixed",
     price: 0,
-    duration: 1,
+    duration: '1 day',
   });
 
   const createMutation = useCreateService();
@@ -212,9 +204,10 @@ const ServicesTab: React.FC = () => {
     setFormData({
       title: "",
       imageUrl: "",
+      imageFile: null,
       pricingMode: "fixed",
       price: 0,
-      duration: 1,
+      duration: '1 day',
     });
     setIsCreateModalOpen(true);
   };
@@ -224,9 +217,10 @@ const ServicesTab: React.FC = () => {
     setFormData({
       title: service.title,
       imageUrl: service.image || "",
+      imageFile: null,
       pricingMode: "fixed", // Default if not available
       price: service.price || 0,
-      duration: service.deliveryTime || 1,
+      duration: String(service.deliveryTime || '1 day'),
     });
     setIsEditModalOpen(true);
   };
@@ -253,11 +247,17 @@ const ServicesTab: React.FC = () => {
       price: formData.price,
       duration: formData.duration,
     };
-    createMutation.mutate(data, {
+    createMutation.mutate(
+      {
+        data,
+        image: formData.imageFile,
+      },
+      {
       onSuccess: () => {
         setIsCreateModalOpen(false);
       },
-    });
+      }
+    );
   };
 
   const handleUpdateSubmit = (e: React.FormEvent) => {
@@ -272,7 +272,13 @@ const ServicesTab: React.FC = () => {
       duration: formData.duration,
     };
     updateMutation.mutate(
-      { id: editingService.id, data },
+      {
+        id: editingService.id,
+        payload: {
+          data,
+          image: formData.imageFile,
+        },
+      },
       {
         onSuccess: () => {
           setIsEditModalOpen(false);

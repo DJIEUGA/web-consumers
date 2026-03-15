@@ -327,6 +327,94 @@
   margin-bottom: 24px;
 }
 
+.search-state-wrapper {
+  margin-bottom: 24px;
+}
+
+.search-state-wrapper p {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  color: #616161;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.search-skeleton-card {
+  overflow: hidden;
+}
+
+.search-skeleton {
+  position: relative;
+  background: #ececec;
+  border-radius: 8px;
+}
+
+.search-skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150px;
+  height: 100%;
+  width: 150px;
+  background: linear-gradient(90deg, rgba(236, 236, 236, 0), rgba(255, 255, 255, 0.8), rgba(236, 236, 236, 0));
+  animation: search-skeleton-shimmer 1.4s infinite;
+}
+
+@keyframes search-skeleton-shimmer {
+  0% {
+    left: -150px;
+  }
+  100% {
+    left: calc(100% + 150px);
+  }
+}
+
+.search-skeleton-line {
+  height: 12px;
+}
+
+.search-skeleton-name {
+  width: 70%;
+}
+
+.search-skeleton-sub {
+  width: 50%;
+}
+
+.search-skeleton-location {
+  width: 45%;
+}
+
+.search-skeleton-badge {
+  width: 96px;
+  height: 24px;
+}
+
+.search-skeleton-stat {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+}
+
+.search-skeleton-btn {
+  width: 140px;
+  height: 42px;
+  border-radius: 30px;
+}
+
+.search-skeleton-btn-mobile {
+  margin: 0 24px 24px;
+  width: calc(100% - 48px);
+}
+
+.search-skeleton-tag {
+  width: 88px;
+  height: 26px;
+  border-radius: 20px;
+}
+
 /* DESKTOP: Afficher en liste */
 .search-results-list {
   display: flex;
@@ -848,6 +936,11 @@
   background: #3DC7C9;
   color: white;
   border-color: #3DC7C9;
+}
+
+.search-pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ========================================

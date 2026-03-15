@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../stores/auth.store';
+import { resolveCurrentLocation } from '../utils/location';
 import '../styles/Home.css';
 import SearchBar from '../../../components/shared/SearchBar';
 
 export const Home = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
   const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [searchQuery, setSearchQuery] = useState('');
   const [placeholderText, setPlaceholderText] = useState('lieux, secteur d\'activité, ville, quartier...');
@@ -40,20 +42,26 @@ export const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    
-    if (!searchQuery.trim()) {
+  const handleSearchNavigation = async () => {
+    const trimmedQuery = searchQuery.trim();
+
+    if (trimmedQuery) {
+      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}&page=0&size=12`);
       return;
     }
-    
-    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-  };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSearch(e);
+    const params = new URLSearchParams({
+      page: '0',
+      size: '12',
+    });
+
+    const location = await resolveCurrentLocation(authUser || undefined);
+    if (location) {
+      params.set('country', location.country);
+      params.set('city', location.city);
     }
+
+    navigate(`/search?${params.toString()}`);
   };
 
   return (
@@ -73,7 +81,7 @@ export const Home = () => {
             value={searchQuery}
             placeholder={placeholderText}
             onChange={setSearchQuery}
-            onSearch={() => navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)}
+            onSearch={handleSearchNavigation}
           />
 
           <div className="action-buttons">

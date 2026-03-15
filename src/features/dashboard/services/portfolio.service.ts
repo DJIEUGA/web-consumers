@@ -12,8 +12,22 @@ import type {
   CreateServiceDto,
   UpdateServiceDto,
   CreatePortfolioDto,
+  UpdatePortfolioDto,
 } from '../../../api/profileEndpoints';
-import type { ApiEnvelope } from '../../../types/api';
+import {
+  compressImageForUpload,
+  createMultipartDataPayload,
+} from '../../../utils/imageCompression';
+
+export interface ServiceMultipartPayload<T> {
+  data: T;
+  image?: File | null;
+}
+
+export interface PortfolioMultipartPayload<T = CreatePortfolioDto> {
+  data: T;
+  image?: File | null;
+}
 
 /* ========================================
  * SERVICE OFFERS MANAGEMENT
@@ -24,9 +38,20 @@ import type { ApiEnvelope } from '../../../types/api';
  * POST /profiles/me/services
  */
 export async function createService(
-  data: CreateServiceDto
+  payload: ServiceMultipartPayload<CreateServiceDto>
 ): Promise<any> {
-  const response = await axios.post(PROFILE_ENDPOINTS.SERVICES, data);
+  const formData = createMultipartDataPayload(payload.data);
+
+  if (payload.image) {
+    const compressed = await compressImageForUpload(payload.image);
+    formData.append('image', compressed, compressed.name);
+  }
+
+  const response = await axios.post(PROFILE_ENDPOINTS.SERVICES, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response;
 }
 
@@ -36,10 +61,21 @@ export async function createService(
  */
 export async function updateService(
   id: string,
-  data: UpdateServiceDto
+  payload: ServiceMultipartPayload<UpdateServiceDto>
 ): Promise<any> {
   const endpoint = PROFILE_ENDPOINTS.SERVICE_BY_ID(id);
-  const response = await axios.put(endpoint, data);
+  const formData = createMultipartDataPayload(payload.data);
+
+  if (payload.image) {
+    const compressed = await compressImageForUpload(payload.image);
+    formData.append('image', compressed, compressed.name);
+  }
+
+  const response = await axios.put(endpoint, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response;
 }
 
@@ -64,9 +100,44 @@ export async function deleteService(
  * POST /profiles/me/portfolio
  */
 export async function createPortfolio(
-  data: CreatePortfolioDto
+  payload: PortfolioMultipartPayload<CreatePortfolioDto>
 ): Promise<any> {
-  const response = await axios.post(PROFILE_ENDPOINTS.PORTFOLIO, data);
+  const formData = createMultipartDataPayload(payload.data);
+
+  if (payload.image) {
+    const compressed = await compressImageForUpload(payload.image);
+    formData.append('image', compressed, compressed.name);
+  }
+
+  const response = await axios.post(PROFILE_ENDPOINTS.PORTFOLIO, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response;
+}
+
+/**
+ * Update portfolio item
+ * PUT /profiles/me/portfolio/{id}
+ */
+export async function updatePortfolio(
+  id: string,
+  payload: PortfolioMultipartPayload<UpdatePortfolioDto>
+): Promise<any> {
+  const endpoint = PROFILE_ENDPOINTS.PORTFOLIO_BY_ID(id);
+  const formData = createMultipartDataPayload(payload.data);
+
+  if (payload.image) {
+    const compressed = await compressImageForUpload(payload.image);
+    formData.append('image', compressed, compressed.name);
+  }
+
+  const response = await axios.put(endpoint, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response;
 }
 

@@ -112,7 +112,7 @@ export interface CreateServiceDto {
   imageUrl: string;
   pricingMode: string; // e.g., "fixed", "hourly", "package"
   price: number;
-  duration: number; // e.g., "1 day", "3 days", "1 week"
+  duration: string; // e.g., "1 day", "3 days", "1 week"
 }
 
 export interface UpdateServiceDto {
@@ -120,13 +120,21 @@ export interface UpdateServiceDto {
   imageUrl: string;
   pricingMode: string;
   price: number;
-  duration: number;
+  duration: string;
 }
 
 /**
  * Portfolio Management DTOs (Pro)
  */
 export interface CreatePortfolioDto {
+  title: string;
+  description: string;
+  imageUrl: string;
+  projectLink: string;
+  tools: string[];
+}
+
+export interface UpdatePortfolioDto {
   title: string;
   description: string;
   imageUrl: string;

@@ -22,6 +22,7 @@ interface PortfolioFormData {
   title: string;
   description: string;
   imageUrl: string;
+  imageFile: File | null;
   projectLink: string;
   tools: string[];
 }
@@ -34,6 +35,7 @@ const RealisationsTab: React.FC = () => {
     title: "",
     description: "",
     imageUrl: "",
+    imageFile: null,
     projectLink: "",
     tools: [],
   });
@@ -47,6 +49,7 @@ const RealisationsTab: React.FC = () => {
       title: "",
       description: "",
       imageUrl: "",
+      imageFile: null,
       projectLink: "",
       tools: [],
     });
@@ -84,11 +87,17 @@ const RealisationsTab: React.FC = () => {
       tools: toolsArray,
     };
 
-    createMutation.mutate(data, {
+    createMutation.mutate(
+      {
+        data,
+        image: formData.imageFile,
+      },
+      {
       onSuccess: () => {
         setIsCreateModalOpen(false);
       },
-    });
+      }
+    );
   };
 
   const closeModal = () => {
@@ -99,20 +108,11 @@ const RealisationsTab: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const toDataUrl = (selectedFile: File) =>
-      new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Impossible de lire le fichier image"));
-        reader.readAsDataURL(selectedFile);
-      });
-
-    try {
-      const imageDataUrl = await toDataUrl(file);
-      setFormData({ ...formData, imageUrl: imageDataUrl });
-    } catch {
-      setFormData({ ...formData, imageUrl: "" });
-    }
+    setFormData({
+      ...formData,
+      imageFile: file,
+      imageUrl: URL.createObjectURL(file),
+    });
   };
 
   return (
