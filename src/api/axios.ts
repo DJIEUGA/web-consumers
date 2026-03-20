@@ -18,6 +18,18 @@ const axiosInstance: AxiosInstance = axios.create({
  */
 axiosInstance.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData) {
+      const headers = config.headers as any;
+
+      if (headers?.delete) {
+        headers.delete('Content-Type');
+        headers.delete('content-type');
+      } else if (headers) {
+        delete headers['Content-Type'];
+        delete headers['content-type'];
+      }
+    }
+
     if (!config.skipAuth) {
       const token = localStorage.getItem('jwt_token');
       if (token) {

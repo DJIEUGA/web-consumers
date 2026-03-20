@@ -44,6 +44,9 @@ export async function createService(
 
   if (payload.image) {
     const compressed = await compressImageForUpload(payload.image);
+    if (!compressed.type || !compressed.type.startsWith('image/')) {
+      throw new Error(`Image MIME invalide pour upload: ${compressed.type || 'inconnu'}`);
+    }
     formData.append('image', compressed, compressed.name);
   }
 
@@ -64,6 +67,9 @@ export async function updateService(
 
   if (payload.image) {
     const compressed = await compressImageForUpload(payload.image);
+    if (!compressed.type || !compressed.type.startsWith('image/')) {
+      throw new Error(`Image MIME invalide pour upload: ${compressed.type || 'inconnu'}`);
+    }
     formData.append('image', compressed, compressed.name);
   }
 
@@ -98,6 +104,9 @@ export async function createPortfolio(
 
   if (payload.image) {
     const compressed = await compressImageForUpload(payload.image);
+    if (!compressed.type || !compressed.type.startsWith('image/')) {
+      throw new Error(`Image MIME invalide pour upload: ${compressed.type || 'inconnu'}`);
+    }
     formData.append('image', compressed, compressed.name);
   }
 
@@ -118,6 +127,9 @@ export async function updatePortfolio(
 
   if (payload.image) {
     const compressed = await compressImageForUpload(payload.image);
+    if (!compressed.type || !compressed.type.startsWith('image/')) {
+      throw new Error(`Image MIME invalide pour upload: ${compressed.type || 'inconnu'}`);
+    }
     formData.append('image', compressed, compressed.name);
   }
 

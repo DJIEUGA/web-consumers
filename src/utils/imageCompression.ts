@@ -51,8 +51,12 @@ export const compressImageForUpload = async (file: File): Promise<File> => {
       fileType: normalizedFile.type,
     });
 
+    const compressedType = isSupportedImageMimeType(compressed.type)
+      ? compressed.type
+      : normalizedFile.type;
+
     return new File([compressed], compressed.name || normalizedFile.name, {
-      type: compressed.type || normalizedFile.type,
+      type: compressedType,
       lastModified: Date.now(),
     });
   } catch {
@@ -63,7 +67,7 @@ export const compressImageForUpload = async (file: File): Promise<File> => {
 
 export const createMultipartDataPayload = (data: unknown): FormData => {
   const formData = new FormData();
-  const dataBlob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-  formData.append('data', dataBlob);
+  const jsonBlob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  formData.append('data', jsonBlob);
   return formData;
 };
