@@ -30,15 +30,47 @@ import type { PublicProfile } from '../types/publicProfile.d';
 import { EmptyState, ErrorState } from '@/components/ui';
 import { parseApiError, getErrorDescription } from '@/utils/errorHandler';
 import { resolveAvatarUrl } from '@/utils/avatar';
+import {
+  SECTOR_OPTIONS,
+  getSectorKeywords,
+  normalizeSectorText,
+  resolveSectorSlug,
+} from '@/utils/sectorMapping';
 import { useAuthStore } from '@/stores/auth.store';
 import './Marketplace.css';
+
+const buildFiltersFromParams = (params: URLSearchParams) => ({
+  search: params.get('q') || '',
+  secteur: resolveSectorSlug(params.get('secteur')),
+  pays: params.get('pays') || '',
+  ville: params.get('ville') || '',
+  categorie: params.get('categorie') || '',
+});
+
+const buildQueryParams = (filters: {
+  search: string;
+  secteur: string;
+  pays: string;
+  ville: string;
+  categorie: string;
+}) => {
+  const params = new URLSearchParams();
+
+  if (filters.search.trim()) params.set('q', filters.search.trim());
+  if (filters.secteur.trim()) params.set('secteur', filters.secteur.trim());
+  if (filters.pays.trim()) params.set('pays', filters.pays.trim());
+  if (filters.ville.trim()) params.set('ville', filters.ville.trim());
+  if (filters.categorie.trim()) params.set('categorie', filters.categorie.trim());
+
+  return params;
+};
 
 export const Marketplace = () =>{
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const authUser = useAuthStore((state) => state.user);
   const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
   const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
@@ -50,14 +82,7 @@ export const Marketplace = () =>{
     });
   };
   
-  // États des filtres
-  const [filters, setFilters] = useState({
-    search: searchParams.get('q') || '',
-    secteur: '',
-    pays: '',
-    ville: '',
-    categorie: ''
-  });
+  const filters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
 
   const [visibleCount, setVisibleCount] = useState(8);
 
@@ -122,9 +147,21 @@ export const Marketplace = () =>{
     let filtered = apiProfiles;
 
     if (filters.secteur) {
-      filtered = filtered.filter(p => 
-        p.skills?.some(s => s.toLowerCase().includes(filters.secteur.toLowerCase()))
-      );
+      const sectorKeywords = getSectorKeywords(filters.secteur);
+      filtered = filtered.filter((p) => {
+        const skillMatch = p.skills?.some((skill) => {
+          const normalizedSkill = normalizeSectorText(skill || '');
+          return sectorKeywords.some((keyword) =>
+            normalizedSkill.includes(keyword) || keyword.includes(normalizedSkill),
+          );
+        });
+
+        const professionMatch = sectorKeywords.some((keyword) =>
+          normalizeSectorText(p.profession || '').includes(keyword),
+        );
+
+        return Boolean(skillMatch || professionMatch);
+      });
     }
 
     if (filters.ville) {
@@ -246,17 +283,7 @@ export const Marketplace = () =>{
   ];
 
   // Listes pour les filtres
-  const secteurs = [
-    'Tous les secteurs',
-    'Bâtiment & Travaux',
-    'Électricité & Plomberie',
-    'Informatique & Tech',
-    'Design & Création',
-    'Santé & Bien-être',
-    'Éducation & Formation',
-    'Commerce & Vente',
-    'Transport & Logistique'
-  ];
+  const secteurs = SECTOR_OPTIONS;
 
   const paysListe = [
     'Tous les pays',
@@ -272,12 +299,18 @@ export const Marketplace = () =>{
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
+    const nextFilters = {
+      ...filters,
+      [name]: name === 'secteur' ? resolveSectorSlug(value) : value,
+    };
+
+    setSearchParams(buildQueryParams(nextFilters), { replace: true });
+    setVisibleCount(8);
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    console.log('Filtres appliqués:', filters);
+    setSearchParams(buildQueryParams(filters));
   };
 
   const toggleMenu = () => {
@@ -471,9 +504,10 @@ export const Marketplace = () =>{
               value={filters.secteur}
               onChange={handleFilterChange}
             >
-              {secteurs.map((secteur, index) => (
-                <option key={index} value={index === 0 ? '' : secteur}>
-                  {secteur}
+              <option value="">Tous les secteurs</option>
+              {secteurs.map((secteur) => (
+                <option key={secteur.slug} value={secteur.slug}>
+                  {secteur.label}
                 </option>
               ))}
             </select>
@@ -554,13 +588,8 @@ export const Marketplace = () =>{
             action={{
               label: 'Réinitialiser les filtres',
               onClick: () => {
-                setFilters({
-                  search: '',
-                  secteur: '',
-                  pays: '',
-                  ville: '',
-                  categorie: ''
-                });
+                setSearchParams(new URLSearchParams(), { replace: true });
+                setVisibleCount(8);
               }
             }}
           />

@@ -42,6 +42,7 @@ import { COLORS } from '../../../../styles/colors';
 import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../../stores/auth.store';
 import { resolveAvatarUrl } from '@/utils/avatar';
+import { resolveSectorSlug } from '@/utils/sectorMapping';
 import '../../styles/decouverte/style.css';
 
 export const Decouverte = () => {
@@ -246,7 +247,8 @@ export const Decouverte = () => {
   ];
 
   const handleSecteurClick = (secteurId) => {
-    navigate(`/marketplace?secteur=${secteurId}`);
+    const resolvedSecteur = resolveSectorSlug(secteurId);
+    navigate(`/marketplace?secteur=${encodeURIComponent(resolvedSecteur || secteurId)}`);
     setMenuOpen(false);
   };
 
