@@ -21,7 +21,8 @@ export const searchPublicProfiles = async (
   const response = await axiosInstance.get<PublicApiEnvelope<PublicProfilesSearchResponseData>>(
     SEARCH_ENDPOINT,
     {
-      data: payload,
+      // GET requests should send filters as query params, not request body.
+      params: payload,
       skipAuth: true,
     },
   );
