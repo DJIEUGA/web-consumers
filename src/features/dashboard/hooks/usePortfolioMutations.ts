@@ -39,7 +39,7 @@ export function useCreateService() {
       toast.success('Service créé avec succès!');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Erreur lors de la création du service';
+      const message = error?.response?.data?.message || error?.message || 'Erreur lors de la création du service';
       toast.error(message);
     },
   });
@@ -64,7 +64,7 @@ export function useUpdateService() {
       toast.success('Service mis à jour avec succès!');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Erreur lors de la mise à jour du service';
+      const message = error?.response?.data?.message || error?.message || 'Erreur lors de la mise à jour du service';
       toast.error(message);
     },
   });
@@ -83,7 +83,7 @@ export function useDeleteService() {
       toast.success('Service supprimé avec succès!');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Erreur lors de la suppression du service';
+      const message = error?.response?.data?.message || error?.message || 'Erreur lors de la suppression du service';
       toast.error(message);
     },
   });
@@ -107,7 +107,7 @@ export function useCreatePortfolio() {
       toast.success('Réalisation ajoutée avec succès!');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erreur lors de l'ajout de la réalisation";
+      const message = error?.response?.data?.message || error?.message || "Erreur lors de l'ajout de la réalisation";
       toast.error(message);
     },
   });
@@ -132,7 +132,7 @@ export function useUpdatePortfolio() {
       toast.success('Réalisation mise à jour avec succès!');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || "Erreur lors de la mise à jour de la réalisation";
+      const message = error?.response?.data?.message || error?.message || "Erreur lors de la mise à jour de la réalisation";
       toast.error(message);
     },
   });
@@ -151,7 +151,7 @@ export function useDeletePortfolio() {
       toast.success('Réalisation supprimée avec succès!');
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || 'Erreur lors de la suppression de la réalisation';
+      const message = error?.response?.data?.message || error?.message || 'Erreur lors de la suppression de la réalisation';
       toast.error(message);
     },
   });

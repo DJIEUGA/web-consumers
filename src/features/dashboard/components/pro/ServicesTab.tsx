@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   FiPlus,
   FiZap,
@@ -19,6 +20,7 @@ import {
 import type { CreateServiceDto, UpdateServiceDto } from "@/api/profileEndpoints";
 import type { ServiceDto } from "@/api/dashboardEndpoints";
 import ConfirmActionModal from "./ConfirmActionModal";
+import { normalizeImageFileForUpload } from "@/utils/imageCompression";
 
 interface ServiceFormData {
   title: string;
@@ -61,14 +63,22 @@ const ServiceModal: React.FC<ServiceModalProps> = ({
         : "Mettre à jour";
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    onChange({
-      ...formData,
-      imageFile: file,
-      imageUrl: URL.createObjectURL(file),
-    });
+      const normalizedFile = normalizeImageFileForUpload(file);
+
+      onChange({
+        ...formData,
+        imageFile: normalizedFile,
+        imageUrl: URL.createObjectURL(normalizedFile),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Format image non supporte";
+      toast.error(message);
+      event.target.value = "";
+    }
   };
 
   return (
@@ -242,7 +252,7 @@ const ServicesTab: React.FC = () => {
     e.preventDefault();
     const data: CreateServiceDto = {
       title: formData.title,
-      imageUrl: formData.imageUrl,
+      imageUrl: formData.imageFile ? "" : formData.imageUrl,
       pricingMode: formData.pricingMode,
       price: formData.price,
       duration: formData.duration,
@@ -266,7 +276,7 @@ const ServicesTab: React.FC = () => {
 
     const data: UpdateServiceDto = {
       title: formData.title,
-      imageUrl: formData.imageUrl,
+      imageUrl: formData.imageFile ? "" : formData.imageUrl,
       pricingMode: formData.pricingMode,
       price: formData.price,
       duration: formData.duration,

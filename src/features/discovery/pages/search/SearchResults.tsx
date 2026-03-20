@@ -154,7 +154,7 @@ function SearchResults() {
   const formResetKey = `${activeFilters.search}|${activeFilters.secteur}|${activeFilters.pays}|${activeFilters.ville}`;
 
   useEffect(() => {
-    const hasLocationInParams = Boolean(activeFilters.pays.trim() && activeFilters.ville.trim());
+    const hasLocationInParams = Boolean(activeFilters.pays.trim() || activeFilters.ville.trim());
     if (hasLocationInParams) return;
 
     let cancelled = false;
@@ -168,7 +168,8 @@ function SearchResults() {
           search: activeFilters.search,
           secteur: activeFilters.secteur,
           pays: location.country,
-          ville: location.city,
+          // Never auto-fill city; keep city user-driven only.
+          ville: '',
           type: activeFilters.type,
           page: DEFAULT_PAGE,
           size: activeFilters.size,

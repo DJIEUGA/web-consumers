@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   FiPlus,
   FiLink,
@@ -17,6 +18,7 @@ import {
 } from "../../hooks/usePortfolioMutations";
 import type { CreatePortfolioDto } from "@/api/profileEndpoints";
 import ConfirmActionModal from "./ConfirmActionModal";
+import { normalizeImageFileForUpload } from "@/utils/imageCompression";
 
 interface PortfolioFormData {
   title: string;
@@ -82,7 +84,7 @@ const RealisationsTab: React.FC = () => {
     const data: CreatePortfolioDto = {
       title: formData.title,
       description: formData.description,
-      imageUrl: formData.imageUrl,
+      imageUrl: formData.imageFile ? "" : formData.imageUrl,
       projectLink: formData.projectLink,
       tools: toolsArray,
     };
@@ -105,14 +107,22 @@ const RealisationsTab: React.FC = () => {
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    setFormData({
-      ...formData,
-      imageFile: file,
-      imageUrl: URL.createObjectURL(file),
-    });
+      const normalizedFile = normalizeImageFileForUpload(file);
+
+      setFormData({
+        ...formData,
+        imageFile: normalizedFile,
+        imageUrl: URL.createObjectURL(normalizedFile),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Format image non supporte";
+      toast.error(message);
+      event.target.value = "";
+    }
   };
 
   return (

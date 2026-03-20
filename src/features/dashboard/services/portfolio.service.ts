@@ -47,11 +47,7 @@ export async function createService(
     formData.append('image', compressed, compressed.name);
   }
 
-  const response = await axios.post(PROFILE_ENDPOINTS.SERVICES, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await axios.post(PROFILE_ENDPOINTS.SERVICES, formData);
   return response;
 }
 
@@ -71,11 +67,7 @@ export async function updateService(
     formData.append('image', compressed, compressed.name);
   }
 
-  const response = await axios.put(endpoint, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await axios.put(endpoint, formData);
   return response;
 }
 
@@ -109,11 +101,7 @@ export async function createPortfolio(
     formData.append('image', compressed, compressed.name);
   }
 
-  const response = await axios.post(PROFILE_ENDPOINTS.PORTFOLIO, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await axios.post(PROFILE_ENDPOINTS.PORTFOLIO, formData);
   return response;
 }
 
@@ -133,11 +121,7 @@ export async function updatePortfolio(
     formData.append('image', compressed, compressed.name);
   }
 
-  const response = await axios.put(endpoint, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await axios.put(endpoint, formData);
   return response;
 }
 
