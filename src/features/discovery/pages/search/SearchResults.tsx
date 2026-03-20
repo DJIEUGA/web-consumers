@@ -130,7 +130,9 @@ function SearchResults() {
   const authUser = useAuthStore((state) => state.user);
   const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [locationResolved, setLocationResolved] = useState(false);
+  const [locationResolved, setLocationResolved] = useState(
+    () => Boolean(searchParams.get('country')?.trim() && searchParams.get('city')?.trim()),
+  );
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
   const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
   const authAvatarUrl = resolveAvatarUrl(authUser);
@@ -143,7 +145,11 @@ function SearchResults() {
 
   const activeFilters = useMemo(() => buildFiltersFromParams(searchParams), [searchParams]);
   const [countryOverrideForTowns, setCountryOverrideForTowns] = useState<string | null>(null);
-  const selectedCountryForTowns = countryOverrideForTowns ?? activeFilters.pays;
+  const selectedCountryForTowns =
+    countryOverrideForTowns !== null &&
+    normalizeText(countryOverrideForTowns) !== normalizeText(activeFilters.pays)
+      ? countryOverrideForTowns
+      : activeFilters.pays;
 
   const formResetKey = `${activeFilters.search}|${activeFilters.secteur}|${activeFilters.pays}|${activeFilters.ville}`;
 
