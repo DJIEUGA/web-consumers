@@ -37,7 +37,7 @@ import {
 } from 'react-icons/fi';
 import { HiOutlineSparkles } from 'react-icons/hi';
 import { FaWhatsapp } from 'react-icons/fa';
-import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { COLORS } from '../../../../styles/colors';
 import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../../stores/auth.store';
@@ -260,54 +260,65 @@ export const Decouverte = () => {
     setMenuOpen(false);
   };
 
-  // Initialize Mapbox map for discovery (uses placeholder token for demo)
+  // Initialize Mapbox map for discovery only when this page is opened.
   useEffect(() => {
     if (map.current) return;
-    
-    // For production, replace with your actual Mapbox token
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazA0eWRpNjAwMDAwMnFwb2R1YWptdDAwIn0.demo';
-    
-    try {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/outdoors-v12',
-        center: [-4.0, 5.3],
-        zoom: 6,
-        pitch: 0
-      });
+    let isCancelled = false;
 
-      // Add navigation controls
-      map.current.addControl(new mapboxgl.NavigationControl());
+    const initializeMap = async () => {
+      try {
+        const mapboxModule = await import('mapbox-gl');
+        if (isCancelled || map.current || !mapContainer.current) return;
 
-      // Add fullscreen control
-      map.current.addControl(new mapboxgl.FullscreenControl());
+        const mapboxgl = mapboxModule.default;
 
-      // Example markers for African locations (Abidjan area)
-      const locations = [
-        { name: 'Abidjan - Tech Hub', lng: -4.0219, lat: 5.3197 },
-        { name: 'Marketplace Center', lng: -3.9836, lat: 5.3089 },
-        { name: 'Innovation District', lng: -4.0155, lat: 5.3267 }
-      ];
+        // For production, replace with your actual Mapbox token
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjazA0eWRpNjAwMDAwMnFwb2R1YWptdDAwIn0.demo';
 
-      locations.forEach((location) => {
-        const marker = document.createElement('div');
-        marker.style.backgroundImage = `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5' width='32' height='32'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/%3E%3C/svg%3E")`;
-        marker.style.backgroundSize = 'contain';
-        marker.style.width = '32px';
-        marker.style.height = '32px';
-        marker.style.cursor = 'pointer';
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/outdoors-v12',
+          center: [-4.0, 5.3],
+          zoom: 6,
+          pitch: 0
+        });
 
-        new mapboxgl.Marker(marker)
-          .setLngLat([location.lng, location.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 25 }).setText(location.name))
-          .addTo(map.current);
-      });
-    } catch (error) {
-      console.warn('Mapbox initialization failed (token may be placeholder):', error);
-    }
+        map.current.addControl(new mapboxgl.NavigationControl());
+        map.current.addControl(new mapboxgl.FullscreenControl());
+
+        // Example markers for African locations (Abidjan area)
+        const locations = [
+          { name: 'Abidjan - Tech Hub', lng: -4.0219, lat: 5.3197 },
+          { name: 'Marketplace Center', lng: -3.9836, lat: 5.3089 },
+          { name: 'Innovation District', lng: -4.0155, lat: 5.3267 }
+        ];
+
+        locations.forEach((location) => {
+          const marker = document.createElement('div');
+          marker.style.backgroundImage = `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5' width='32' height='32'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'/%3E%3C/svg%3E")`;
+          marker.style.backgroundSize = 'contain';
+          marker.style.width = '32px';
+          marker.style.height = '32px';
+          marker.style.cursor = 'pointer';
+
+          new mapboxgl.Marker(marker)
+            .setLngLat([location.lng, location.lat])
+            .setPopup(new mapboxgl.Popup({ offset: 25 }).setText(location.name))
+            .addTo(map.current);
+        });
+      } catch (error) {
+        console.warn('Mapbox initialization failed (token may be placeholder):', error);
+      }
+    };
+
+    initializeMap();
 
     return () => {
-      // Cleanup on unmount if needed
+      isCancelled = true;
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
     };
   }, []);
 
