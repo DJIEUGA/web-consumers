@@ -3,6 +3,21 @@ export interface PublicProfilesSearchRequest {
   sector?: string;
   country?: string;
   city?: string;
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+  specialization?: string;
+  minRate?: number;
+  maxRate?: number;
+  minExperienceYears?: number;
+  maxExperienceYears?: number;
+  minYearsOfOperation?: number;
+  maxYearsOfOperation?: number;
+  minRating?: number;
+  verifiedOnly?: boolean;
+  premiumOnly?: boolean;
+  minProjects?: number;
+  maxHourlyRate?: number;
   page: number;
   size: number;
 }
@@ -13,7 +28,7 @@ export interface PublicSearchProfileItem {
   companyName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
-  type: 'PRO' | 'ENTERPRISE';
+  type: 'PRO' | 'ENTERPRISE' | string;
   specialization: string | null;
   sector: string | null;
   hourlyRate: number | null;
@@ -21,8 +36,12 @@ export interface PublicSearchProfileItem {
   reviewCount: number | null;
   city: string | null;
   country: string | null;
-  premium: boolean;
-  verified: boolean;
+  experienceYears?: number | null;
+  yearsOfOperation?: number | null;
+  premium?: boolean;
+  verified?: boolean;
+  isPremium?: boolean;
+  isVerified?: boolean;
 }
 
 export interface PublicSearchPageMeta {
