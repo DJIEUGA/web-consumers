@@ -11,6 +11,7 @@ import {
   FiMenu,
   FiX,
   FiStar,
+  FiClock,
   FiBriefcase,
   FiCalendar,
   FiGrid,
@@ -42,6 +43,8 @@ import {
   resolveSectorSlug,
 } from '@/utils/sectorMapping';
 import { useAuthStore } from '@/stores/auth.store';
+import { resolveCurrentLocation } from '@/features/discovery/utils/location';
+import { resolveSmartSearchInput } from '@/features/discovery/utils/searchRequestBuilder';
 import './Marketplace.css';
 
 const DEFAULT_PAGE = 0;
@@ -76,6 +79,45 @@ type MarketplaceCard = {
   relevanceScore?: number;
   secteur?: string;
   isPremium: boolean;
+  availabilityLabel: string;
+  availabilityClassName: 'disponible' | 'indisponible';
+};
+
+const resolveAvailability = (
+  profile: ProEnterpriseCard,
+): Pick<MarketplaceCard, 'availabilityLabel' | 'availabilityClassName'> => {
+  const statusText =
+    typeof profile.availabilityStatus === 'string'
+      ? profile.availabilityStatus.trim().toUpperCase()
+      : '';
+
+  const booleanAvailability =
+    profile.isAvailable ?? profile.available ?? profile.disponible;
+
+  if (statusText.includes('AVAILABLE') || statusText.includes('DISPONIBLE') || booleanAvailability === true) {
+    return {
+      availabilityLabel: 'Disponible',
+      availabilityClassName: 'disponible',
+    };
+  }
+
+  if (
+    statusText.includes('BUSY') ||
+    statusText.includes('OCCUP') ||
+    statusText.includes('UNAVAILABLE') ||
+    statusText.includes('INDISPONIBLE') ||
+    booleanAvailability === false
+  ) {
+    return {
+      availabilityLabel: 'Indisponible',
+      availabilityClassName: 'indisponible',
+    };
+  }
+
+  return {
+    availabilityLabel: 'Disponibilite non renseignee',
+    availabilityClassName: 'indisponible',
+  };
 };
 
 const mapSearchCard = (profile: ProEnterpriseCard): MarketplaceCard => {
@@ -84,6 +126,7 @@ const mapSearchCard = (profile: ProEnterpriseCard): MarketplaceCard => {
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();
   const name = profile.companyName || fullName || 'Profil';
   const normalizedType = String(profile.type || '').toUpperCase();
+  const availability = resolveAvailability(profile);
 
   return {
     id: profile.userId,
@@ -102,6 +145,8 @@ const mapSearchCard = (profile: ProEnterpriseCard): MarketplaceCard => {
     relevanceScore: profile.relevanceScore,
     secteur: profile.sector || undefined,
     isPremium: profile.isPremium ?? Boolean(legacyPremium),
+    availabilityLabel: availability.availabilityLabel,
+    availabilityClassName: availability.availabilityClassName,
   };
 };
 
@@ -126,11 +171,51 @@ export const Marketplace = () =>{
     () => buildFiltersFromParams(searchParams, { page: DEFAULT_PAGE, size: DEFAULT_SIZE }),
     [searchParams],
   );
+  const [locationResolved, setLocationResolved] = useState(
+    () => Boolean(searchParams.get('country')?.trim() && searchParams.get('city')?.trim()),
+  );
   const [formFilters, setFormFilters] = useState(filters);
 
   useEffect(() => {
     setFormFilters(filters);
   }, [filters]);
+
+  useEffect(() => {
+    const hasLocationInParams = Boolean(filters.pays.trim() || filters.ville.trim());
+    if (hasLocationInParams) {
+      setLocationResolved(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const initLocation = async () => {
+      const location = await resolveCurrentLocation(authUser || undefined);
+      if (cancelled) return;
+
+      if (location) {
+        const params = buildQueryParams({
+          ...filters,
+          pays: location.country,
+          ville: '',
+          page: DEFAULT_PAGE,
+        });
+        setSearchParams(params, { replace: true });
+      }
+
+      setLocationResolved(true);
+    };
+
+    initLocation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authUser,
+    filters,
+    setSearchParams,
+  ]);
 
   const [activeTab, setActiveTab] = useState<'pros' | 'enterprises'>('pros');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -156,7 +241,23 @@ export const Marketplace = () =>{
   );
   const debouncedSuggestionQuery = useDebouncedValue(formFilters.search, 300);
   const validationError = useMemo(() => validateMarketplaceFilters(filters), [filters]);
-  const searchRequest = useMemo(() => toSearchRequest(filters), [filters]);
+  const searchRequest = useMemo(() => {
+    const { query, resolvedCity, resolvedSector } = resolveSmartSearchInput({
+      search: filters.search,
+      city: filters.ville,
+      sector: filters.secteur,
+      resolveSector: resolveSectorSlug,
+    });
+
+    return toSearchRequest({
+      ...filters,
+      search: query || filters.search,
+      ville: resolvedCity,
+      secteur: resolvedSector,
+    });
+  }, [filters]);
+
+  const shouldWaitForLocation = !locationResolved && !filters.pays && !filters.ville;
 
   const {
     data: marketplaceData,
@@ -164,7 +265,7 @@ export const Marketplace = () =>{
     isFetching,
     error,
     refetch,
-  } = useMarketplaceSearch(searchRequest, !validationError);
+  } = useMarketplaceSearch(searchRequest, !validationError && !shouldWaitForLocation);
 
   const { data: suggestionsData } = useSearchSuggestions(debouncedSuggestionQuery);
 
@@ -238,7 +339,6 @@ export const Marketplace = () =>{
   const totalResults = (marketplaceData?.pros?.totalElements || 0) + (marketplaceData?.enterprises?.totalElements || 0);
   const activePageResult = activeTab === 'pros' ? marketplaceData?.pros : marketplaceData?.enterprises;
   const hasMoreActiveResults = (activePageResult?.totalElements || 0) > activeCards.length;
-  const showRelevanceBadge = import.meta.env.MODE !== 'production';
 
   const activeFilterChips = useMemo(
     () => [
@@ -786,7 +886,7 @@ export const Marketplace = () =>{
             >
               <option value="">Tous les secteurs</option>
               {secteurs.map((secteur) => (
-                <option key={secteur.slug} value={secteur.slug}>
+                <option key={secteur.slug} value={secteur.label}>
                   {secteur.label}
                 </option>
               ))}
@@ -933,13 +1033,20 @@ export const Marketplace = () =>{
                     max={500000}
                     placeholder="0"
                     value={formFilters.maxRate ?? formFilters.minRate ?? ''}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const rawValue = e.target.value.trim();
+                      const parsedValue = rawValue === '' ? undefined : Number(rawValue);
+                      const safeValue =
+                        parsedValue !== undefined && Number.isFinite(parsedValue) && parsedValue > 0
+                          ? parsedValue
+                          : undefined;
+
                       setFormFilters((prev) => ({
                         ...prev,
                         minRate: undefined,
-                        maxRate: Number(e.target.value) || 0,
-                      }))
-                    }
+                        maxRate: safeValue,
+                      }));
+                    }}
                   />
                 </div>
 
@@ -1092,7 +1199,8 @@ export const Marketplace = () =>{
           />
         ) : activeTab === 'pros' ? (
           <div className="freelance-grid">
-            {pros.map((freelance) => (
+            {pros.map((freelance) => {
+              return (
               <div key={freelance.id} className="freelance-card">
                 <div className="card-header" style={{ backgroundColor: COLORS.secondary }}>
                   <span className="badge freelance-badge">Freelance</span>
@@ -1126,16 +1234,14 @@ export const Marketplace = () =>{
                       <FiDollarSign style={{ color: COLORS.secondary }} />
                       <span>À partir de : {Math.ceil(freelance.tarifMin).toLocaleString()} {freelance.devise}</span>
                     </div>
-                    <div className="info-item">
+                    {/* <div className="info-item">
                       <FiStar style={{ color: '#FFB800' }} />
-                      <span>{freelance.note?.toFixed(1) || '0'} ({freelance.projectsCompletes || 0} projets)</span>
+                      <span>{freelance.note?.toFixed(1) || '0'}</span>
+                    </div> */}
+                    <div className="info-item">
+                      <FiClock style={{ color: COLORS.primary }} />
+                      <span className={freelance.availabilityClassName}>{freelance.availabilityLabel}</span>
                     </div>
-                    {showRelevanceBadge && freelance.relevanceScore !== undefined && (
-                      <div className="info-item">
-                        <FiGrid style={{ color: COLORS.secondary }} />
-                        <span>Relevance: {freelance.relevanceScore.toFixed(2)}</span>
-                      </div>
-                    )}
                   </div>
 
                   <button 
@@ -1158,11 +1264,13 @@ export const Marketplace = () =>{
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="entreprise-grid">
-            {enterprises.map((entreprise) => (
+            {enterprises.map((entreprise) => {
+              return (
               <div key={entreprise.id} className="entreprise-card">
                 <div className="entreprise-image">
                   <img src={entreprise.photo} alt={entreprise.nom} />
@@ -1202,12 +1310,10 @@ export const Marketplace = () =>{
                     {renderStars(Math.floor(entreprise.note), false)}
                   </div>
 
-                  {showRelevanceBadge && entreprise.relevanceScore !== undefined && (
-                    <div className="entreprise-secteurs">
-                      <FiGrid style={{ color: COLORS.secondary }} />
-                      <span>Relevance: {entreprise.relevanceScore.toFixed(2)}</span>
-                    </div>
-                  )}
+                  <div className="entreprise-secteurs">
+                    <FiClock style={{ color: COLORS.primary }} />
+                    <span className={entreprise.availabilityClassName}>{entreprise.availabilityLabel}</span>
+                  </div>
 
                   <button 
                     className="visiter-btn"
@@ -1218,7 +1324,8 @@ export const Marketplace = () =>{
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

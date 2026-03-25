@@ -46,6 +46,10 @@ export type ProEnterpriseCard = {
   verified?: boolean;
   premium?: boolean;
   relevanceScore?: number;
+  availabilityStatus?: string;
+  isAvailable?: boolean;
+  available?: boolean;
+  disponible?: boolean;
 };
 
 export type PageResult<T> = {

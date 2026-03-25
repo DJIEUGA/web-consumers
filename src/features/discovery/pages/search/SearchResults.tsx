@@ -14,7 +14,7 @@ import { resolveAvatarUrl } from '@/utils/avatar';
 import { usePublicProfileSearch } from '../../hooks/usePublicProfileSearch';
 import type { PublicSearchProfileItem } from '../../types/search';
 import { resolveCurrentLocation } from '../../utils/location';
-import { inferSectorFromQuery } from '../../utils/professionHints';
+import { resolveSmartSearchInput } from '../../utils/searchRequestBuilder';
 import professionSectorMap from '../../data/profession-sector-map.json';
 import countryTownMap from '../../data/country-town-map.json';
 import '../../styles/search/style.css';
@@ -54,27 +54,6 @@ const readOptionalNumberParam = (value: string | null): number | undefined => {
   if (!value || !value.trim()) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
-};
-
-const extractSmartQuery = (rawQuery: string) => {
-  const trimmed = rawQuery.trim();
-  if (!trimmed) {
-    return { query: '', inferredCity: '', inferredSector: '' };
-  }
-
-  const separators = [' à ', ' a '];
-  for (const separator of separators) {
-    const idx = trimmed.toLowerCase().lastIndexOf(separator);
-    if (idx > 0) {
-      const query = trimmed.slice(0, idx).trim();
-      const inferredCity = trimmed.slice(idx + separator.length).trim();
-      if (query && inferredCity) {
-        return { query, inferredCity, inferredSector: inferSectorFromQuery(query) };
-      }
-    }
-  }
-
-  return { query: trimmed, inferredCity: '', inferredSector: inferSectorFromQuery(trimmed) };
 };
 
 const buildFiltersFromParams = (params: URLSearchParams) => {
@@ -406,12 +385,14 @@ function SearchResults() {
   ]);
 
   const requestPayload = useMemo(() => {
-    const smart = extractSmartQuery(activeFilters.search);
-    const resolvedCity = activeFilters.ville.trim() || smart.inferredCity;
-    const resolvedSector = activeFilters.secteur.trim() || smart.inferredSector;
+    const { query, resolvedCity, resolvedSector } = resolveSmartSearchInput({
+      search: activeFilters.search,
+      city: activeFilters.ville,
+      sector: activeFilters.secteur,
+    });
 
     return {
-      query: smart.query || undefined,
+      query: query || undefined,
       sector: resolvedSector || undefined,
       country: activeFilters.pays.trim() || undefined,
       city: resolvedCity || undefined,

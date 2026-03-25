@@ -756,7 +756,17 @@
   font-weight: 600;
 }
 
+.marketplace-container .entreprise-secteurs .disponible {
+  color: #00C853;
+  font-weight: 600;
+}
+
 .marketplace-container .info-item .indisponible {
+  color: #ff4444;
+  font-weight: 600;
+}
+
+.marketplace-container .entreprise-secteurs .indisponible {
   color: #ff4444;
   font-weight: 600;
 }

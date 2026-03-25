@@ -7,6 +7,8 @@
 @layer base {
   :root {
     /* Backgrounds & Surfaces - Enterprise SaaS (Zinc palette) */
+    --turquoise-light: #E8F8F9;
+    --turquoise-dark: #2BA5A7;
     --background: 0 0% 100%;
     --foreground: 0 0% 10%;
     --card: 0 0% 100%;

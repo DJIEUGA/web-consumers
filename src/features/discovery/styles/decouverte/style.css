@@ -1072,7 +1072,8 @@
   }
 
   .header-logo img {
-    max-width: 100px;
+    max-width: 140px;
+    height: auto;
   }
 
   /* Contenu principal */
@@ -1178,6 +1179,12 @@
 /* ========================================================================== */
 
 @media (max-width: 480px) {
+
+   .header-logo img {
+    max-width: 140px;
+    height: auto;
+  }
+  
   /* Sidebar */
   .sidebar-menu {
     width: 100%;
