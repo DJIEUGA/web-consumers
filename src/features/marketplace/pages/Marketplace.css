@@ -1547,8 +1547,8 @@
 .marketplace-container .marketplace-proximity-card .marketplace-proximity-checkbox {
   -webkit-appearance: none;
   appearance: none;
-  width: 10px;
-  height: 10px;
+  width: 26px;
+  height: 26px;
   border: 1px solid #9bcdd0;
   border-radius: 3px;
   background: #fff;

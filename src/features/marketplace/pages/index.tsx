@@ -53,11 +53,8 @@ const normalizeDraftComparable = (filters: any) => ({
   specialization: filters.specialization.trim(),
   type: filters.type.trim(),
   minRating: filters.minRating,
-  minRate: filters.minRate,
   maxRate: filters.maxRate,
-  minExperienceYears: filters.minExperienceYears,
   maxExperienceYears: filters.maxExperienceYears,
-  minYearsOfOperation: filters.minYearsOfOperation,
   maxYearsOfOperation: filters.maxYearsOfOperation,
   lat: filters.lat,
   lng: filters.lng,
@@ -68,11 +65,8 @@ const DEFAULT_PAGE = 0;
 const DEFAULT_SIZE = 12;
 const NUMBER_FILTER_KEYS = new Set([
   'minRating',
-  'minRate',
   'maxRate',
-  'minExperienceYears',
   'maxExperienceYears',
-  'minYearsOfOperation',
   'maxYearsOfOperation',
   'lat',
   'lng',
@@ -262,11 +256,8 @@ export const Marketplace = () =>{
       Boolean(
         searchParams.get('specialization') ||
           searchParams.get('minRating') ||
-          searchParams.get('minRate') ||
           searchParams.get('maxRate') ||
-          searchParams.get('minExperienceYears') ||
           searchParams.get('maxExperienceYears') ||
-          searchParams.get('minYearsOfOperation') ||
           searchParams.get('maxYearsOfOperation') ||
           searchParams.get('lat') ||
           searchParams.get('lng') ||
@@ -393,19 +384,19 @@ export const Marketplace = () =>{
       filters.minRating !== undefined
         ? { key: 'minRating' as const, label: `Note: ${filters.minRating}` }
         : null,
-      (filters.maxRate ?? filters.minRate) !== undefined
-        ? { key: 'maxRate' as const, label: `Tarif: ${filters.maxRate ?? filters.minRate}` }
+      (filters.maxRate) !== undefined
+        ? { key: 'maxRate' as const, label: `Tarif: ${filters.maxRate}` }
         : null,
-      isProsTab && (filters.maxExperienceYears ?? filters.minExperienceYears) !== undefined
+      isProsTab && (filters.maxExperienceYears) !== undefined
         ? {
             key: 'maxExperienceYears' as const,
-            label: `Experience: ${filters.maxExperienceYears ?? filters.minExperienceYears} ans`,
+            label: `Experience: ${filters.maxExperienceYears} ans`,
           }
         : null,
-      !isProsTab && (filters.maxYearsOfOperation ?? filters.minYearsOfOperation) !== undefined
+      !isProsTab && (filters.maxYearsOfOperation) !== undefined
         ? {
             key: 'maxYearsOfOperation' as const,
-            label: `Exercice: ${filters.maxYearsOfOperation ?? filters.minYearsOfOperation} ans`,
+            label: `Exercice: ${filters.maxYearsOfOperation} ans`,
           }
         : null,
       filters.lat !== undefined ? { key: 'lat' as const, label: `Lat: ${filters.lat}` } : null,
@@ -557,7 +548,7 @@ export const Marketplace = () =>{
 
     if (key === 'maxExperienceYears') {
       updateFilters(
-        { minExperienceYears: undefined, maxExperienceYears: undefined },
+        { maxExperienceYears: undefined },
         { resetPage: true, replace: true },
       );
       return;
@@ -591,7 +582,6 @@ export const Marketplace = () =>{
       minRating: undefined,
       minRate: undefined,
       maxRate: undefined,
-      minExperienceYears: undefined,
       maxExperienceYears: undefined,
       minYearsOfOperation: undefined,
       maxYearsOfOperation: undefined,
@@ -678,8 +668,7 @@ export const Marketplace = () =>{
 
     const scopedYears = isProsTab
       ? {
-          minExperienceYears:
-            formFilters.maxExperienceYears !== undefined && formFilters.maxExperienceYears > 0 ? 0 : undefined,
+          minExperienceYears: formFilters.maxExperienceYears,
           maxExperienceYears: formFilters.maxExperienceYears,
           minYearsOfOperation: undefined,
           maxYearsOfOperation: undefined,
@@ -687,8 +676,7 @@ export const Marketplace = () =>{
       : {
           minExperienceYears: undefined,
           maxExperienceYears: undefined,
-          minYearsOfOperation:
-            formFilters.maxYearsOfOperation !== undefined && formFilters.maxYearsOfOperation > 0 ? 0 : undefined,
+          minYearsOfOperation: formFilters.maxYearsOfOperation,
           maxYearsOfOperation: formFilters.maxYearsOfOperation,
         };
 
@@ -696,7 +684,7 @@ export const Marketplace = () =>{
       {
         ...formFilters,
         search: formFilters.search.trim(),
-        minRate: normalizedMaxRate !== undefined && normalizedMaxRate > 0 ? 0 : undefined,
+        minRate: normalizedMaxRate,
         maxRate: normalizedMaxRate,
         ...scopedYears,
       },
@@ -1068,8 +1056,8 @@ export const Marketplace = () =>{
                   </select>
                 </div>
 
-                <div className="marketplace-advanced-group">
-                  <label htmlFor="minRating">Note: {formFilters.minRating ?? 0} ★</label>
+                <div className="marketplace-advanced-group" style={{ display: 'none' }}>
+                  <label htmlFor="minRating">Note: {formFilters.minRating ?? 0}</label>
                   <input
                     id="minRating"
                     type="range"
@@ -1108,7 +1096,6 @@ export const Marketplace = () =>{
 
                       setFormFilters((prev) => ({
                         ...prev,
-                        minRate: undefined,
                         maxRate: safeValue,
                       }));
                     }}
@@ -1117,7 +1104,7 @@ export const Marketplace = () =>{
 
                 {isProsTab ? (
                   <div className="marketplace-advanced-group">
-                    <label htmlFor="maxExperienceYears">Experience: {formFilters.maxExperienceYears ?? formFilters.minExperienceYears ?? 0} ans</label>
+                    <label htmlFor="maxExperienceYears">Experience: {formFilters.maxExperienceYears ?? formFilters.maxExperienceYears ?? 0} ans</label>
                     <input
                       id="maxExperienceYears"
                       type="range"
@@ -1125,11 +1112,10 @@ export const Marketplace = () =>{
                       min={0}
                       max={50}
                       step={1}
-                      value={formFilters.maxExperienceYears ?? formFilters.minExperienceYears ?? 0}
+                      value={formFilters.maxExperienceYears ?? formFilters.maxExperienceYears ?? 0}
                       onChange={(e) =>
                         setFormFilters((prev) => ({
                           ...prev,
-                          minExperienceYears: undefined,
                           maxExperienceYears: Number(e.target.value),
                         }))
                       }
@@ -1138,7 +1124,7 @@ export const Marketplace = () =>{
                   </div>
                 ) : (
                   <div className="marketplace-advanced-group">
-                    <label htmlFor="maxYearsOfOperation">Exercice: {formFilters.maxYearsOfOperation ?? formFilters.minYearsOfOperation ?? 0} ans</label>
+                    <label htmlFor="maxYearsOfOperation">Exercice: {formFilters.maxYearsOfOperation ?? formFilters.maxYearsOfOperation ?? 0} ans</label>
                     <input
                       id="maxYearsOfOperation"
                       type="range"
@@ -1146,11 +1132,10 @@ export const Marketplace = () =>{
                       min={0}
                       max={50}
                       step={1}
-                      value={formFilters.maxYearsOfOperation ?? formFilters.minYearsOfOperation ?? 0}
+                      value={formFilters.maxYearsOfOperation ?? formFilters.maxYearsOfOperation ?? 0}
                       onChange={(e) =>
                         setFormFilters((prev) => ({
                           ...prev,
-                          minYearsOfOperation: undefined,
                           maxYearsOfOperation: Number(e.target.value),
                         }))
                       }
