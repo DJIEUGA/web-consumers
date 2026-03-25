@@ -1247,7 +1247,7 @@ const ResultListItem = ({ result }) => (
                         setFormFilters((prev) => ({ ...prev, minRating: Number(e.target.value) }))
                       }
                     />
-                    <div className="search-slider-label">0 ★ — 5 ★</div>
+                    <div className="search-slider-label">0 — 5</div>
                   </div>
 
                   <div className="search-filter-item">

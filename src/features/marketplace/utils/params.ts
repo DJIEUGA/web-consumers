@@ -1,5 +1,4 @@
 import type { SearchRequest } from '../api/marketplaceTypes';
-import { resolveSectorSlug } from '@/utils/sectorMapping';
 
 const readOptionalNumber = (value: string | null): number | undefined => {
   if (value === null || value.trim() === '') return undefined;
@@ -13,6 +12,7 @@ export type MarketplaceFilters = {
   pays: string;
   ville: string;
   specialization: string;
+  type: string;
   minRating?: number;
   minRate?: number;
   maxRate?: number;
@@ -42,10 +42,11 @@ export const buildFiltersFromParams = (
 
   return {
     search: params.get('q') || '',
-    secteur: resolveSectorSlug(params.get('sector') || ''),
+    secteur: params.get('sector') || '',
     pays: params.get('country') || '',
     ville: params.get('city') || '',
     specialization: params.get('specialization') || '',
+    type: params.get('type') || '',
     minRating: readOptionalNumber(params.get('minRating')),
     minRate: parsedMinRate,
     maxRate: parsedMaxRate ?? parsedMinRate,
@@ -69,6 +70,7 @@ export const buildQueryParams = (filters: MarketplaceFilters): URLSearchParams =
   if (filters.pays.trim()) params.set('country', filters.pays.trim());
   if (filters.ville.trim()) params.set('city', filters.ville.trim());
   if (filters.specialization.trim()) params.set('specialization', filters.specialization.trim());
+  if (filters.type.trim()) params.set('type', filters.type.trim());
 
   if (filters.minRating !== undefined) params.set('minRating', String(filters.minRating));
   if (filters.minRate !== undefined) params.set('minRate', String(filters.minRate));
@@ -97,21 +99,21 @@ export const buildQueryParams = (filters: MarketplaceFilters): URLSearchParams =
 };
 
 export const toSearchRequest = (filters: MarketplaceFilters): SearchRequest => ({
-  query: filters.search.trim() || undefined,
-  sector: filters.secteur.trim() || undefined,
-  country: filters.pays.trim() || undefined,
-  city: filters.ville.trim() || undefined,
-  specialization: filters.specialization.trim() || undefined,
-  minRating: filters.minRating,
-  minRate: filters.minRate,
-  maxRate: filters.maxRate,
-  minExperienceYears: filters.minExperienceYears,
-  maxExperienceYears: filters.maxExperienceYears,
-  minYearsOfOperation: filters.minYearsOfOperation,
-  maxYearsOfOperation: filters.maxYearsOfOperation,
-  lat: filters.lat,
-  lng: filters.lng,
-  radiusKm: filters.radiusKm,
+  ...(filters.search.trim() && { query: filters.search.trim() }),
+  ...(filters.secteur.trim() && { sector: filters.secteur.trim() }),
+  ...(filters.pays.trim() && { country: filters.pays.trim() }),
+  ...(filters.ville.trim() && { city: filters.ville.trim() }),
+  ...(filters.specialization.trim() && { specialization: filters.specialization.trim() }),
+  ...(filters.minRating !== undefined && { minRating: filters.minRating }),
+  ...(filters.minRate !== undefined && { minRate: filters.minRate }),
+  ...(filters.maxRate !== undefined && { maxRate: filters.maxRate }),
+  ...(filters.minExperienceYears !== undefined && { minExperienceYears: filters.minExperienceYears }),
+  ...(filters.maxExperienceYears !== undefined && { maxExperienceYears: filters.maxExperienceYears }),
+  ...(filters.minYearsOfOperation !== undefined && { minYearsOfOperation: filters.minYearsOfOperation }),
+  ...(filters.maxYearsOfOperation !== undefined && { maxYearsOfOperation: filters.maxYearsOfOperation }),
+  ...(filters.lat !== undefined && { lat: filters.lat }),
+  ...(filters.lng !== undefined && { lng: filters.lng }),
+  ...(filters.radiusKm !== undefined && { radiusKm: filters.radiusKm }),
   page: filters.page,
   size: filters.size,
 });

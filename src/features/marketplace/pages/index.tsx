@@ -38,14 +38,31 @@ import {
 import { EmptyState, ErrorState } from '@/components/ui';
 import { parseApiError, getErrorDescription } from '@/utils/errorHandler';
 import { resolveAvatarUrl } from '@/utils/avatar';
-import {
-  SECTOR_OPTIONS,
-  resolveSectorSlug,
-} from '@/utils/sectorMapping';
 import { useAuthStore } from '@/stores/auth.store';
 import { resolveCurrentLocation } from '@/features/discovery/utils/location';
 import { resolveSmartSearchInput } from '@/features/discovery/utils/searchRequestBuilder';
+import professionSectorMap from '@/features/discovery/data/profession-sector-map.json';
 import './Marketplace.css';
+
+// Utility function for draft comparison
+const normalizeDraftComparable = (filters: any) => ({
+  search: filters.search.trim(),
+  secteur: filters.secteur.trim(),
+  pays: filters.pays.trim(),
+  ville: filters.ville.trim(),
+  specialization: filters.specialization.trim(),
+  type: filters.type.trim(),
+  minRating: filters.minRating,
+  minRate: filters.minRate,
+  maxRate: filters.maxRate,
+  minExperienceYears: filters.minExperienceYears,
+  maxExperienceYears: filters.maxExperienceYears,
+  minYearsOfOperation: filters.minYearsOfOperation,
+  maxYearsOfOperation: filters.maxYearsOfOperation,
+  lat: filters.lat,
+  lng: filters.lng,
+  radiusKm: filters.radiusKm,
+});
 
 const DEFAULT_PAGE = 0;
 const DEFAULT_SIZE = 12;
@@ -180,6 +197,12 @@ export const Marketplace = () =>{
     setFormFilters(filters);
   }, [filters]);
 
+  const hasDraftChanges = useMemo(() => {
+    const normalizedForm = normalizeDraftComparable(formFilters);
+    const normalizedActive = normalizeDraftComparable(filters);
+    return JSON.stringify(normalizedForm) !== JSON.stringify(normalizedActive);
+  }, [formFilters, filters]);
+
   useEffect(() => {
     const hasLocationInParams = Boolean(filters.pays.trim() || filters.ville.trim());
     if (hasLocationInParams) {
@@ -218,6 +241,17 @@ export const Marketplace = () =>{
   ]);
 
   const [activeTab, setActiveTab] = useState<'pros' | 'enterprises'>('pros');
+  const isFreelanceOnly = filters.type === 'freelance';
+  const isEnterpriseOnly = filters.type === 'entreprise';
+
+  // Update activeTab based on type filter
+  useEffect(() => {
+    if (isFreelanceOnly) {
+      setActiveTab('pros');
+    } else if (isEnterpriseOnly) {
+      setActiveTab('enterprises');
+    }
+  }, [isFreelanceOnly, isEnterpriseOnly]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [proximityEnabled, setProximityEnabled] = useState(
     () => Boolean(searchParams.get('lat') && searchParams.get('lng')),
@@ -246,7 +280,6 @@ export const Marketplace = () =>{
       search: filters.search,
       city: filters.ville,
       sector: filters.secteur,
-      resolveSector: resolveSectorSlug,
     });
 
     return toSearchRequest({
@@ -265,7 +298,7 @@ export const Marketplace = () =>{
     isFetching,
     error,
     refetch,
-  } = useMarketplaceSearch(searchRequest, !validationError && !shouldWaitForLocation);
+  } = useMarketplaceSearch(searchRequest, !shouldWaitForLocation);
 
   const { data: suggestionsData } = useSearchSuggestions(debouncedSuggestionQuery);
 
@@ -323,22 +356,32 @@ export const Marketplace = () =>{
   }, [error, parsedError, refetch]);
 
   const pros = useMemo(
-    () => (marketplaceData?.pros?.content || []).map(mapSearchCard),
-    [marketplaceData],
+    () => {
+      const rawPros = (marketplaceData?.pros?.content || []).map(mapSearchCard);
+      return filters.type === 'entreprise' ? [] : rawPros;
+    },
+    [marketplaceData, filters.type],
   );
   const enterprises = useMemo(
-    () => (marketplaceData?.enterprises?.content || []).map(mapSearchCard),
-    [marketplaceData],
+    () => {
+      const rawEnterprises = (marketplaceData?.enterprises?.content || []).map(mapSearchCard);
+      return filters.type === 'freelance' ? [] : rawEnterprises;
+    },
+    [marketplaceData, filters.type],
   );
 
   const activeCards = activeTab === 'pros' ? pros : enterprises;
   const isProsTab = activeTab === 'pros';
-  const advancedCriteriaLabel = isProsTab
+  const advancedCriteriaLabel = (isFreelanceOnly || (!isEnterpriseOnly && isProsTab))
     ? 'Freelances: specialisation, proximite, fourchette de tarif, annees d\'experience.'
     : 'Entreprises: specialisation, proximite, fourchette de tarif, annees d\'exercice.';
-  const totalResults = (marketplaceData?.pros?.totalElements || 0) + (marketplaceData?.enterprises?.totalElements || 0);
+  const totalResults = isFreelanceOnly
+    ? (marketplaceData?.pros?.page?.totalElements || 0)
+    : isEnterpriseOnly
+    ? (marketplaceData?.enterprises?.page?.totalElements || 0)
+    : (marketplaceData?.pros?.page?.totalElements || 0) + (marketplaceData?.enterprises?.page?.totalElements || 0);
   const activePageResult = activeTab === 'pros' ? marketplaceData?.pros : marketplaceData?.enterprises;
-  const hasMoreActiveResults = (activePageResult?.totalElements || 0) > activeCards.length;
+  const hasMoreActiveResults = (activePageResult?.page?.totalElements || 0) > activeCards.length;
 
   const activeFilterChips = useMemo(
     () => [
@@ -346,6 +389,7 @@ export const Marketplace = () =>{
       filters.specialization
         ? { key: 'specialization' as const, label: `Specialisation: ${filters.specialization}` }
         : null,
+      filters.type ? { key: 'type' as const, label: `Type: ${filters.type === 'freelance' ? 'Freelances' : 'Entreprises'}` } : null,
       filters.minRating !== undefined
         ? { key: 'minRating' as const, label: `Note: ${filters.minRating}` }
         : null,
@@ -444,7 +488,15 @@ export const Marketplace = () =>{
   ];
 
   // Listes pour les filtres
-  const secteurs = SECTOR_OPTIONS;
+  const secteurs = useMemo(
+    () => [
+      'Tous les secteurs',
+      ...professionSectorMap
+        .map((entry) => entry.sector)
+        .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }))
+    ],
+    [],
+  );
 
   const paysListe = [
     'Tous les pays',
@@ -461,7 +513,6 @@ export const Marketplace = () =>{
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const normalizedValue = (() => {
-      if (name === 'secteur') return resolveSectorSlug(value);
       if (NUMBER_FILTER_KEYS.has(name)) {
         const trimmed = value.trim();
         if (!trimmed) return undefined;
@@ -487,7 +538,7 @@ export const Marketplace = () =>{
     };
 
     if (type === 'sector') {
-      nextFilters.secteur = resolveSectorSlug(value);
+      nextFilters.secteur = value;
     }
 
     if (type === 'specialization') {
@@ -536,6 +587,7 @@ export const Marketplace = () =>{
       pays: '',
       ville: '',
       specialization: '',
+      type: '',
       minRating: undefined,
       minRate: undefined,
       maxRate: undefined,
@@ -884,10 +936,9 @@ export const Marketplace = () =>{
               value={formFilters.secteur}
               onChange={handleFilterChange}
             >
-              <option value="">Tous les secteurs</option>
-              {secteurs.map((secteur) => (
-                <option key={secteur.slug} value={secteur.label}>
-                  {secteur.label}
+              {secteurs.map((secteur, index) => (
+                <option key={index} value={index === 0 ? '' : secteur}>
+                  {secteur}
                 </option>
               ))}
             </select>
@@ -1004,6 +1055,20 @@ export const Marketplace = () =>{
                 </div>
 
                 <div className="marketplace-advanced-group">
+                  <label htmlFor="type">Type de profil</label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={formFilters.type}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">Tous les types</option>
+                    <option value="freelance">Freelances uniquement</option>
+                    <option value="entreprise">Entreprises uniquement</option>
+                  </select>
+                </div>
+
+                <div className="marketplace-advanced-group">
                   <label htmlFor="minRating">Note: {formFilters.minRating ?? 0} ★</label>
                   <input
                     id="minRating"
@@ -1020,7 +1085,7 @@ export const Marketplace = () =>{
                       }))
                     }
                   />
-                  <div className="marketplace-slider-label">0 ★ — 5 ★</div>
+                  <div className="marketplace-slider-label">0 — 5 </div>
                 </div>
 
                 <div className="marketplace-advanced-group">
@@ -1118,14 +1183,14 @@ export const Marketplace = () =>{
           </div>
         )}
 
-        <SearchInsights metadata={marketplaceData?.metadata} />
-
-        <ResultsTabs
-          activeTab={activeTab}
-          prosCount={marketplaceData?.pros?.totalElements || 0}
-          enterprisesCount={marketplaceData?.enterprises?.totalElements || 0}
-          onTabChange={setActiveTab}
-        />
+        {!isFreelanceOnly && !isEnterpriseOnly && (
+          <ResultsTabs
+            activeTab={activeTab}
+            prosCount={marketplaceData?.pros?.page?.totalElements || 0}
+            enterprisesCount={marketplaceData?.enterprises?.page?.totalElements || 0}
+            onTabChange={setActiveTab}
+          />
+        )}
 
         <p className="results-count">
           <strong>{isLoading ? 'Chargement...' : totalResults}</strong> resultats trouves
@@ -1145,7 +1210,7 @@ export const Marketplace = () =>{
             {activeTab === 'pros' ? 'Freelance' : 'Entreprise'}
           </h2>
           <span className="section-count">
-            {isLoading ? 'Chargement...' : `${activePageResult?.totalElements || 0} Profils`}
+            {isLoading ? 'Chargement...' : `${activePageResult?.page?.totalElements || 0} Profils`}
           </span>
         </div>
 

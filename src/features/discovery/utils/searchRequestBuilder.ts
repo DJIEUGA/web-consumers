@@ -38,7 +38,7 @@ export const resolveSmartSearchInput = (input: {
   const inferredSector = input.resolveSector
     ? input.resolveSector(smart.inferredSector)
     : smart.inferredSector;
-  const resolvedSector = input.sector.trim() || inferredSector;
+  const resolvedSector = input.sector || inferredSector;
 
   return {
     query: smart.query,

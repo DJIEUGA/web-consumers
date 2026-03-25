@@ -52,14 +52,16 @@ export type ProEnterpriseCard = {
   disponible?: boolean;
 };
 
-export type PageResult<T> = {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
+export type PageInfo = {
   size: number;
   number: number;
-  first: boolean;
-  last: boolean;
+  totalElements: number;
+  totalPages: number;
+};
+
+export type PageResult<T> = {
+  content: T[];
+  page: PageInfo;
 };
 
 export type MarketplaceSearchMetadata = {
