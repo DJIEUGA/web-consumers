@@ -4,8 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
   FiSearch, 
-  FiMapPin, 
-  FiDollarSign, 
+  FiMapPin,  
   FiCheck,
   FiChevronDown,
   FiMenu,
@@ -1281,7 +1280,6 @@ export const Marketplace = () =>{
                       <span>{[freelance.ville, freelance.pays].filter(Boolean).join(', ') || 'Non renseigne'}</span>
                     </div>
                     <div className="info-item">
-                      <FiDollarSign style={{ color: COLORS.secondary }} />
                       <span>À partir de : {Math.ceil(freelance.tarifMin).toLocaleString()} {freelance.devise}</span>
                     </div>
                     {/* <div className="info-item">
@@ -1440,7 +1438,6 @@ export const Marketplace = () =>{
                     <span>{job.ville}, {job.pays} / {job.entreprise}</span>
                   </div>
                   <div className="job-detail-item">
-                    <FiDollarSign style={{ color: COLORS.secondary }} />
                     <span>Salaire : {job.salaire}{job.devise}</span>
                   </div>
                   <div className="job-detail-item">

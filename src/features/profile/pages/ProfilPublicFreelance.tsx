@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
-  FiMenu, FiX, FiUser, FiMapPin, FiDollarSign, FiStar,
+  FiMenu, FiX, FiUser, FiMapPin, FiStar,
   FiMessageCircle, FiBriefcase, FiCheckCircle, FiCalendar,
   FiClock, FiEye, FiHeart, FiShare2, FiAward, FiTrendingUp,
   FiLink, FiImage, FiMoreVertical, FiShield, FiChevronsRight, FiChevronLeft,
@@ -673,7 +673,6 @@ function ProfilPublicFreelance() {
             <div className="profil-sidebar-card profil-tarif-card">
               <h3 className="profil-sidebar-title">Tarif</h3>
               <div className="tarif-display">
-                <FiDollarSign />
                 <span className="tarif-value">{freelance.tarifHoraire.toLocaleString()}</span>
                 <span className="tarif-unit">FCFA/h</span>
               </div>
@@ -719,12 +718,11 @@ function ProfilPublicFreelance() {
                           <div className="profil-service-prix">
                             {service.typePrix === 'fixe' && service.prix !== null ? (
                               <>
-                                <FiDollarSign />
+
                                 <span>{service.prix.toLocaleString()} FCFA</span>
                               </>
                             ) : (
                               <>
-                                <FiDollarSign />
                                 <span>Sur devis</span>
                               </>
                             )}

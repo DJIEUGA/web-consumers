@@ -83,6 +83,8 @@ const buildFiltersFromParams = (params: URLSearchParams) => {
     params.get("maxYearsOfOperation"),
     0,
   );
+ const minRating = readNumberParam(params.get("minRating"), 0);
+ const maxRating = readNumberParam(params.get("maxRating"), 0);
 
   return {
     search: params.get("q") || "",
@@ -94,7 +96,8 @@ const buildFiltersFromParams = (params: URLSearchParams) => {
     maxExperienceYears,
     minYearsOfOperation,
     maxYearsOfOperation,
-    minRating: readNumberParam(params.get("minRating"), 0),
+    minRating,
+    maxRating,
     verifiedOnly: readBooleanParam(params.get("verifiedOnly")),
     premiumOnly: readBooleanParam(params.get("premiumOnly")),
     minProjects: readNumberParam(params.get("minProjects"), 0),
@@ -118,6 +121,7 @@ const buildQueryParams = (filters: {
   minYearsOfOperation: number;
   maxYearsOfOperation: number;
   minRating: number;
+  maxRating: number;
   verifiedOnly: boolean;
   premiumOnly: boolean;
   minProjects: number;
@@ -143,6 +147,7 @@ const buildQueryParams = (filters: {
   if (filters.maxYearsOfOperation > 0)
     params.set("maxYearsOfOperation", String(filters.maxYearsOfOperation));
   if (filters.minRating > 0) params.set("minRating", String(filters.minRating));
+  if (filters.maxRating > 0) params.set("maxRating", String(filters.maxRating));
   if (filters.verifiedOnly) params.set("verifiedOnly", "true");
   if (filters.premiumOnly) params.set("premiumOnly", "true");
   if (filters.minProjects > 0)
@@ -419,6 +424,7 @@ function SearchResults() {
           minYearsOfOperation: activeFilters.minYearsOfOperation,
           maxYearsOfOperation: activeFilters.maxYearsOfOperation,
           minRating: activeFilters.minRating,
+          maxRating: activeFilters.maxRating,
           verifiedOnly: activeFilters.verifiedOnly,
           premiumOnly: activeFilters.premiumOnly,
           minProjects: activeFilters.minProjects,
@@ -451,6 +457,7 @@ function SearchResults() {
     activeFilters.minYearsOfOperation,
     activeFilters.maxYearsOfOperation,
     activeFilters.minRating,
+    activeFilters.maxRating,
     activeFilters.verifiedOnly,
     activeFilters.premiumOnly,
     activeFilters.minProjects,
@@ -497,6 +504,7 @@ function SearchResults() {
           : undefined,
       minRating:
         activeFilters.minRating > 0 ? activeFilters.minRating : undefined,
+      maxRating: activeFilters.maxRating > 0 ? activeFilters.maxRating : undefined,
       verifiedOnly: activeFilters.verifiedOnly || undefined,
       premiumOnly: activeFilters.premiumOnly || undefined,
       minProjects:
@@ -520,6 +528,7 @@ function SearchResults() {
     activeFilters.maxExperienceYears,
     activeFilters.maxYearsOfOperation,
     activeFilters.minRating,
+    activeFilters.maxRating,
     activeFilters.verifiedOnly,
     activeFilters.premiumOnly,
     activeFilters.minProjects,
@@ -758,6 +767,7 @@ function SearchResults() {
           ? formFilters.maxYearsOfOperation
           : 0,
       minRating: formFilters.minRating,
+      maxRating: formFilters.maxRating,
       verifiedOnly: formFilters.verifiedOnly,
       premiumOnly: formFilters.premiumOnly,
       minProjects: formFilters.minProjects,
@@ -904,6 +914,7 @@ function SearchResults() {
       minYearsOfOperation: scopedYears.minYearsOfOperation,
       maxYearsOfOperation: scopedYears.maxYearsOfOperation,
       minRating: activeFilters.minRating,
+      maxRating: activeFilters.maxRating,
       verifiedOnly: activeFilters.verifiedOnly,
       premiumOnly: activeFilters.premiumOnly,
       minProjects: activeFilters.minProjects,
@@ -931,6 +942,7 @@ function SearchResults() {
       minYearsOfOperation: activeFilters.minYearsOfOperation,
       maxYearsOfOperation: activeFilters.maxYearsOfOperation,
       minRating: activeFilters.minRating,
+      maxRating: activeFilters.maxRating,
       verifiedOnly: activeFilters.verifiedOnly,
       premiumOnly: activeFilters.premiumOnly,
       minProjects: activeFilters.minProjects,
