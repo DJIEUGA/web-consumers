@@ -246,9 +246,8 @@ export const Decouverte = () => {
     }
   ];
 
-  const handleSecteurClick = (secteurId) => {
-    const resolvedSecteur = resolveSectorSlug(secteurId);
-    navigate(`/marketplace?secteur=${encodeURIComponent(resolvedSecteur || secteurId)}`);
+  const handleSecteurClick = (secteurName) => {
+    navigate(`/marketplace?sector=${encodeURIComponent(secteurName)}`);
     setMenuOpen(false);
   };
 
@@ -492,11 +491,11 @@ export const Decouverte = () => {
               <div
                 key={secteur.id}
                 className="secteur-card"
-                onClick={() => handleSecteurClick(secteur.id)}
+                onClick={() => handleSecteurClick(secteur.nom)}
                 role="button"
                 tabIndex={0}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') handleSecteurClick(secteur.id);
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSecteurClick(secteur.nom);
                 }}
               >
                 <div className="secteur-icon-wrapper">

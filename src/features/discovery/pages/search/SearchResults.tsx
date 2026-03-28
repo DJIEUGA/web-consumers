@@ -517,9 +517,7 @@ function SearchResults() {
     activeFilters.pays,
     activeFilters.ville,
     activeFilters.type,
-    activeFilters.minExperienceYears,
     activeFilters.maxExperienceYears,
-    activeFilters.minYearsOfOperation,
     activeFilters.maxYearsOfOperation,
     activeFilters.minRating,
     activeFilters.verifiedOnly,
@@ -1466,6 +1464,7 @@ function SearchResults() {
                           type="checkbox"
                           className="search-proximity-checkbox"
                           checked={proximityEnabled}
+                          style={{borderRadius: "4px"}}
                           onChange={(e) =>
                             handleProximityToggle(e.target.checked)
                           }
@@ -1522,7 +1521,6 @@ function SearchResults() {
                 <div className="search-advanced-right">
                   <div
                     className="search-filter-item"
-                    style={{ display: "none" }}
                   >
                     <label htmlFor="minRating">
                       Note: {formFilters.minRating}
