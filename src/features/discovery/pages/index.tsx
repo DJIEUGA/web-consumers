@@ -46,7 +46,7 @@ export const Home = () => {
     const trimmedQuery = searchQuery.trim();
 
     if (trimmedQuery) {
-      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}&page=0&size=12`);
+      navigate(`/search?query=${encodeURIComponent(trimmedQuery)}&page=0&size=12`);
       return;
     }
 
