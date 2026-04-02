@@ -295,6 +295,77 @@ function SearchResults() {
     );
   }, [formFilters, activeFilters]);
 
+  const countryTownEntries = (countryTownMap as CountryTownEntry[]);
+
+  // Auto-update filters with an 800ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (hasDraftChanges) {
+        const search = formFilters.search.trim();
+        const secteur = formFilters.secteur;
+        const selectedPays = formFilters.pays.trim();
+        const selectedVille = formFilters.ville.trim();
+
+        const matchedCountry = countryTownEntries.find(
+          (entry) => normalizeText(entry.country) === normalizeText(selectedPays),
+        );
+
+        const resolvedPays = matchedCountry?.country || selectedPays;
+        const resolvedVille = (() => {
+          if (!selectedVille) return "";
+          if (!matchedCountry) return selectedVille;
+
+          const matchedTown = matchedCountry.towns.find(
+            (town) => normalizeText(town) === normalizeText(selectedVille),
+          );
+
+          return matchedTown || selectedVille;
+        })();
+
+        const params = buildQueryParams({
+          search,
+          secteur,
+          pays: resolvedPays,
+          ville: resolvedVille,
+          type: activeFilters.type,
+          minExperienceYears:
+            (activeFilters.type === "" || activeFilters.type === "freelance") &&
+            formFilters.maxExperienceYears > 0
+              ? formFilters.maxExperienceYears
+              : 0,
+          maxExperienceYears:
+            activeFilters.type === "" || activeFilters.type === "freelance"
+              ? formFilters.maxExperienceYears
+              : 0,
+          minYearsOfOperation:
+            (activeFilters.type === "" || activeFilters.type === "entreprise") &&
+            formFilters.maxYearsOfOperation > 0
+              ? formFilters.maxYearsOfOperation
+              : 0,
+          maxYearsOfOperation:
+            activeFilters.type === "" || activeFilters.type === "entreprise"
+              ? formFilters.maxYearsOfOperation
+              : 0,
+          minRating: formFilters.minRating,
+          maxRating: formFilters.maxRating,
+          verifiedOnly: formFilters.verifiedOnly,
+          premiumOnly: formFilters.premiumOnly,
+          minProjects: formFilters.minProjects,
+          maxHourlyRate: formFilters.maxHourlyRate,
+          lat: formFilters.lat,
+          lng: formFilters.lng,
+          radiusKm: formFilters.radiusKm,
+          page: DEFAULT_PAGE,
+          size: activeFilters.size,
+        });
+
+        setSearchParams(params, { replace: false });
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [formFilters, hasDraftChanges, activeFilters.type, activeFilters.size, countryTownEntries, setSearchParams]);
+
   const advancedCriteriaLabel = useMemo(() => {
     if (activeFilters.type === "freelance") {
       return "Freelances: specialisation, proximite, fourchette de tarif, annees d'experience.";
@@ -465,6 +536,7 @@ function SearchResults() {
     activeFilters.lat,
     activeFilters.lng,
     activeFilters.radiusKm,
+    activeFilters.page,
     activeFilters.size,
     authUser,
     setSearchParams,
@@ -572,28 +644,14 @@ function SearchResults() {
     [],
   );
 
-  const countryTownEntries = useMemo(
-    () =>
-      sortByLabel(
-        (countryTownMap as CountryTownEntry[]).map((entry) => entry.country),
-      ).map((country) => {
-        const sourceEntry = (countryTownMap as CountryTownEntry[]).find(
-          (entry) => entry.country === country,
-        );
-        return {
-          country,
-          towns: sortByLabel(sourceEntry?.towns ?? []),
-        };
-      }),
-    [],
-  );
-
   const pays = useMemo(
     () => [
       "Tous les pays",
-      ...countryTownEntries.map((entry) => entry.country),
+      ...sortByLabel(
+        countryTownEntries.map((entry) => entry.country),
+      ),
     ],
-    [countryTownEntries],
+    [],
   );
 
   const townsForSelectedCountry = useMemo(() => {
@@ -601,12 +659,12 @@ function SearchResults() {
     if (!selected) return [];
 
     const selectedNormalized = normalizeText(selected);
-    const match = countryTownEntries.find(
+    const match = (countryTownMap as CountryTownEntry[]).find(
       (entry) => normalizeText(entry.country) === selectedNormalized,
     );
 
     return match?.towns ?? [];
-  }, [formFilters.pays, countryTownEntries]);
+  }, [formFilters.pays]);
 
   const normalizedPros = useMemo(() => pros.map(normalizeResult), [pros]);
   const normalizedEnterprises = useMemo(
@@ -1385,12 +1443,11 @@ function SearchResults() {
               <select
                 name="secteur"
                 value={formFilters.secteur}
-                onChange={(e) =>
-                  setFormFilters((prev) => ({
-                    ...prev,
-                    secteur: e.target.value,
-                  }))
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormFilters((prev) => ({ ...prev, secteur: val }));
+                  setSearchParams(buildQueryParams({ ...formFilters, secteur: val, page: DEFAULT_PAGE, size: activeFilters.size }));
+                }}
               >
                 {secteurs.map((secteur, index) => (
                   <option key={index} value={index === 0 ? "" : secteur}>
@@ -1405,9 +1462,11 @@ function SearchResults() {
               <select
                 name="pays"
                 value={formFilters.pays}
-                onChange={(e) =>
-                  setFormFilters((prev) => ({ ...prev, pays: e.target.value }))
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormFilters((prev) => ({ ...prev, pays: val }));
+                  setSearchParams(buildQueryParams({ ...formFilters, pays: val, page: DEFAULT_PAGE, size: activeFilters.size }));
+                }}
               >
                 {pays.map((p, index) => (
                   <option key={index} value={index === 0 ? "" : p}>
@@ -1603,7 +1662,7 @@ function SearchResults() {
                       id="type"
                       name="type"
                       value={formFilters.type}
-                      onChange={(e)=> handleQuickTypeChange(e.target.value) }
+                      onChange={(e) => handleQuickTypeChange(e.target.value)}
                     >
                       <option value="">Tous les types</option>
                       <option value="freelance">Freelances</option>

@@ -41,6 +41,7 @@ import { resolveCurrentLocation } from '@/features/discovery/utils/location';
 import { resolveSmartSearchInput } from '@/features/discovery/utils/searchRequestBuilder';
 import professionSectorMap from '@/features/discovery/data/profession-sector-map.json';
 import './Marketplace.css';
+import { preview } from 'vite';
 
 // Utility function for draft comparison
 const normalizeDraftComparable = (filters: any) => ({
@@ -515,6 +516,7 @@ export const Marketplace = () =>{
       ...prev,
       [name]: normalizedValue,
     }));
+    setSearchParams(buildQueryParams({ ...filters,[name]: normalizedValue, page: DEFAULT_PAGE }));
 
     if (name === 'search') {
       setShowSuggestions(String(normalizedValue || '').trim().length >= 2);
