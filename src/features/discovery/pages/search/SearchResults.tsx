@@ -651,7 +651,7 @@ function SearchResults() {
         countryTownEntries.map((entry) => entry.country),
       ),
     ],
-    [],
+    [countryTownEntries],
   );
 
   const townsForSelectedCountry = useMemo(() => {
