@@ -26,7 +26,6 @@ import type { ProEnterpriseCard } from '../api/marketplaceTypes';
 import { useMarketplaceSearch } from '../hooks/useMarketplaceSearch';
 import { useSearchSuggestions } from '../hooks/useSearchSuggestions';
 import ResultsTabs from '../components/ResultsTabs';
-import SearchInsights from '../components/SearchInsights';
 import { useDebouncedValue } from '../utils/debounce';
 import {
   buildFiltersFromParams,
@@ -212,7 +211,7 @@ export const Marketplace = () =>{
       if (location) {
         const params = buildQueryParams({
           ...filters,
-          pays: location.country,
+          pays: '',
           ville: '',
           page: DEFAULT_PAGE,
         });

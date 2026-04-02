@@ -41,7 +41,7 @@ export const buildFiltersFromParams = (
   const parsedMaxYearsOfOperation = readOptionalNumber(params.get('maxYearsOfOperation'));
 
   return {
-    search: params.get('q') || '',
+    search: params.get('query') || '',
     secteur: params.get('sector') || '',
     pays: params.get('country') || '',
     ville: params.get('city') || '',
@@ -65,7 +65,7 @@ export const buildFiltersFromParams = (
 export const buildQueryParams = (filters: MarketplaceFilters): URLSearchParams => {
   const params = new URLSearchParams();
 
-  if (filters.search.trim()) params.set('q', filters.search.trim());
+  if (filters.search.trim()) params.set('query', filters.search.trim());
   if (filters.secteur.trim()) params.set('sector', filters.secteur.trim());
   if (filters.pays.trim()) params.set('country', filters.pays.trim());
   if (filters.ville.trim()) params.set('city', filters.ville.trim());
