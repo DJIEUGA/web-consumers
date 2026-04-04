@@ -516,8 +516,7 @@ export const Marketplace = () =>{
       ...prev,
       [name]: normalizedValue,
     }));
-    setSearchParams(buildQueryParams({ ...filters,[name]: normalizedValue, page: DEFAULT_PAGE }));
-
+   updateFilters({ [name]: normalizedValue }, { resetPage: true, replace: false });
     if (name === 'search') {
       setShowSuggestions(String(normalizedValue || '').trim().length >= 2);
     }
@@ -1066,18 +1065,13 @@ export const Marketplace = () =>{
                     max={5}
                     step={0.5}
                     value={formFilters.minRating ?? 0}
-                    onChange={(e) =>
-                      setFormFilters((prev) => ({
-                        ...prev,
-                        minRating: Number(e.target.value),
-                      }))
-                    }
+                    onChange={handleFilterChange}
                   />
                   <div className="marketplace-slider-label">0 — 5 </div>
                 </div>
 
                 <div className="marketplace-advanced-group">
-                  <label htmlFor="maxRate">Tarif max (FCFA)</label>
+                  <label htmlFor="maxRate">Tarif (FCFA)</label>
                   <input
                     id="maxRate"
                     type="number"
@@ -1086,19 +1080,7 @@ export const Marketplace = () =>{
                     max={500000}
                     placeholder="0"
                     value={formFilters.maxRate ?? formFilters.minRate ?? ''}
-                    onChange={(e) => {
-                      const rawValue = e.target.value.trim();
-                      const parsedValue = rawValue === '' ? undefined : Number(rawValue);
-                      const safeValue =
-                        parsedValue !== undefined && Number.isFinite(parsedValue) && parsedValue > 0
-                          ? parsedValue
-                          : undefined;
-
-                      setFormFilters((prev) => ({
-                        ...prev,
-                        maxRate: safeValue,
-                      }));
-                    }}
+                    onChange={handleFilterChange}
                   />
                 </div>
 
@@ -1113,12 +1095,7 @@ export const Marketplace = () =>{
                       max={50}
                       step={1}
                       value={formFilters.maxExperienceYears ?? formFilters.maxExperienceYears ?? 0}
-                      onChange={(e) =>
-                        setFormFilters((prev) => ({
-                          ...prev,
-                          maxExperienceYears: Number(e.target.value),
-                        }))
-                      }
+                      onChange={handleFilterChange}
                     />
                     <div className="marketplace-slider-label">0 — 50 ans</div>
                   </div>
@@ -1133,12 +1110,7 @@ export const Marketplace = () =>{
                       max={50}
                       step={1}
                       value={formFilters.maxYearsOfOperation ?? formFilters.maxYearsOfOperation ?? 0}
-                      onChange={(e) =>
-                        setFormFilters((prev) => ({
-                          ...prev,
-                          maxYearsOfOperation: Number(e.target.value),
-                        }))
-                      }
+                      onChange={handleFilterChange}
                     />
                     <div className="marketplace-slider-label">0 — 50 ans</div>
                   </div>
