@@ -13,6 +13,7 @@ import {
   usePublicProfileById,
   usePublicProfiles,
 } from '../../marketplace/hooks/usePublicProfiles';
+import { useUploadAvatarMutation, useUploadCoverImageMutation } from '../hooks/useProfileMutations';
 import { useAuthStore } from '../../../stores/auth.store';
 import './ProfilPublicFreelance.css';
 
@@ -64,6 +65,7 @@ function ProfilPublicFreelance() {
   const { identifier, freelanceId, id } = useParams();
   const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authUser = useAuthStore((state) => state.user);
   const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
 
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
@@ -130,6 +132,24 @@ function ProfilPublicFreelance() {
     isFetching: isProfileFetching,
     isError: isProfileError,
   } = usePublicProfileById(resolvedUserId);
+
+  const isOwnProfile =
+    isAuthenticated && Boolean(authUser?.id) && authUser?.id === resolvedUserId;
+
+  const uploadAvatarMutation = useUploadAvatarMutation();
+  const uploadCoverMutation = useUploadCoverImageMutation();
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadAvatarMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadCoverMutation.mutate(e.target.files[0]);
+    }
+  };
 
   const liveProfilePayload = useMemo(
     () => getProfilePayload(profileByIdData),
@@ -504,6 +524,12 @@ function ProfilPublicFreelance() {
               style={{ backgroundImage: `url(${freelance.couverture})` }}
             >
               <div className="profil-cover-overlay"></div>
+              {isOwnProfile && (
+                <label className="profil-cover-upload-btn">
+                  <FiCamera /> Changer la couverture
+                  <input type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} disabled={uploadCoverMutation.isPending} />
+                </label>
+              )}
             </div>
           </div>
 
@@ -517,6 +543,12 @@ function ProfilPublicFreelance() {
                   alt={`${freelance.prenom} ${freelance.nom}`}
                   className="profil-avatar-img"
                 />
+                {isOwnProfile && (
+                  <label className="profil-avatar-upload-btn">
+                    <FiCamera />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadAvatarMutation.isPending} />
+                  </label>
+                )}
                 {freelance.verified && (
                   <span className="profil-verified-badge">
                     <FiCheckCircle />

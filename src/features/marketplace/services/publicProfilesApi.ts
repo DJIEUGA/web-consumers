@@ -58,7 +58,7 @@ export const getPublicProfiles = async (params?: {
  */
 export const getPublicProfileById = async (userId: string): Promise<PublicProfilesResponse> => {
   const endpoint = ENDPOINTS.PUBLIC_PROFILE_BY_ID.replace(':userId', userId);
-  const response = await axiosInstance.get<PublicProfilesResponse>(endpoint, { skipAuth: true });
+  const response = await axiosInstance.get<PublicProfilesResponse>(endpoint); // Authentication is now required for this endpoint
   return response.data;
 };
 

@@ -156,20 +156,43 @@ function App() {
               />
               <Route
                 path="/profil-freelance/:freelanceId"
-                element={<ProfilPublicFreelance />}
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/profil-freelance/:resultId"
-                element={<ProfilPublicFreelance />}
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/profil-freelance"
-                element={<ProfilPublicFreelance />}
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/profil/:id" element={<ProfilPublicFreelance />} />
+              <Route 
+                path="/profil/:id" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                } 
+              />
               <Route
                 path="/profiles/:identifier"
-                element={<ProfilPublicFreelance />}
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
               />
               <Route path="/search" element={<SearchResults />} />
               <Route

@@ -75,6 +75,16 @@ export const uploadAvatar = async (file: File): Promise<ApiResponse> => {
 };
 
 /**
+ * Upload cover image
+ */
+export const uploadCoverImage = async (file: File): Promise<ApiResponse> => {
+  const formData = new FormData();
+  formData.append("cover", file);
+
+  return apiUpload(PROFILE_ENDPOINTS.COVER, formData);
+};
+
+/**
  * Upload KYC documents (for freelancers)
  */
 export const uploadKYC = async (kycData: KycPayload): Promise<ApiResponse> => {
@@ -138,6 +148,7 @@ export default {
   getProfileById,
   updateProfile,
   uploadAvatar,
+  uploadCoverImage,
   uploadKYC,
   updatePassword,
   deleteAccount,

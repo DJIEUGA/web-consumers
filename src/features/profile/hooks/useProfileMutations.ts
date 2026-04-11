@@ -19,6 +19,7 @@ import {
   updateProProfile,
   updateEnterpriseProfile,
   uploadAvatar,
+  uploadCoverImage,
   uploadKYC,
   updatePassword,
   deleteAccount,
@@ -461,6 +462,33 @@ export const useUploadAvatarMutation = () => {
 };
 
 /**
+ * Upload cover image
+ */
+export const useUploadCoverImageMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, unknown>({
+    mutationFn: uploadCoverImage,
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Photo de couverture mise a jour avec succes.',
+        "Impossible de televerser la photo de couverture.",
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      refreshProfileQueries(queryClient);
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
+    },
+  });
+};
+
+/**
  * Upload KYC documents
  */
 export const useUploadKYCMutation = () => {
@@ -549,6 +577,7 @@ export default {
   useUpdateProProfileMutation,
   useUpdateEnterpriseProfileMutation,
   useUploadAvatarMutation,
+  useUploadCoverImageMutation,
   useUploadKYCMutation,
   useChangePasswordMutation,
   useDeleteAccountMutation,

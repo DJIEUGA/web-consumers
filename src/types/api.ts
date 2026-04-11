@@ -3,8 +3,11 @@ export interface ApiEnvelope<T> {
   status: number;
   message: string;
   data: T;
+  errors?: unknown;
   timestamp: string;
 }
+
+export type ApiResponse<T> = ApiEnvelope<T>;
 
 export interface LocationDto {
   city?: string | null;

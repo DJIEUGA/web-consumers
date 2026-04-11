@@ -55,7 +55,7 @@ export const useRegisterMutation = () => {
       }
 
       // Registration returns ApiResponseVoid (no token, no data field)
-      // User must confirm email first via GET /auth/confirm with token from email link
+      // User is verified immediately from the backend, no need to confirm email.
       return response;
     },
   });

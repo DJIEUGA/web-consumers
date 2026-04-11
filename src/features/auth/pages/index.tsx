@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useNotification } from "../../../hooks/useNotification";
 import {
   useLoginMutation,
@@ -28,6 +28,7 @@ import "../styles/Connexion.css";
 export const Connexion = () => {
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const notify = useNotification();
   const loginMutation = useLoginMutation();
   const registerMutation = useRegisterMutation();
@@ -302,27 +303,13 @@ export const Connexion = () => {
           // Registration successful - show confirmation message
           notify.success(
             "Inscription réussie!",
-            "Vérifiez votre email pour confirmer votre compte.",
+            "Vous pouvez maintenant vous connecter à votre compte.",
             {
               duration: 5000,
             },
           );
 
-          // // Trigger profile update in background (non-blocking)
-          // // Do NOT await this, just fire and forget
-          // const profileUpdateData = buildProfileUpdateData();
-          // if (
-          //   profileUpdateData &&
-          //   profileUpdateData.profileData &&
-          //   Object.keys(profileUpdateData.profileData).length > 0
-          // ) {
-          //   profileUpdateMutation.mutate(profileUpdateData, {
-          //     onSuccess: () => {},
-          //     onError: () => {},
-          //   });
-          // }
-
-          // Reset form and route to confirmation info page
+          // Reset form and return to login view
           setIsLogin(true);
           setSignupStep(1);
           setLoginData({ email: signupData.email, password: "" });
@@ -445,9 +432,10 @@ export const Connexion = () => {
 
                     // Wait for toast to display, then redirect
                     setTimeout(() => {
-                      const redirect = authStore.getDashboardRoute(res.data.role);
+                      const redirectUrl = searchParams.get("redirect");
+                      const redirect = redirectUrl || authStore.getDashboardRoute(res.data.role);
                       navigate(redirect);
-                    }, 2500);
+                    }, 500); // 2.5s is a bit long, let's keep it faster so users aren't waiting on empty screens
                   } else {
                     notify.error('Erreur', 'Réponse du serveur inattendue', {
                       duration: 5000,

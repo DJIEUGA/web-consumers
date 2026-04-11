@@ -21,7 +21,7 @@ import type {
 } from '@/types/api';
 
 const PROFILE_ENDPOINTS = {
-  PUBLIC: (id: string) => `/api/v1/public/profiles/${id}`,
+  PUBLIC: (id: string) => `/api/v1/public/profiles/${id}/details`,
   ME: '/api/v1/profiles/me',
   SERVICES: '/api/v1/profiles/me/services',
   SERVICE_BY_ID: (serviceId: string) => `/api/v1/profiles/me/services/${serviceId}`,

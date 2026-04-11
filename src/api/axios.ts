@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../stores/auth.store';
+import { toast } from 'sonner';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -71,6 +72,18 @@ axiosInstance.interceptors.response.use(
       // Trigger frontend-only logout (clears token and redirects)
       const authStore = useAuthStore.getState();
       authStore.logout();
+
+      // Preserve return URL and route to login
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/connexion') {
+        window.location.href = `/connexion?redirect=${encodeURIComponent(currentPath + window.location.search + window.location.hash)}`;
+      }
+    }
+
+    if (error.response?.status === 403 && !originalRequest.skipAuth) {
+      toast.error("Insufficient permission", {
+        description: "You do not have the required permissions to perform this action.",
+      });
     }
 
     // Return the error envelope for TanStack Query to catch

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.store';
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
 
 const ProtectedRoute: React.FC<Props> = ({children}) => {
   const { isAuthenticated, isHydrated } = useAuthStore();
+  const location = useLocation();
 
   console.log('[PROTECTED_ROUTE] Render check:', { isAuthenticated, isHydrated });
 
@@ -47,7 +48,7 @@ const ProtectedRoute: React.FC<Props> = ({children}) => {
 
   if (!isAuthenticated) {
     console.log('[PROTECTED_ROUTE] Not authenticated, redirecting to /connexion');
-    return <Navigate to="/connexion" replace />;
+    return <Navigate to={`/connexion?redirect=${encodeURIComponent(location.pathname + location.search + location.hash)}`} replace />;
   }
 
   console.log('[PROTECTED_ROUTE] Authenticated, rendering children');
