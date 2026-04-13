@@ -33,7 +33,7 @@ import {
   toSearchRequest,
   validateMarketplaceFilters,
 } from '../utils/params';
-import { EmptyState, ErrorState } from '@/components/ui';
+import { EmptyState, ErrorState, Card, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
 import { parseApiError, getErrorDescription } from '@/utils/errorHandler';
 import { resolveAvatarUrl } from '@/utils/avatar';
 import { useAuthStore } from '@/stores/auth.store';
@@ -168,6 +168,20 @@ export const Marketplace = () =>{
   const [searchParams, setSearchParams] = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
+  
+  const [authModal, setAuthModal] = useState({
+    isOpen: false,
+    targetUrl: '',
+    targetState: null as any
+  });
+
+  const handleProfileClick = (url: string, stateOptions?: any) => {
+    if (isAuthenticated) {
+      navigate(url, { state: stateOptions });
+    } else {
+      setAuthModal({ isOpen: true, targetUrl: url, targetState: stateOptions });
+    }
+  };
   const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
   const authAvatarUrl = resolveAvatarUrl(authUser);
 
@@ -1273,11 +1287,9 @@ export const Marketplace = () =>{
                           ? String(freelance.username).trim()
                           : String(freelance.id);
 
-                      navigate(`/profiles/${encodeURIComponent(identifier)}`, {
-                        state: {
-                          userId: String(freelance.id),
-                          username: freelance.username || null,
-                        },
+                      handleProfileClick(`/profiles/${encodeURIComponent(identifier)}`, {
+                        userId: String(freelance.id),
+                        username: freelance.username || null,
                       });
                     }}
                   >
@@ -1338,7 +1350,7 @@ export const Marketplace = () =>{
 
                   <button 
                     className="visiter-btn"
-                    onClick={() => navigate(`/profiles/${encodeURIComponent(entreprise.id)}`)}
+                    onClick={() => handleProfileClick(`/profiles/${encodeURIComponent(entreprise.id)}`)}
                     style={{ borderColor: COLORS.secondary, color: COLORS.secondary }}
                   >
                     VISITER
@@ -1421,7 +1433,7 @@ export const Marketplace = () =>{
 
                 <button 
                   className="voir-plus-job-btn"
-                  onClick={() => navigate(`/profil/experience/${job.id}`)}
+                  onClick={() => handleProfileClick(`/profil/experience/${job.id}`)}
                 >
                   VOIR LE +
                 </button>
@@ -1548,6 +1560,41 @@ export const Marketplace = () =>{
     <p className="footer-copyright">© 2024 Jobty - Tous droits réservés</p>
   </div>
 </footer>
+
+      {/* Auth Modal Modal */}
+      {authModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div style={{padding: '15px'}} className="bg-white w-full max-w-md rounded-[24px] shadow-2xl flex flex-col items-center text-center">
+            <div className="w-16 h-16 flex-none rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 mt-5 text-3xl">
+              <FiUser />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-4">
+              Accès restreint
+            </h3>
+            <p className="text-base text-slate-600 mb-8 leading-relaxed">
+              Connectez-vous ou créez un compte gratuit pour découvrir le profil détaillé de ce professionnel.
+            </p>
+            <div style={{marginTop: '10px'}} className="flex flex-col sm:flex-row gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setAuthModal({ isOpen: false, targetUrl: '', targetState: null })}
+                className="flex-1 py-6 rounded-xl font-semibold border-zinc-200 text-slate-700 cursor-pointer"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={() => {
+                  navigate('/connexion', { state: { from: authModal.targetUrl } });
+                }}
+                className="flex-1 py-6 rounded-xl font-semibold cursor-pointer"
+                style={{ backgroundColor: COLORS.primary, color: COLORS.white }}
+              >
+                Se connecter
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
