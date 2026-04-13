@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   FiMenu, FiX, FiUser, FiMapPin, FiStar,
   FiMessageCircle, FiBriefcase, FiCheckCircle, FiCalendar,
@@ -136,18 +137,31 @@ function ProfilPublicFreelance() {
   const isOwnProfile =
     isAuthenticated && Boolean(authUser?.id) && authUser?.id === resolvedUserId;
 
+  const queryClient = useQueryClient();
   const uploadAvatarMutation = useUploadAvatarMutation();
   const uploadCoverMutation = useUploadCoverImageMutation();
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      uploadAvatarMutation.mutate(e.target.files[0]);
+      uploadAvatarMutation.mutate(e.target.files[0], {
+        onSuccess: () => {
+          if (resolvedUserId) {
+            queryClient.invalidateQueries({ queryKey: ['publicProfile', resolvedUserId] });
+          }
+        },
+      });
     }
   };
 
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      uploadCoverMutation.mutate(e.target.files[0]);
+      uploadCoverMutation.mutate(e.target.files[0], {
+        onSuccess: () => {
+          if (resolvedUserId) {
+            queryClient.invalidateQueries({ queryKey: ['publicProfile', resolvedUserId] });
+          }
+        },
+      });
     }
   };
 

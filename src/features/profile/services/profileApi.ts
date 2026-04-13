@@ -69,7 +69,7 @@ export const updateProfile = async (
  */
 export const uploadAvatar = async (file: File): Promise<ApiResponse> => {
   const formData = new FormData();
-  formData.append("avatar", file);
+  formData.append("file", file);
 
   return apiUpload(PROFILE_ENDPOINTS.AVATAR, formData);
 };
@@ -79,7 +79,7 @@ export const uploadAvatar = async (file: File): Promise<ApiResponse> => {
  */
 export const uploadCoverImage = async (file: File): Promise<ApiResponse> => {
   const formData = new FormData();
-  formData.append("cover", file);
+  formData.append("file", file);
 
   return apiUpload(PROFILE_ENDPOINTS.COVER, formData);
 };
