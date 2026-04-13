@@ -16,6 +16,7 @@ import {
   FiFileText,
   FiCompass,
   FiGlobe,
+  FiStar,
 } from "react-icons/fi";
 import { FaBalanceScale, FaUserShield, FaHandshake, FaBullhorn } from "react-icons/fa";
 import type { UserRole } from "@/stores/auth.store";
@@ -87,7 +88,10 @@ const proItems: NavItem[] = [
 
 const customerItems: NavItem[] = [
   { key: "apercu", label: "Vue d'ensemble", icon: <FiGrid /> },
-  { key: "projets", label: "Projets", icon: <FiBriefcase /> },
+  { key: "profil", label: "Mon profil", icon: <FiUser /> },
+  { key: "collaborations", label: "Collaborations", icon: <FaHandshake /> },
+  { key: "trouver-pro", label: "Trouver un pro", icon: <FiCompass /> },
+  { key: "avis", label: "Avis", icon: <FiStar /> },
 ];
 
 const roleItems: Record<UserRole, NavItem[]> = {
@@ -147,6 +151,7 @@ const RoleSidebar: React.FC<RoleSidebarProps> = ({
             src={user.photo}
             alt={`${user.firstName} ${user.lastName}`}
             className={variant === "dash" ? "dash-user-photo" : undefined}
+            style={{ display: "block", margin: "0 auto 10px" }}
           />
           <h3>
             {user.firstName} {user.lastName}

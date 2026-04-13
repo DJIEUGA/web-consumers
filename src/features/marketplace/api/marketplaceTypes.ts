@@ -48,6 +48,7 @@ export type ProEnterpriseCard = {
   relevanceScore?: number;
   availabilityStatus?: string;
   isAvailable?: boolean;
+  actionButtonType?: 'CONTACT' | 'COLLABORATE' |  null;
   available?: boolean;
   disponible?: boolean;
 };

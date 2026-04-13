@@ -202,6 +202,8 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
 }) => {
   const navigate = useNavigate();
   const { role, updateUser } = useAuthStore();
+  const isPro = role === "ROLE_PRO";
+  const isEnterprise = role === "ROLE_ENTERPRISE";
 
   // Only fetch profile when drawer is open to avoid unnecessary API calls
   const { data: profileData, isLoading } = useProfileQuery({
@@ -627,40 +629,44 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
                   placeholder="Ville"
                 />
               </div>
-              <div className="profile-field">
-                <label>Secteur d'activite</label>
-                <input
-                  type="text"
-                  value={form.sector}
-                  onChange={(event) =>
-                    handleChange("sector", event.target.value)
-                  }
-                  placeholder="Secteur"
-                  className="focus:text-[#3DC7C9]"
-                />
-              </div>
-              <div className="profile-field">
-                <label>Specialisation</label>
-                <input
-                  type="text"
-                  value={form.specialization}
-                  onChange={(event) =>
-                    handleChange("specialization", event.target.value)
-                  }
-                  placeholder="Specialisation"
-                />
-              </div>
-              <div className="profile-field">
-                <label>Annee d'experience</label>
-                <input
-                  type="number"
-                  value={form.experienceYears}
-                  onChange={(event) =>
-                    handleChange("experienceYears", event.target.value)
-                  }
-                  placeholder="0"
-                />
-              </div>
+              {(isPro || isEnterprise) && (
+                <>
+                  <div className="profile-field">
+                    <label>Secteur d'activite</label>
+                    <input
+                      type="text"
+                      value={form.sector}
+                      onChange={(event) =>
+                        handleChange("sector", event.target.value)
+                      }
+                      placeholder="Secteur"
+                      className="focus:text-[#3DC7C9]"
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Specialisation</label>
+                    <input
+                      type="text"
+                      value={form.specialization}
+                      onChange={(event) =>
+                        handleChange("specialization", event.target.value)
+                      }
+                      placeholder="Specialisation"
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Annee d'experience</label>
+                    <input
+                      type="number"
+                      value={form.experienceYears}
+                      onChange={(event) =>
+                        handleChange("experienceYears", event.target.value)
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                </>
+              )}
               <div className="profile-field">
                 <label>Telephone</label>
                 <input
@@ -672,7 +678,7 @@ const ProfileDrawer: React.FC<{ open: boolean; onClose: () => void }> = ({
                   placeholder="+000 00 00 00 00"
                 />
               </div>
-              {role === "ROLE_PRO" && (
+              {isPro && (
                 <>
                   <div className="profile-field">
                     <label>Competences (tags)</label>

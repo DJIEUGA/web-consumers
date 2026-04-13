@@ -15,6 +15,7 @@ import {
   usePublicProfiles,
 } from '../../marketplace/hooks/usePublicProfiles';
 import { useUploadAvatarMutation, useUploadCoverImageMutation } from '../hooks/useProfileMutations';
+import collaborationApi from '@/features/collaboration/services/collaborationApi';
 import { useAuthStore } from '../../../stores/auth.store';
 import './ProfilPublicFreelance.css';
 
@@ -67,6 +68,7 @@ function ProfilPublicFreelance() {
   const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const authUser = useAuthStore((state) => state.user);
+  const authRole = useAuthStore((state) => state.role);
   const getDashboardRoute = useAuthStore((state) => state.getDashboardRoute);
 
   const authShortcutLabel = isAuthenticated ? 'Dashboard' : 'Connexion';
@@ -199,6 +201,7 @@ function ProfilPublicFreelance() {
   const [activeSection, setActiveSection] = useState('apropos');
   const [selectedRealisationIndex, setSelectedRealisationIndex] = useState(null);
   const [isNavSticky, setIsNavSticky] = useState(false);
+  const [isStartingCollaboration, setIsStartingCollaboration] = useState(false);
 
   
   const actionButtonType = normalizeActionButtonType(
@@ -373,8 +376,58 @@ function ProfilPublicFreelance() {
     navigate(`/collaboration/${freelance.id}`);
   };
 
-  const handleCollabClick = () => {
-    navigate(`/collaboration/${freelance.id}`);
+  const handleCollabClick = async () => {
+    if (!isAuthenticated) {
+      navigate('/connexion', {
+        state: { from: location.pathname },
+      });
+      return;
+    }
+
+    const roleValue = String(authRole || authUser?.role || '').toUpperCase();
+    if (roleValue !== 'ROLE_CUSTOMER') {
+      navigate(`/collaboration/${freelance.id}`);
+      return;
+    }
+
+    if (!freelance.id) {
+      navigate('/marketplace');
+      return;
+    }
+
+    try {
+      setIsStartingCollaboration(true);
+      const createdSpace = await collaborationApi.createSpace({
+        proId: freelance.id,
+        title: `Collaboration avec ${freelance.prenom || freelance.nom || 'ce professionnel'}`,
+      });
+
+      navigate(`/collaboration/${encodeURIComponent(createdSpace.id)}`);
+    } catch (error: any) {
+      const statusCode = Number(error?.status || 0);
+
+      if (statusCode === 409) {
+        try {
+          const spaces = await collaborationApi.listMySpaces();
+          const existingSpace = spaces.find(
+            (space) =>
+              space.proId === freelance.id &&
+              (!authUser?.id || space.customerId === authUser.id),
+          );
+
+          if (existingSpace?.id) {
+            navigate(`/collaboration/${encodeURIComponent(existingSpace.id)}`);
+            return;
+          }
+        } catch {
+          // Fallback navigation below.
+        }
+      }
+
+      navigate(`/collaboration/${freelance.id}`);
+    } finally {
+      setIsStartingCollaboration(false);
+    }
   };
 
   const scrollToSection = (section) => {
@@ -624,8 +677,12 @@ function ProfilPublicFreelance() {
                     <FiMessageCircle /> Contacter
                   </button>
                 ) : (
-                  <button className="profil-btn-primary" onClick={handleCollabClick}>
-                    <FaHandshake /> Collaborer
+                  <button
+                    className="profil-btn-primary"
+                    onClick={() => void handleCollabClick()}
+                    disabled={isStartingCollaboration}
+                  >
+                    <FaHandshake /> {isStartingCollaboration ? 'Connexion...' : 'Collaborer'}
                   </button>
                 )}
                 <button className="profil-btn-secondary" onClick={handleContactClick}>

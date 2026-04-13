@@ -433,7 +433,8 @@ export const Connexion = () => {
                     // Wait for toast to display, then redirect
                     setTimeout(() => {
                       const redirectUrl = searchParams.get("redirect");
-                      const redirect = redirectUrl || authStore.getDashboardRoute(res.data.role);
+                      const redirect =
+                        redirectUrl || authStore.getPostLoginRoute(res.data.role);
                       navigate(redirect);
                     }, 500); // 2.5s is a bit long, let's keep it faster so users aren't waiting on empty screens
                   } else {
@@ -572,7 +573,7 @@ export const Connexion = () => {
                       }
                     >
                       <FiUser />
-                      Visiteur
+                      Client
                     </button>
                   </div>
                 </div>
@@ -680,7 +681,7 @@ export const Connexion = () => {
                         <input
                           type="text"
                           id="ville-client"
-                          name="ville"
+                          name="city"
                           placeholder="Dakar"
                           value={signupData.city}
                           onChange={handleSignupChange}

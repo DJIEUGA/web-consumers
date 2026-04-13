@@ -50,6 +50,7 @@ export interface AuthState {
   refreshToken: (token: string) => void;
   checkTokenExpiry: () => boolean;
 
+  getPostLoginRoute: (role?: UserRole) => string;
   getDashboardRoute: (role?: UserRole) => string;
   initializeAuth: () => void;
   setHydrated: (hydrated: boolean) => void;
@@ -233,6 +234,14 @@ export const useAuthStore = create<AuthState>()(
         }
 
         return true;
+      },
+
+      getPostLoginRoute: (role) => {
+        const r = role ?? get().user?.role;
+
+        if (!r) return "/";
+        if (r === "ROLE_CUSTOMER") return "/marketplace";
+        return "/dashboard";
       },
 
       getDashboardRoute: (role) => {

@@ -61,6 +61,7 @@ import { FaBullhorn } from "react-icons/fa";
 import { FaHandshake, FaRocket } from "react-icons/fa";
 
 import ProfileDrawer from "../../../../components/shared/ProfileDrawer";
+import NotificationsDrawer from "../../../../components/shared/NotificationsDrawer";
 import RoleSidebar from "../../../../components/shared/RoleSidebar";
 import { useDashboardProfile } from "../../hooks/useDashboardProfile";
 import {
@@ -109,6 +110,7 @@ function ProDashboard() {
   const updateProProfileMutation = useUpdateProProfileMutation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [paiementSubTab, setPaiementSubTab] = useState("recus");
   const [parametresSubTab, setParametresSubTab] = useState("notifications");
   const [pubSubTab, setPubSubTab] = useState("actives");
@@ -662,7 +664,7 @@ function ProDashboard() {
             <button className="dash-public-btn" onClick={() => navigate('/decouverte')}>
               <FiGlobe /> Site public
             </button>
-            <button className="dash-notif-btn">
+            <button className="dash-notif-btn" onClick={() => setNotificationsOpen(true)}>
               <FiBell />
               <span className="dash-notif-badge">{stats.messagesNonLus}</span>
             </button>
@@ -2109,6 +2111,10 @@ function ProDashboard() {
         </div>
       </main>
       <ProfileDrawer open={profileOpen} onClose={closeProfile} />
+      <NotificationsDrawer
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </div>
   );
 }

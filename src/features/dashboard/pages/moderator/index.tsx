@@ -21,6 +21,7 @@ import {
   FaChartLine, FaMapMarkedAlt 
 } from 'react-icons/fa';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
+import NotificationsDrawer from '../../../../components/shared/NotificationsDrawer';
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
 import { useDashboardProfile } from '../../hooks/useDashboardProfile';
 import {
@@ -41,6 +42,7 @@ function ModeratorDashboard() {
   const logoutMutation = useLogoutMutation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('apercu');
   const [, setKycDetail] = useState(null);
   const [, setLitigeDetail] = useState(null);
@@ -219,7 +221,7 @@ function ModeratorDashboard() {
             <button className="admin-public-btn" onClick={() => navigate('/decouverte')}>
               <FiGlobe /> Site public
             </button>
-            <button className="admin-notif-btn">
+            <button className="admin-notif-btn" onClick={() => setNotificationsOpen(true)}>
               <FiBell />
               <span className="admin-notif-badge">15</span>
             </button>
@@ -1018,6 +1020,10 @@ function ModeratorDashboard() {
         </div>
       </main>
       <ProfileDrawer open={profileOpen} onClose={closeProfile} />
+      <NotificationsDrawer
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FiMenu, FiBell, FiGlobe } from "react-icons/fi";
 import RoleSidebar from "@/components/shared/RoleSidebar";
 import ProfileDrawer from "@/components/shared/ProfileDrawer";
+import NotificationsDrawer from "@/components/shared/NotificationsDrawer";
 import { useAuthStore, type UserRole } from "@/stores/auth.store";
 import { useLogoutMutation } from "@/features/auth/hooks/useAuthMutations";
 import { useDashboardProfile } from "../hooks/useDashboardProfile";
@@ -29,6 +30,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const { profile } = useDashboardProfile();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -75,7 +77,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <button className="dash-public-btn" onClick={() => navigate("/decouverte")}>
               <FiGlobe /> Site public
             </button>
-            <button className="dash-notif-btn">
+            <button className="dash-notif-btn" onClick={() => setNotificationsOpen(true)}>
               <FiBell />
               <span className="dash-notif-badge">
                 {profile.unreadNotifications || 0}
@@ -91,6 +93,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </main>
 
       <ProfileDrawer open={profileOpen} onClose={closeProfile} />
+      <NotificationsDrawer
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </div>
   );
 };

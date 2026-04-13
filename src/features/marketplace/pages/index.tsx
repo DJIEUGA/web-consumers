@@ -85,7 +85,7 @@ type MarketplaceCard = {
   verifie: boolean;
   note: number;
   projectsCompletes: number;
-  actionLabel: string;
+  actionButtonType: string;
   relevanceScore?: number;
   secteur?: string;
   isPremium: boolean;
@@ -151,7 +151,7 @@ const mapSearchCard = (profile: ProEnterpriseCard): MarketplaceCard => {
     verifie: profile.isVerified ?? Boolean(legacyVerified),
     note: profile.averageRating || 0,
     projectsCompletes: profile.reviewCount || 0,
-    actionLabel: normalizedType === 'ENTERPRISE' ? 'Visiter' : 'Contacter',
+    actionButtonType: profile.actionButtonType || (normalizedType === 'PRO' ? 'CONTACT' : 'HIRE'),
     relevanceScore: profile.relevanceScore,
     secteur: profile.sector || undefined,
     isPremium: profile.isPremium ?? Boolean(legacyPremium),
@@ -1293,7 +1293,7 @@ export const Marketplace = () =>{
                       });
                     }}
                   >
-                    {freelance.actionLabel || 'Contacter'}
+                    {freelance.actionButtonType === 'CONTACT' ? 'Contacter' : 'Collaborer'}
                   </button>
                 </div>
               </div>
