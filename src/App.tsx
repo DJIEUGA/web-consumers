@@ -1,68 +1,211 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClientProvider } from '@tanstack/react-query';
-import ErrorBoundary from './components/ErrorBoundary';
-import ProtectedRoute from './components/ProtectedRoute';
-import {useAuthStore}  from './stores/auth.store.js';
-import queryClient from './lib/query-client';
-import Home from './pages/home.jsx';
-import Decouverte from './pages/decouverte.jsx';
-import Connexion from './pages/connexion.jsx';
-import Marketplace from './pages/marketplace.jsx';
-import Portfolio from './pages/portfolio.jsx';
-import Localisation from './pages/localisation.jsx';
-import JobAlerte from './pages/jobAlerte.jsx';
-import JobExperience from './pages/jobExperience.jsx';
-import CollaborationSpace from './pages/collaborationSpace.jsx';
-import DashboardFreelance from './pages/dashboardFreelance.jsx';
-import ProfilPublicFreelance from './pages/ProfilPublicFreelance.jsx';
-import SearchResults from './pages/searchResults.jsx';
-import DashboardAdmin from './pages/DashboardAdmin';
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import ErrorBoundary from "./components/ErrorBoundary";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { useAuthStore } from "./stores/auth.store.js";
+import queryClient from "./lib/query-client";
 
-import './App.css';
+import "./App.css";
+import { useAuthProfileSync } from "./features/auth/hooks/useAuthProfileSync";
+import InstallAppPrompt from "./components/shared/InstallAppPrompt";
+
+const Home = lazy(() =>
+  import("./features/discovery/pages").then((module) => ({
+    default: module.Home,
+  })),
+);
+
+const Decouverte = lazy(() =>
+  import("./features/discovery/pages/decouverte/Decouverte.tsx").then(
+    (module) => ({ default: module.Decouverte }),
+  ),
+);
+
+const Connexion = lazy(() =>
+  import("./features/auth/pages").then((module) => ({
+    default: module.Connexion,
+  })),
+);
+
+const EmailVerificationPage = lazy(
+  () => import("./features/auth/pages/EmailVerificationPage"),
+);
+
+const ForgotPasswordPage = lazy(
+  () => import("./features/auth/pages/ForgotPasswordPage"),
+);
+
+const ResetPasswordPage = lazy(
+  () => import("./features/auth/pages/ResetPasswordPage"),
+);
+
+const Marketplace = lazy(() =>
+  import("./features/marketplace/pages").then((module) => ({
+    default: module.Marketplace,
+  })),
+);
+
+const Portfolio = lazy(() =>
+  import("./features/portfolio/pages").then((module) => ({
+    default: module.Portfolio,
+  })),
+);
+
+const Localisation = lazy(() =>
+  import("./features/localisation/pages").then((module) => ({
+    default: module.Localisation,
+  })),
+);
+
+const JobAlerte = lazy(() =>
+  import("./features/jobalerte/pages").then((module) => ({
+    default: module.JobAlerte,
+  })),
+);
+
+const JobExperience = lazy(() =>
+  import("./features/jobexperience/pages").then((module) => ({
+    default: module.JobExperience,
+  })),
+);
+
+const CollaborationSpace = lazy(() =>
+  import("./features/collaboration/pages").then((module) => ({
+    default: module.CollaborationSpace,
+  })),
+);
+
+const ProfilPublicFreelance = lazy(() =>
+  import("./features/profile/pages").then((module) => ({
+    default: module.ProfilPublicFreelance,
+  })),
+);
+
+const UserDashboard = lazy(() => import("./features/dashboard/pages/index.tsx"));
+
+const SearchResults = lazy(
+  () => import("./features/discovery/pages/search/SearchResults.tsx"),
+);
+
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+
+function AuthProfileBootstrap() {
+  useAuthProfileSync();
+  return null;
+}
 
 function App() {
   // Initialize auth from localStorage on app mount
   useEffect(() => {
-    useAuthStore.getState().initializeAuth();
+    console.log("[APP] App mounted, initializing auth");
+    const authStore = useAuthStore.getState();
+    authStore.initializeAuth();
+
+    // Check token expiry immediately
+    authStore.checkTokenExpiry();
+  }, []);
+
+  // Periodic token expiry check (every 5 minutes)
+  useEffect(() => {
+    const interval = setInterval(
+      () => {
+        useAuthStore.getState().checkTokenExpiry();
+      },
+      5 * 60 * 1000,
+    ); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check token expiry when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        useAuthStore.getState().checkTokenExpiry();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/decouverte" element={<Decouverte />} />
-            <Route path="/connexion" element={<Connexion />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/localisation" element={<Localisation />} />
-            <Route path="/job-alerte" element={<JobAlerte />} />
-            <Route path="/job-experience" element={<JobExperience />} />
-            <Route path="/collaboration/:freelanceId" element={<CollaborationSpace />} />
-            <Route 
-              path="/dashboard-freelance" 
-              element={
-                <ProtectedRoute allowedRoles={['ROLE_PRO', 'ROLE_ENTERPRISE']}>
-                  <DashboardFreelance />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/profil-freelance/:freelanceId" element={<ProfilPublicFreelance />} />
-            <Route path="/profil-freelance/:resultId" element={<ProfilPublicFreelance />} />
-            <Route path="/profil-freelance" element={<ProfilPublicFreelance />} />
-            <Route path="/profil/:id" element={<ProfilPublicFreelance />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route 
-              path="/dashboard-admin" 
-              element={
-                <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MODERATOR']}>
-                  <DashboardAdmin />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
+          <AuthProfileBootstrap />
+          <InstallAppPrompt />
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/decouverte" element={<Decouverte />} />
+              <Route path="/connexion" element={<Connexion />} />
+              <Route path="/auth/confirm" element={<EmailVerificationPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/auth/password/reset" element={<ResetPasswordPage />} />
+              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/portfolio" element={<Portfolio />} />
+              <Route path="/localisation" element={<Localisation />} />
+              <Route path="/job-alerte" element={<JobAlerte />} />
+              <Route path="/job-experience" element={<JobExperience />} />
+              <Route
+                path="/collaboration/:freelanceId"
+                element={<CollaborationSpace />}
+              />
+              <Route
+                path="/profil-freelance/:freelanceId"
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profil-freelance/:resultId"
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profil-freelance"
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route 
+                path="/profil/:id" 
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route
+                path="/profiles/:identifier"
+                element={
+                  <ProtectedRoute>
+                    <ProfilPublicFreelance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/search" element={<SearchResults />} />
+              <Route
+                path="/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <UserDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </Router>
       </QueryClientProvider>
     </ErrorBoundary>

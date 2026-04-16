@@ -1,0 +1,50 @@
+[
+  {
+    "country": "Côte d'Ivoire",
+    "towns": ["Abidjan", "Bouaké", "Yamoussoukro", "San-Pédro", "Korhogo"]
+  },
+  {
+    "country": "Sénégal",
+    "towns": ["Dakar", "Thiès", "Saint-Louis", "Kaolack", "Ziguinchor"]
+  },
+  {
+    "country": "Cameroun",
+    "towns": ["Douala", "Yaoundé", "Bafoussam", "Garoua", "Bamenda"]
+  },
+  {
+    "country": "Ghana",
+    "towns": ["Accra", "Kumasi", "Tamale", "Takoradi", "Cape Coast"]
+  },
+  {
+    "country": "Nigeria",
+    "towns": ["Lagos", "Abuja", "Port Harcourt", "Kano", "Ibadan"]
+  },
+  {
+    "country": "Bénin",
+    "towns": ["Cotonou", "Porto-Novo", "Parakou", "Abomey", "Bohicon"]
+  },
+  {
+    "country": "Togo",
+    "towns": ["Lomé", "Sokodé", "Kara", "Atakpamé", "Dapaong"]
+  },
+  {
+    "country": "Mali",
+    "towns": ["Bamako", "Sikasso", "Ségou", "Mopti", "Kayes"]
+  },
+  {
+    "country": "Burkina Faso",
+    "towns": ["Ouagadougou", "Bobo-Dioulasso", "Koudougou", "Banfora", "Dori"]
+  },
+  {
+    "country": "Guinée",
+    "towns": ["Conakry", "Kankan", "Kindia", "Labé", "N'Zérékoré"]
+  },
+  {
+    "country": "RDC",
+    "towns": ["Kinshasa", "Lubumbashi", "Goma", "Kisangani", "Bukavu"]
+  },
+  {
+    "country": "Kenya",
+    "towns": ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret"]
+  }
+]

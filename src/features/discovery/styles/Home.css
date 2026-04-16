@@ -1,0 +1,294 @@
+/* ========================================
+   HOME PAGE - CSS COMPLET
+   ======================================== */
+
+/* Container principal */
+.home-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #cce7e7 0%, #FFFFFF 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.main-content {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.search-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ========================================
+   IMAGE HERO AU-DESSUS DU LOGO
+   ======================================== */
+
+.hero-image-container {
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 10px;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.hero-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* ========================================
+   LOGO JOBTY
+   ======================================== */
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 5px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.logo-image {
+  max-width: 230px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ========================================
+   BARRE DE RECHERCHE
+   ======================================== */
+
+.search-form {
+  width: 80%;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.search-bar {
+  background-color: #e5f0f083;
+  border: 1px solid #9999993d;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  padding: 5px 5px 5px 24px;
+  box-shadow: none;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.search-bar:hover {
+  border-color: #2cc1c375;
+}
+
+.search-bar:focus-within {
+  border-color: #2cc0c3;
+  box-shadow: 0 0 0 3px rgba(44, 192, 195, 0.15);
+}
+
+.search-input-unified {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #333;
+  padding: 9px 0;
+  width: 100%;
+  text-align: center;
+  transition: text-align 0.2s ease;
+}
+
+/* Aligner à gauche quand l'utilisateur tape */
+.search-input-unified:focus,
+.search-input-unified:not(:placeholder-shown) {
+  text-align: left;
+}
+
+.search-input-unified::placeholder {
+  color: #666;
+}
+
+.search-button {
+  background: #2cc0c3;
+  border: none;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.search-button:hover {
+  background: #24a8ab;
+  transform: scale(1.05);
+}
+
+.search-button:active {
+  transform: scale(0.95);
+}
+
+.search-button-icon {
+  color: white;
+  font-size: 20px;
+}
+
+/* ========================================
+   BOUTONS D'ACTION
+   ======================================== */
+
+.action-buttons {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+  animation: fadeInUp 1s ease-out;
+}
+
+.action-btn {
+  padding: 12px 45px;
+  border-radius: 25px;
+  border: 2px solid #2cc0c3;
+  background: transparent;
+  color: #2cc0c3;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.action-btn:hover {
+  background: #2cc0c3;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 192, 195, 0.3);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   ANIMATION
+   ======================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .hero-image-container {
+    max-width: 350px;
+    margin-bottom: 8px;
+  }
+
+  .logo-image {
+    max-width: 175px;
+  }
+
+  .search-bar {
+    padding: 5px 5px 5px 16px;
+    width: 100%;
+  }
+
+  .search-input-unified {
+    font-size: 14px;
+    padding: 8px 0;
+  }
+
+  .search-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .search-button-icon {
+    font-size: 18px;
+  }
+
+  .action-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-container {
+    padding: 15px;
+  }
+
+  .hero-image-container {
+    max-width: 250px;
+    margin-bottom: 6px;
+  }
+
+  .logo-image {
+    max-width: 170px;
+  }
+
+  .search-bar {
+    padding: 4px 4px 4px 12px;
+  }
+
+  .search-input-unified {
+    font-size: 13px;
+    padding: 7px 0;
+  }
+
+  .search-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .search-button-icon {
+    font-size: 16px;
+  }
+
+  .action-btn {
+    padding: 9px 16px;
+    font-size: 13px;
+    min-width: 85px;
+  }
+
+  .action-buttons {
+    gap: 12px;
+  }
+}
+
+/* Très petits écrans */
+@media (max-width: 360px) {
+  .hero-image-container {
+    max-width: 200px;
+  }
+
+  .action-buttons {
+    flex-direction: row;
+  }
+
+  .action-buttons .action-btn {
+    gap: 12px;
+    min-width: 120px;
+  }
+}

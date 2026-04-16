@@ -1,79 +1,91 @@
 import { useMutation } from '@tanstack/react-query';
 import { apiPost } from '../../../services/apiClient';
-import {useAuthStore} from '../../../stores/auth.store';
+import { useAuthStore } from '../../../stores/auth.store';
 import { API_ENDPOINTS } from '../../../utils/constants';
 
+/**
+ * Login mutation hook
+ * Handles user login with email/password
+ */
 export const useLoginMutation = () => {
   const authStore = useAuthStore();
+
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
       authStore.setLoading(true);
-      const response = await apiPost(API_ENDPOINTS.AUTH.LOGIN, credentials);
-      authStore.setLoading(false);
-      // If the API returned a normalized error response, throw it so react-query triggers onError
-      if (!response.success) {
-        const err: any = new Error(response.message || 'Login failed');
-        err.response = response;
-        throw err;
+      
+      try {
+        const response = await apiPost(API_ENDPOINTS.AUTH.LOGIN, credentials);
+        authStore.setLoading(false);
+
+        // If the API returned a normalized error response, throw it so react-query triggers onError
+        if (!response.success) {
+          const err: any = new Error(response.message || 'Login failed');
+          err.response = response;
+          err.statusCode = response.status;
+          throw err;
+        }
+        
+        return response;
+      } catch (error: any) {
+        authStore.setLoading(false);
+        throw error;
       }
-      return response;
-    },
-    onSuccess: (data: any) => {
-      console.log(data.data);
-      if (data.data) {
-        const { role, token } = data.data;
-        authStore.login(role, token);
-      }
-    },
-    onError: (error: any) => {
-      authStore.setError('Login failed. Please try again.');
-      // Provide richer diagnostics in console
-      console.error('Login error:', error);
-      if (error?.response) console.error('API response:', error.response);
     },
   });
 };
 
+/**
+ * Register mutation hook
+ * Handles user registration with email/password/role
+ */
 export const useRegisterMutation = () => {
   const authStore = useAuthStore();
+
   return useMutation({
     mutationFn: async (userData: any) => {
       authStore.setLoading(true);
       const response = await apiPost(API_ENDPOINTS.AUTH.REGISTER, userData);
       authStore.setLoading(false);
+
       if (!response.success) {
         const err: any = new Error(response.message || 'Registration failed');
         err.response = response;
         throw err;
       }
+
       // Registration returns ApiResponseVoid (no token, no data field)
-      // User must confirm email first via GET /auth/confirm with token from email link
+      // User is verified immediately from the backend, no need to confirm email.
       return response;
-    },
-    onError: (error: any) => {
-      authStore.setError('Registration failed. Please try again.');
-      console.error('Register error:', error);
-      if (error?.response) console.error('API response:', error.response);
     },
   });
 };
 
+/**
+ * Logout mutation - Frontend only (no API call)
+ * Clears local auth state
+ *
+ * Note: Does NOT call the API to avoid 500 errors from backend
+ * Token expiry is handled automatically by the auth store
+ */
 export const useLogoutMutation = () => {
   const authStore = useAuthStore();
+
   return useMutation({
     mutationFn: async () => {
-      const response = await apiPost(API_ENDPOINTS.AUTH.LOGOUT);
-      if (!response.success) {
-        const err: any = new Error(response.message || 'Logout failed');
-        err.response = response;
-        throw err;
-      }
-      return response;
+      // Simulate async operation for consistent behavior
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          authStore.logout();
+          resolve();
+        }, 100);
+      });
     },
-    onSuccess: () => authStore.logout(),
-    onError: (error: any) => {
-      console.error('Logout error:', error);
-      if (error?.response) console.error('API response:', error.response);
+    onSuccess: () => {
+      // State already cleared by authStore.logout()
+    },
+    onError: () => {
+      // Failsafe: always logout even if something goes wrong
       authStore.logout();
     },
   });

@@ -1,8 +1,3 @@
-/**
- * Profile Mutations & Queries
- * TanStack Query hooks for profile operations
- */
-
 import {
   useMutation,
   useQuery,
@@ -11,34 +6,290 @@ import {
   type UseQueryOptions,
   type UseQueryResult,
 } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { useUIStore } from '../../../stores/ui.store';
+import { useAuthStore } from '../../../stores/auth.store';
 
 import {
   getProfile,
   getProfileById,
   updateProfile,
+  updateStandardProfile,
+  updateProProfile,
+  updateEnterpriseProfile,
   uploadAvatar,
+  uploadCoverImage,
   uploadKYC,
-  verifyEmail,
   updatePassword,
   deleteAccount,
 } from '../services/profileApi';
 
-/**
- * Generic placeholders – replace with real domain types later
- */
-type Profile = unknown;
-type ApiError = unknown;
+type Profile = Record<string, any>;
+type ApiError = Record<string, any>;
+type Variables = unknown;
 
-/**
- * Fetch current user's profile
- */
+type MutationResponse = {
+  success?: boolean;
+  message?: string;
+};
+
+type MutationContext = {
+  previousProfile?: Profile;
+};
+
+const toStringValue = (value: unknown): string =>
+  value === null || value === undefined ? '' : String(value).trim();
+
+const getResponseMessage = (
+  response: MutationResponse | undefined,
+  fallback: string,
+): string => {
+  return response?.message || fallback;
+};
+
+const getErrorMessage = (error: ApiError): string => {
+  return (
+    error?.data?.message ||
+    error?.message ||
+    'Une erreur est survenue. Veuillez reessayer.'
+  );
+};
+
+const notifySuccess = (message: string) => {
+  toast.success(message);
+  useUIStore.getState().addNotification({
+    type: 'success',
+    title: 'Succes',
+    message,
+  });
+};
+
+const notifyError = (message: string) => {
+  toast.error(message);
+  useUIStore.getState().addNotification({
+    type: 'error',
+    title: 'Erreur',
+    message,
+  });
+};
+
+const persistAvatarToAuthStore = (variables: unknown, responseData?: unknown) => {
+  const source = isObjectRecord(variables)
+    ? variables
+    : isObjectRecord(responseData)
+      ? responseData
+      : null;
+
+  if (!source) return;
+
+  const nestedData = isObjectRecord(source.data)
+    ? (source.data as Record<string, unknown>)
+    : null;
+
+  const avatarCandidate =
+    toStringValue(source.avatarUrl) ||
+    toStringValue(source.avatar) ||
+    toStringValue(nestedData?.avatarUrl) ||
+    toStringValue(nestedData?.avatar) ||
+    '';
+
+  if (!avatarCandidate) return;
+
+  useAuthStore.getState().updateUser({ avatar: avatarCandidate });
+};
+
+const persistUserIdentityToAuthStore = (
+  variables: unknown,
+  responseData?: unknown,
+) => {
+  const source = isObjectRecord(responseData)
+    ? responseData
+    : isObjectRecord(variables)
+      ? variables
+      : null;
+
+  if (!source) return;
+
+  const nestedData = isObjectRecord(source.data)
+    ? (source.data as Record<string, unknown>)
+    : null;
+
+  const firstNameCandidate =
+    toStringValue(source.firstName) ||
+    toStringValue(source.prenom) ||
+    toStringValue(nestedData?.firstName) ||
+    toStringValue(nestedData?.prenom) ||
+    '';
+
+  const lastNameCandidate =
+    toStringValue(source.lastName) ||
+    toStringValue(source.nom) ||
+    toStringValue(nestedData?.lastName) ||
+    toStringValue(nestedData?.nom) ||
+    '';
+
+  const avatarCandidate =
+    toStringValue(source.avatarUrl) ||
+    toStringValue(source.avatar) ||
+    toStringValue(nestedData?.avatarUrl) ||
+    toStringValue(nestedData?.avatar) ||
+    '';
+
+  const patch: Record<string, string> = {};
+  if (firstNameCandidate) patch.firstName = firstNameCandidate;
+  if (lastNameCandidate) patch.lastName = lastNameCandidate;
+  if (avatarCandidate) patch.avatar = avatarCandidate;
+
+  if (!Object.keys(patch).length) return;
+
+  useAuthStore.getState().updateUser(patch);
+};
+
+const handleMutationFeedback = (
+  data: MutationResponse,
+  successFallback: string,
+  errorFallback: string,
+): boolean => {
+  if (data?.success === false) {
+    notifyError(getResponseMessage(data, errorFallback));
+    return false;
+  }
+
+  notifySuccess(getResponseMessage(data, successFallback));
+  return true;
+};
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const patchCurrentProfileCache = (
+  current: Profile | undefined,
+  patch: Record<string, unknown>,
+): Profile | undefined => {
+  if (!current || !isObjectRecord(current) || !Object.keys(patch).length) {
+    return current;
+  }
+
+  const hasLevelOneData = isObjectRecord(current.data);
+  const levelOne = hasLevelOneData
+    ? (current.data as Record<string, unknown>)
+    : (current as Record<string, unknown>);
+
+  const hasLevelTwoData = isObjectRecord(levelOne.data);
+  const levelTwo = hasLevelTwoData
+    ? (levelOne.data as Record<string, unknown>)
+    : levelOne;
+
+  const mergedPayload = {
+    ...levelTwo,
+    ...patch,
+  };
+
+  if (hasLevelTwoData) {
+    const nextLevelOne = {
+      ...levelOne,
+      data: mergedPayload,
+    };
+
+    if (hasLevelOneData) {
+      return {
+        ...(current as Record<string, unknown>),
+        data: nextLevelOne,
+      } as Profile;
+    }
+
+    return nextLevelOne as Profile;
+  }
+
+  if (hasLevelOneData) {
+    return {
+      ...(current as Record<string, unknown>),
+      data: mergedPayload,
+    } as Profile;
+  }
+
+  return mergedPayload as Profile;
+};
+
+const syncPublicProfileCaches = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  patch: Record<string, unknown>,
+) => {
+  const userId = toStringValue(useAuthStore.getState().user?.id);
+
+  if (userId && Object.keys(patch).length) {
+    queryClient.setQueryData<Profile | undefined>(['publicProfile', userId], (current) =>
+      patchCurrentProfileCache(current, patch),
+    );
+  }
+
+  queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
+  queryClient.invalidateQueries({ queryKey: ['publicProfiles'] });
+  queryClient.invalidateQueries({ queryKey: ['searchPublicProfiles'] });
+  queryClient.invalidateQueries({ queryKey: ['publicProfilesBySector'] });
+  queryClient.invalidateQueries({ queryKey: ['publicProfilesByLocation'] });
+
+  queryClient.refetchQueries({ queryKey: ['publicProfile'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['publicProfiles'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['searchPublicProfiles'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['publicProfilesBySector'], type: 'active' });
+  queryClient.refetchQueries({ queryKey: ['publicProfilesByLocation'], type: 'active' });
+};
+
+const applyOptimisticProfilePatch = async (
+  queryClient: ReturnType<typeof useQueryClient>,
+  variables: unknown,
+): Promise<MutationContext> => {
+  await queryClient.cancelQueries({
+    queryKey: ['profile', 'current'],
+    exact: true,
+  });
+
+  const previousProfile = queryClient.getQueryData<Profile>(['profile', 'current']);
+
+  if (isObjectRecord(variables)) {
+    queryClient.setQueryData<Profile | undefined>(['profile', 'current'], (current) =>
+      patchCurrentProfileCache(current, variables),
+    );
+  }
+
+  return { previousProfile };
+};
+
+const refreshProfileQueries = (queryClient: ReturnType<typeof useQueryClient>) => {
+  queryClient.invalidateQueries({ queryKey: ['profile'] });
+  queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+  queryClient.refetchQueries({
+    queryKey: ['profile', 'current'],
+    exact: true,
+    type: 'active',
+  });
+};
+
+const syncProfileAcrossApp = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  variables: unknown,
+  data?: unknown,
+) => {
+  const patch = isObjectRecord(variables)
+    ? (variables as Record<string, unknown>)
+    : {};
+
+  persistAvatarToAuthStore(variables, data);
+  persistUserIdentityToAuthStore(variables, data);
+  refreshProfileQueries(queryClient);
+  syncPublicProfileCaches(queryClient, patch);
+};
+
 export const useProfileQuery = (
   options?: UseQueryOptions<Profile, ApiError>
 ): UseQueryResult<Profile, ApiError> => {
   return useQuery<Profile, ApiError>({
     queryKey: ['profile', 'current'],
     queryFn: getProfile,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 0,
+    refetchOnMount: true,
     ...options,
   });
 };
@@ -62,19 +313,123 @@ export const useProfileByIdQuery = (
 /**
  * Update user profile
  */
-export const useUpdateProfileMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
-) => {
+export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
     mutationFn: updateProfile,
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
+    onSuccess: (data, variables) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      syncProfileAcrossApp(queryClient, variables, data);
     },
-    onError: (error, variables, context) => {
-      options?.onError?.(error, variables, context);
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
+      notifyError(getErrorMessage(error));
+    },
+  });
+};
+
+/**
+ * Update standard profile (ROLE_CUSTOMER)
+ */
+export const useUpdateStandardProfileMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
+    mutationFn: updateStandardProfile,
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
+    onSuccess: (data, variables) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      syncProfileAcrossApp(queryClient, variables, data);
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
+      notifyError(getErrorMessage(error));
+    },
+  });
+};
+
+/**
+ * Update pro profile (ROLE_PRO)
+ */
+export const useUpdateProProfileMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
+    mutationFn: updateProProfile,
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
+    onSuccess: (data, variables) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      syncProfileAcrossApp(queryClient, variables, data);
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
+      notifyError(getErrorMessage(error));
+    },
+  });
+};
+
+/**
+ * Update enterprise profile (ROLE_ENTERPRISE)
+ */
+export const useUpdateEnterpriseProfileMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, MutationContext>({
+    mutationFn: updateEnterpriseProfile,
+    onMutate: (variables) => applyOptimisticProfilePatch(queryClient, variables),
+    onSuccess: (data, variables) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Profil mis a jour avec succes.',
+        'Echec de la mise a jour du profil.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      syncProfileAcrossApp(queryClient, variables, data);
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousProfile) {
+        queryClient.setQueryData(['profile', 'current'], context.previousProfile);
+      }
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -82,16 +437,53 @@ export const useUpdateProfileMutation = (
 /**
  * Upload avatar
  */
-export const useUploadAvatarMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
-) => {
+export const useUploadAvatarMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: uploadAvatar,
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Avatar mis a jour avec succes.',
+        "Impossible de televerser l'avatar.",
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      refreshProfileQueries(queryClient);
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
+    },
+  });
+};
+
+/**
+ * Upload cover image
+ */
+export const useUploadCoverImageMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, unknown>({
+    mutationFn: uploadCoverImage,
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Photo de couverture mise a jour avec succes.',
+        "Impossible de televerser la photo de couverture.",
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      refreshProfileQueries(queryClient);
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -99,33 +491,26 @@ export const useUploadAvatarMutation = (
 /**
  * Upload KYC documents
  */
-export const useUploadKYCMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
-) => {
+export const useUploadKYCMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Profile, ApiError, unknown>({
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: uploadKYC,
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Documents KYC televerses avec succes.',
+        'Impossible de televerser les documents KYC.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      refreshProfileQueries(queryClient);
     },
-  });
-};
-
-/**
- * Verify email
- */
-export const useVerifyEmailMutation = (
-  options?: UseMutationOptions<Profile, ApiError, unknown>
-) => {
-  const queryClient = useQueryClient();
-
-  return useMutation<Profile, ApiError, unknown>({
-    mutationFn: verifyEmail,
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      options?.onSuccess?.(data, variables, context);
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -133,13 +518,26 @@ export const useVerifyEmailMutation = (
 /**
  * Change password
  */
-export const useChangePasswordMutation = (
-  options?: UseMutationOptions<void, ApiError, unknown>
-) => {
-  return useMutation<void, ApiError, unknown>({
+export const useChangePasswordMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<Profile, ApiError, Variables, unknown>({
     mutationFn: updatePassword,
-    onSuccess: (data, variables, context) => {
-      options?.onSuccess?.(data, variables, context);
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Mot de passe mis a jour avec succes.',
+        'Impossible de mettre a jour le mot de passe.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
+      refreshProfileQueries(queryClient);
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -147,16 +545,26 @@ export const useChangePasswordMutation = (
 /**
  * Delete account
  */
-export const useDeleteAccountMutation = (
-  options?: UseMutationOptions<void, ApiError, void>
-) => {
+export const useDeleteAccountMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<void, ApiError, void>({
+  return useMutation<Profile, ApiError, string, unknown>({
     mutationFn: deleteAccount,
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data) => {
+      const isSuccess = handleMutationFeedback(
+        data,
+        'Compte supprime avec succes.',
+        'Impossible de supprimer le compte.',
+      );
+
+      if (!isSuccess) {
+        return;
+      }
+
       queryClient.clear();
-      options?.onSuccess?.(data, variables, context);
+    },
+    onError: (error) => {
+      notifyError(getErrorMessage(error));
     },
   });
 };
@@ -165,9 +573,12 @@ export default {
   useProfileQuery,
   useProfileByIdQuery,
   useUpdateProfileMutation,
+  useUpdateStandardProfileMutation,
+  useUpdateProProfileMutation,
+  useUpdateEnterpriseProfileMutation,
   useUploadAvatarMutation,
+  useUploadCoverImageMutation,
   useUploadKYCMutation,
-  useVerifyEmailMutation,
   useChangePasswordMutation,
   useDeleteAccountMutation,
 };

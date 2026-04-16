@@ -1,4 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
+import { useAuthStore } from '../stores/auth.store';
+import { toast } from 'sonner';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -13,12 +15,27 @@ const axiosInstance: AxiosInstance = axios.create({
 /**
  * Request Interceptor
  * Injects the Bearer token from localStorage into every outgoing request.
+ * Uses 'jwt_token' key to match the auth store persistence
  */
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('jobty_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (config.data instanceof FormData) {
+      const headers = config.headers as any;
+
+      if (headers?.delete) {
+        headers.delete('Content-Type');
+        headers.delete('content-type');
+      } else if (headers) {
+        delete headers['Content-Type'];
+        delete headers['content-type'];
+      }
+    }
+
+    if (!config.skipAuth) {
+      const token = localStorage.getItem('jwt_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -30,14 +47,43 @@ axiosInstance.interceptors.request.use(
  * Standardizes error handling and catches 401 Unauthorized to trigger logout.
  */
 axiosInstance.interceptors.response.use(
-  (response) => response.data, // Automatically extract ApiResponse.data
+  (response) => response.data,
   (error) => {
     const originalRequest = error.config;
+    const requestUrl = (originalRequest?.url || '').toLowerCase();
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/verify') ||
+      requestUrl.includes('/auth/refresh') ||
+      requestUrl.includes('/auth/confirm');
     
-    // Handle Session Expiry
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      localStorage.removeItem('jobty_token');
-      // Optional: window.location.href = '/login?expired=true';
+    // Handle Session Expiry - trigger frontend logout
+    // Skip logout for public endpoints (skipAuth=true) to avoid unnecessary redirects
+    if (
+      error.response?.status === 401 && 
+      !originalRequest._retry && 
+      !originalRequest.skipAuth &&
+      !isAuthEndpoint
+    ) {
+      // Mark request as retried to prevent infinite loops
+      originalRequest._retry = true;
+      
+      // Trigger frontend-only logout (clears token and redirects)
+      const authStore = useAuthStore.getState();
+      authStore.logout();
+
+      // Preserve return URL and route to login
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/connexion') {
+        window.location.href = `/connexion?redirect=${encodeURIComponent(currentPath + window.location.search + window.location.hash)}`;
+      }
+    }
+
+    if (error.response?.status === 403 && !originalRequest.skipAuth) {
+      toast.error("Insufficient permission", {
+        description: "You do not have the required permissions to perform this action.",
+      });
     }
 
     // Return the error envelope for TanStack Query to catch

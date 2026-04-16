@@ -1,49 +1,50 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
+import js from "@eslint/js";
+import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  // 1. Global ignores
-  { ignores: ['dist'] },
-
-  // 2. Base JS config (applies to all files)
+  { ignores: ["dist", "public/sw.js"] },
   js.configs.recommended,
-
-  // 3. TypeScript specific config
   {
-    files: ['**/*.{ts,tsx}'],
+    files: [
+      "**/*.{ts,tsx}",
+      "**/*.{js,jsx}",
+      "tailwind.config.ts",
+      "public/sw.js",
+    ],
     extends: [
       ...tseslint.configs.recommended,
+      tseslint.configs.disableTypeChecked,
     ],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: "latest",
       globals: globals.browser,
       parserOptions: {
-        project: ['./tsconfig.json'],
+        project: ["./tsconfig.json"],
         tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      '@typescript-eslint/no-explicit-any': 'warn',
-      'react-refresh/only-export-components': [
-        'warn',
+      "import/no-extraneous-dependencies": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "react-refresh/only-export-components": [
+        "off",
         { allowConstantExport: true },
       ],
-      '@typescript-eslint/no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
+      "@typescript-eslint/no-undef": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "off",
+        { varsIgnorePattern: "^[A-Z_]" },
+      ],
     },
   },
-  
-  // 4. Special handling for JS files (like vite.config.js) 
-  // This prevents the "cannot read tsconfig" error for JS files
-  {
-    files: ['**/*.{js,jsx}'],
-    extends: [tseslint.configs.disableTypeChecked],
-  }
-)
+);

@@ -1,8 +1,8 @@
-export const cn = (...classes: Array<string | false | null | undefined>) => {
-  return classes
-    .flatMap((cls) => (typeof cls === 'string' ? cls.split(' ') : []))
-    .filter(Boolean)
-    .join(' ');
-};
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-export default cn;
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export default cn

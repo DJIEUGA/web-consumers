@@ -1,0 +1,90 @@
+[
+  {
+    "sector": "Bâtiment & Travaux",
+    "keywords": ["Maçons", "menuisiers", "peintres"]
+  },
+  {
+    "sector": "Électricité",
+    "keywords": ["Électriciens", "domotique", "réseaux électriques"]
+  },
+  {
+    "sector": "Informatique & Tech",
+    "keywords": ["Développeurs", "techniciens", "réseaux"]
+  },
+  {
+    "sector": "Design & Création",
+    "keywords": ["Graphistes", "designers", "illustrateurs"]
+  },
+  {
+    "sector": "Santé",
+    "keywords": ["Infirmiers", "kinés", "esthétique"]
+  },
+  {
+    "sector": "Éducation & Formation",
+    "keywords": ["Professeurs", "formateurs", "coachs"]
+  },
+  {
+    "sector": "Commerce & Vente",
+    "keywords": ["Vendeurs", "commerciaux", "e-commerce"]
+  },
+  {
+    "sector": "Transport & Logistique",
+    "keywords": ["Chauffeurs", "livreurs", "logisticiens"]
+  },
+  {
+    "sector": "Agriculture",
+    "keywords": ["Agronomes", "éleveurs", "pêcheurs"]
+  },
+  {
+    "sector": "Artisanat",
+    "keywords": ["Couturiers", "bijoutiers", "potiers"]
+  },
+  {
+    "sector": "Juridique & Administratif",
+    "keywords": ["Avocats", "notaires", "assistants"]
+  },
+  {
+    "sector": "Marketing & Communication",
+    "keywords": ["Community managers", "publicitaires"]
+  },
+  {
+    "sector": "Finance & Comptabilité",
+    "keywords": ["Comptables", "auditeurs", "fiscalistes"]
+  },
+  {
+    "sector": "Événementiel",
+    "keywords": ["Organisateurs", "animateurs", "DJ"]
+  },
+  {
+    "sector": "Restauration",
+    "keywords": ["Cuisiniers", "traiteurs", "pâtissiers"]
+  },
+  {
+    "sector": "Mécanique & Automobile",
+    "keywords": ["Mécaniciens", "garagistes", "carrossiers"]
+  },
+  {
+    "sector": "Beauté & Bien-être",
+    "keywords": ["Coiffeurs", "esthéticiennes", "masseurs"]
+  },
+  {
+    "sector": "Sport & Fitness",
+    "keywords": ["Coachs sportifs", "préparateurs physiques"]
+  },
+  {
+    "sector": "Plomberie & Chauffage",
+    "keywords": ["Plombiers", "chauffagistes", "climatisation"]
+  },
+  {
+    "sector": "Intelligence Artificielle",
+    "keywords": ["IA", "Machine Learning", "Data Science"]
+  },
+  {
+    "sector": "Sons & Musique",
+    "keywords": ["Musiciens", "beatmakers", "ingénieurs son"]
+  },
+  {
+    "sector": "Vidéo & Audiovisuel",
+    "keywords": ["Vidéastes", "monteurs", "réalisateurs"]
+  }
+]
