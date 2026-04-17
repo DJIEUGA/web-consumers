@@ -91,7 +91,11 @@ function ProfilPublicFreelance() {
 
   const rawIdentifier = identifier || freelanceId || id || '';
   const normalizedIdentifier = decodeURIComponent(rawIdentifier).trim().toLowerCase();
-  const routeState = (location.state || {}) as { userId?: string; username?: string | null };
+  const routeState = (location.state || {}) as {
+    proId?: string;
+    userId?: string;
+    username?: string | null;
+  };
   const isLikelyUserId = /^[0-9a-fA-F-]{16,}$/.test(rawIdentifier);
   const shouldResolveByUsername =
     Boolean(rawIdentifier) && !isLikelyUserId && !routeState.userId;
@@ -121,23 +125,24 @@ function ProfilPublicFreelance() {
     return matched || null;
   }, [shouldResolveByUsername, publicProfilesList, normalizedIdentifier]);
 
-  const resolvedUserId = useMemo(() => {
+  const resolvedProId = useMemo(() => {
+    if (routeState.proId) return routeState.proId;
     if (routeState.userId) return routeState.userId;
     if (!rawIdentifier) return '';
     if (isLikelyUserId) return rawIdentifier;
 
-    return toStringValue(matchedProfile?.userId);
-  }, [routeState.userId, rawIdentifier, isLikelyUserId, matchedProfile]);
+    return toStringValue((matchedProfile as any)?.proId || matchedProfile?.userId);
+  }, [routeState.proId, routeState.userId, rawIdentifier, isLikelyUserId, matchedProfile]);
 
   const {
     data: profileByIdData,
     isLoading: isProfileLoading,
     isFetching: isProfileFetching,
     isError: isProfileError,
-  } = usePublicProfileById(resolvedUserId);
+  } = usePublicProfileById(resolvedProId);
 
   const isOwnProfile =
-    isAuthenticated && Boolean(authUser?.id) && authUser?.id === resolvedUserId;
+    isAuthenticated && Boolean(authUser?.id) && authUser?.id === resolvedProId;
 
   const queryClient = useQueryClient();
   const uploadAvatarMutation = useUploadAvatarMutation();
@@ -147,8 +152,8 @@ function ProfilPublicFreelance() {
     if (e.target.files && e.target.files[0]) {
       uploadAvatarMutation.mutate(e.target.files[0], {
         onSuccess: () => {
-          if (resolvedUserId) {
-            queryClient.invalidateQueries({ queryKey: ['publicProfile', resolvedUserId] });
+          if (resolvedProId) {
+            queryClient.invalidateQueries({ queryKey: ['publicProfile', resolvedProId] });
           }
         },
       });
@@ -159,8 +164,8 @@ function ProfilPublicFreelance() {
     if (e.target.files && e.target.files[0]) {
       uploadCoverMutation.mutate(e.target.files[0], {
         onSuccess: () => {
-          if (resolvedUserId) {
-            queryClient.invalidateQueries({ queryKey: ['publicProfile', resolvedUserId] });
+          if (resolvedProId) {
+            queryClient.invalidateQueries({ queryKey: ['publicProfile', resolvedProId] });
           }
         },
       });
@@ -182,7 +187,7 @@ function ProfilPublicFreelance() {
   const isResolvingUsername =
     shouldResolveByUsername && (isProfilesLoading || isProfilesFetching);
   const isLoadingProfileDetails =
-    Boolean(resolvedUserId) && (isProfileLoading || isProfileFetching);
+    Boolean(resolvedProId) && (isProfileLoading || isProfileFetching);
   const isPageLoading = isResolvingUsername || isLoadingProfileDetails;
 
   const isUsernameNotFound =
@@ -191,7 +196,7 @@ function ProfilPublicFreelance() {
     !matchedProfile;
 
   const isProfileNotFound =
-    Boolean(resolvedUserId) &&
+    Boolean(resolvedProId) &&
     !isLoadingProfileDetails &&
     (isProfileError || !hasRenderableProfile);
 

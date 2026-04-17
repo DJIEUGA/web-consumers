@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   FiX,
@@ -56,12 +57,21 @@ import {
 import { COLORS } from "../../../styles/colors";
 import Logo from "@/components/shared/Logo";
 import { useAuthStore } from "@/stores/auth.store";
-import collaborationApi, {
+import {
+  collaborationApi,
   type CollaborationSpaceResponse,
   type CollaborationStatus,
-  type MessageDTO,
   type PublicReviewItem,
 } from "@/features/collaboration/services/collaborationApi";
+import {
+  useCollaborationActions,
+  useMySpaces,
+  usePublicProfileReviews,
+  useSpaceMessages,
+  useSubmitReview,
+} from "@/features/collaboration/hooks/useCollaboration";
+import { usePublicProfile } from "@/features/profile/hooks/useProfileActions";
+import { toast } from "sonner";
 import "../styles/collaboration/style.css";
 
 const COLLAB_STORAGE_PREFIX = "jobty:collaboration:room:";
@@ -164,6 +174,31 @@ const isUuidLike = (value: string) =>
     value,
   );
 
+const getProfilePayload = (
+  profile: unknown,
+): Record<string, any> => {
+  if (!profile || typeof profile !== "object") return {};
+
+  const firstLevel = (profile as Record<string, any>).data;
+  if (firstLevel && typeof firstLevel === "object") {
+    const secondLevel = (firstLevel as Record<string, any>).data;
+    if (secondLevel && typeof secondLevel === "object") {
+      return secondLevel as Record<string, any>;
+    }
+    return firstLevel as Record<string, any>;
+  }
+
+  return profile as Record<string, any>;
+};
+
+type UiMessage = {
+  id: string;
+  sender: "porteur" | "freelance";
+  text: string;
+  time: string;
+  date: string;
+};
+
 export const CollaborationSpace = () => {
   const navigate = useNavigate();
   const { freelanceId } = useParams();
@@ -174,13 +209,99 @@ export const CollaborationSpace = () => {
   const messagesEndRef = useRef(null);
 
   const roleValue = String(authRole || authUser?.role || "").toUpperCase();
-  const actor: CollaborationActor = roleValue === "ROLE_CUSTOMER"
+  const actor: CollaborationActor =
+    roleValue === "ROLE_CUSTOMER" || roleValue === "ROLE_ENTERPRISE"
     ? "customer"
-    : roleValue === "ROLE_PRO" || roleValue === "ROLE_ENTERPRISE"
+    : roleValue === "ROLE_PRO"
       ? "pro"
       : "other";
+  const isCustomer = actor === "customer";
+  const isPro = actor === "pro";
+  const {
+    createSpace,
+    sendMessage: sendMessageMutation,
+    acceptRequest,
+    rejectRequest,
+  } = useCollaborationActions();
+  const mySpacesQuery = useMySpaces();
   const currentUserId = String(authUser?.id || "").trim();
   const incomingId = String(freelanceId || "").trim();
+  const [backendSpace, setBackendSpace] = useState<CollaborationSpaceResponse | null>(null);
+
+  const proProfileLookupId = useMemo(() => {
+    if (isPro && currentUserId && isUuidLike(currentUserId)) {
+      return currentUserId;
+    }
+
+    const backendProId = String(backendSpace?.proId || "").trim();
+    if (backendProId && isUuidLike(backendProId)) {
+      return backendProId;
+    }
+
+    if (isCustomer && incomingId && isUuidLike(incomingId) && incomingId !== currentUserId) {
+      return incomingId;
+    }
+
+    const matchedPair = incomingId.match(/^room:(.+)::(.+)$/);
+    const pairProId = String(matchedPair?.[2] || "").trim();
+    if (pairProId && isUuidLike(pairProId)) {
+      return pairProId;
+    }
+
+    return "";
+  }, [backendSpace?.proId, currentUserId, incomingId, isCustomer, isPro]);
+
+  const publicProProfileQuery = usePublicProfile(proProfileLookupId || undefined);
+  const publicProProfile = useMemo(
+    () => getProfilePayload(publicProProfileQuery.data?.data),
+    [publicProProfileQuery.data?.data],
+  );
+
+  const ownerProfileLookupId = useMemo(() => {
+    const backendCustomerId = String(backendSpace?.customerId || "").trim();
+    if (backendCustomerId && isUuidLike(backendCustomerId)) {
+      return backendCustomerId;
+    }
+
+    if (isPro && incomingId && isUuidLike(incomingId) && incomingId !== currentUserId) {
+      return incomingId;
+    }
+
+    const matchedPair = incomingId.match(/^room:(.+)::(.+)$/);
+    const pairCustomerId = String(matchedPair?.[1] || "").trim();
+    if (pairCustomerId && isUuidLike(pairCustomerId)) {
+      return pairCustomerId;
+    }
+
+    return "";
+  }, [backendSpace?.customerId, currentUserId, incomingId, isPro]);
+
+  const publicOwnerProfileQuery = usePublicProfile(
+    !isPro ? ownerProfileLookupId || undefined : undefined,
+  );
+  const publicOwnerProfile = useMemo(
+    () => getProfilePayload(publicOwnerProfileQuery.data?.data),
+    [publicOwnerProfileQuery.data?.data],
+  );
+  const customerOwnerProfileQuery = useQuery({
+    queryKey: ["collaboration", "customer-profile", ownerProfileLookupId],
+    queryFn: () => collaborationApi.getCustomerProfileDetails(ownerProfileLookupId),
+    enabled: isPro && Boolean(ownerProfileLookupId),
+    staleTime: 5 * 60 * 1000,
+  });
+  const customerOwnerProfile = useMemo(
+    () => getProfilePayload(customerOwnerProfileQuery.data),
+    [customerOwnerProfileQuery.data],
+  );
+  const resolvedOwnerProfile = isPro ? customerOwnerProfile : publicOwnerProfile;
+  const isFreelanceIdentityLoading =
+    Boolean(proProfileLookupId) &&
+    publicProProfileQuery.isPending &&
+    Object.keys(publicProProfile).length === 0;
+  const isOwnerIdentityLoading =
+    Boolean(ownerProfileLookupId) &&
+    (isPro ? customerOwnerProfileQuery.isPending : publicOwnerProfileQuery.isPending) &&
+    Object.keys(resolvedOwnerProfile).length === 0;
 
   const collaborationRoomId = (() => {
     if (!incomingId) return "room:anonymous";
@@ -193,7 +314,7 @@ export const CollaborationSpace = () => {
     }
 
     // Pro opens a customer room: /collaboration/:customerId -> room:<customerId>::<proId>
-    if ((roleValue === "ROLE_PRO" || roleValue === "ROLE_ENTERPRISE") && currentUserId) {
+    if (roleValue === "ROLE_PRO" && currentUserId) {
       return buildRoomId(incomingId, currentUserId);
     }
 
@@ -201,9 +322,9 @@ export const CollaborationSpace = () => {
   })();
 
   const defaultMessages = React.useMemo(
-    () => [
+    (): UiMessage[] => [
       {
-        id: 1,
+        id: "1",
         sender: "freelance",
         text: "Bonjour ! Merci de m'avoir contacté. Je suis disponible pour discuter de votre projet. Pouvez-vous m'en dire plus sur vos besoins ?",
         time: "10:30",
@@ -221,14 +342,8 @@ export const CollaborationSpace = () => {
   const [lifecycleEvents, setLifecycleEvents] = useState<
     CollaborationLifecycleEvent[]
   >([]);
-  const [backendSpace, setBackendSpace] =
-    useState<CollaborationSpaceResponse | null>(null);
-  const [syncError, setSyncError] = useState<string>("");
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewSubmitSuccess, setReviewSubmitSuccess] = useState(false);
   const [hasExistingReview, setHasExistingReview] = useState(false);
-  const [isCheckingExistingReview, setIsCheckingExistingReview] = useState(false);
 
   // États des données
   const [messages, setMessages] = useState(defaultMessages);
@@ -280,12 +395,24 @@ export const CollaborationSpace = () => {
   const isMessageBlockedByStatus = (status?: CollaborationStatus) =>
     Boolean(status && MESSAGE_BLOCKED_STATUSES.includes(status));
 
+  const spaceMessagesQuery = useSpaceMessages(
+    backendSpace?.id && !isMessageBlockedByStatus(backendSpace.status)
+      ? backendSpace.id
+      : undefined,
+  );
+
   const mapBackendMessageToUi = useCallback(
-    (msg: MessageDTO) => ({
-      id: msg.id,
+    (msg: {
+      id: string;
+      senderId: string;
+      content: string;
+      sentAt?: string;
+      createdAt?: string;
+    }): UiMessage => ({
+      id: String(msg.id),
       sender: msg.senderId === currentUserId ? "porteur" : "freelance",
       text: msg.content,
-      time: new Date(msg.sentAt).toLocaleTimeString("fr-FR", {
+      time: new Date(msg.sentAt || msg.createdAt || Date.now()).toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit",
       }),
@@ -367,29 +494,277 @@ export const CollaborationSpace = () => {
     recommande: null,
   });
 
-  // Données du freelance
-  const freelance = {
-    id: 1,
-    nom: "Aminata Koné",
-    poste: "Développeuse Full Stack",
-    photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aminata",
-    ville: "Abidjan",
-    pays: "Côte d'Ivoire",
-    note: 4.8,
-    avis: 47,
-    projetsRealises: 89,
-    tauxReponse: "98%",
-    delaiReponse: "< 2h",
-    competences: ["React", "Node.js", "MongoDB", "UI/UX"],
-    verified: true,
-  };
+  // Données du professionnel (profil public réel + fallback)
+  const freelance = useMemo(() => {
+    const liveProPayload = (publicProProfile || {}) as Record<string, any>;
+    const fullName = [publicProProfile?.firstName, publicProProfile?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
 
-  // Données du porteur de projet
-  const porteur = {
-    nom: "Marc Dubois",
-    photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marc",
-    entreprise: "StartupTech CI",
-  };
+    const displayName =
+      fullName ||
+      publicProProfile?.displayName ||
+      backendSpace?.proName ||
+      "Professionnel Jobty";
+
+    const rating = Number(
+      liveProPayload?.stats?.averageRating ??
+        publicProProfile?.averageRating ??
+        0,
+    );
+    const reviewCount = Number(
+      Array.isArray(liveProPayload?.reviews)
+        ? liveProPayload.reviews.length
+        : publicProProfile?.reviewCount ?? 0,
+    );
+    const completedProjects = Number(
+      liveProPayload?.stats?.completedProjects ??
+        publicProProfile?.completedProjects ??
+        0,
+    );
+
+    const responseRateRaw =
+      liveProPayload?.stats?.responseRate ??
+      liveProPayload?.responseRate ??
+      liveProPayload?.stats?.responseRatePercent;
+    const responseRate =
+      typeof responseRateRaw === "number"
+        ? responseRateRaw > 1
+          ? `${Math.round(responseRateRaw)}%`
+          : `${Math.round(responseRateRaw * 100)}%`
+        : "N/A";
+
+    const normalizeSkillValue = (skill: unknown): string => {
+      if (typeof skill === "string") return skill.trim();
+      if (skill && typeof skill === "object") {
+        const candidate =
+          (skill as { name?: string }).name ||
+          (skill as { title?: string }).title ||
+          (skill as { label?: string }).label ||
+          (skill as { value?: string }).value;
+        return String(candidate || "").trim();
+      }
+      return "";
+    };
+
+    const skillsFromPayload = Array.isArray(liveProPayload?.skills)
+      ? liveProPayload.skills.map(normalizeSkillValue).filter(Boolean)
+      : [];
+
+    const skillsFromAltArrays = [
+      liveProPayload?.competences,
+      liveProPayload?.expertises,
+      liveProPayload?.technologies,
+      liveProPayload?.stack,
+      liveProPayload?.tags,
+    ]
+      .filter(Array.isArray)
+      .flatMap((list) => (list as unknown[]).map(normalizeSkillValue))
+      .filter(Boolean);
+
+    const skillsFromDelimitedFields = [
+      liveProPayload?.
+      liveProPayload?.competences,
+      liveProPayload?.expertises,
+      liveProPayload?.technologies,
+      liveProPayload?.stack,
+      liveProPayload?.tags,
+    ]
+      .filter((value) => typeof value === "string")
+      .flatMap((value) =>
+        String(value)
+          .split(/[,;|]/)
+          .map((item) => item.trim())
+          .filter(Boolean),
+      );
+
+    const skillsFromServices = (publicProProfile?.services || [])
+      .map((service) => String(service?.title || "").trim())
+      .filter(Boolean)
+      .slice(0, 4);
+
+    const specialtySkill = String(
+      liveProPayload?.specialty || liveProPayload?.specialite || "",
+    ).trim();
+    const sectorSkill = String(liveProPayload?.sector || "").trim();
+
+    const normalizedSkills = Array.from(
+      new Set([
+        ...skillsFromPayload,
+        ...skillsFromAltArrays,
+        ...skillsFromDelimitedFields,
+        ...skillsFromServices,
+        specialtySkill,
+        sectorSkill,
+      ].filter(Boolean)),
+    ).slice(0, 4);
+
+    const city = String(
+      publicProProfile?.location?.city || liveProPayload?.city || "",
+    ).trim();
+    const country = String(
+      publicProProfile?.location?.country || liveProPayload?.country || "",
+    ).trim();
+
+    const headline = String(
+      publicProProfile?.headline ||
+        liveProPayload?.specialty ||
+        liveProPayload?.specialite ||
+        liveProPayload?.bio ||
+        "",
+    ).trim();
+
+    const specialty = String(
+      liveProPayload?.specialty ||
+        liveProPayload?.specialite ||
+        liveProPayload?.sector ||
+        "",
+    ).trim();
+
+    const hourlyRate = Number(
+      liveProPayload?.hourlyRate ??
+        liveProPayload?.tarifHoraire ??
+        publicProProfile?.hourlyRate ??
+        NaN,
+    );
+
+    const isVerified = Boolean(
+      (liveProPayload as any)?.isVerified ?? (liveProPayload as any)?.verified ?? false,
+    );
+
+    const responseDelay = String(
+      liveProPayload?.stats?.avgResponseTime ||
+        liveProPayload?.stats?.durationOnPlatform ||
+        "< 2h",
+    ).trim();
+
+    const anciennete = String(
+      liveProPayload?.stats?.durationOnPlatform ||
+        liveProPayload?.anciennete ||
+        "N/A",
+    ).trim();
+
+    const collaborationsEnCours = Number(
+      liveProPayload?.stats?.ongoingProjects ??
+        liveProPayload?.collaborationsEnCours ??
+        0,
+    );
+
+    return {
+      id: proProfileLookupId || 1,
+      nom: displayName,
+      poste: headline || "Profil non renseigné",
+      photo:
+        publicProProfile?.avatarUrl ||
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
+      location: liveProPayload?.location || "localisation non renseignée",
+      note: Number.isFinite(rating) ? rating : 0.0,
+      avis: Number.isFinite(reviewCount) ? reviewCount : 0,
+      projetsRealises: Number.isFinite(completedProjects) ? completedProjects : 0,
+      tauxReponse: responseRate,
+      delaiReponse: responseDelay || "pas definir",
+      competences: normalizedSkills.length > 0 ? normalizedSkills : ["Profil en cours"],
+      verified: isVerified,
+      specialite: specialty,
+      tarifHoraire: Number.isFinite(hourlyRate) ? hourlyRate : null,
+      anciennete: anciennete || "N/A",
+      collaborationsEnCours: Number.isFinite(collaborationsEnCours)
+        ? collaborationsEnCours
+        : 0,
+    };
+  }, [backendSpace?.proName, proProfileLookupId, publicProProfile]);
+
+  // Données du porteur de projet (profil public réel + fallback)
+  const porteur = useMemo(() => {
+    const fullName = [resolvedOwnerProfile?.firstName, resolvedOwnerProfile?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    const companyName = String(
+      resolvedOwnerProfile?.companyName ||
+        resolvedOwnerProfile?.businessName ||
+        resolvedOwnerProfile?.entreprise ||
+        "",
+    ).trim();
+    const displayName =
+      fullName ||
+      resolvedOwnerProfile?.displayName ||
+      companyName ||
+      backendSpace?.customerName ||
+      [authUser?.firstName, authUser?.lastName].filter(Boolean).join(" ").trim() ||
+      "Marc Dubois";
+
+    const companyOrLabel =
+      resolvedOwnerProfile?.headline ||
+      companyName ||
+      resolvedOwnerProfile?.displayName ||
+      "Client Jobty";
+
+    return {
+      id: ownerProfileLookupId || "owner",
+      nom: displayName,
+      photo:
+        resolvedOwnerProfile?.avatarUrl ||
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
+      entreprise: companyOrLabel,
+    };
+  }, [
+    authUser?.firstName,
+    authUser?.lastName,
+    backendSpace?.customerName,
+    ownerProfileLookupId,
+    resolvedOwnerProfile,
+  ]);
+
+  const sidebarIdentityLoading = isPro ? isOwnerIdentityLoading : isFreelanceIdentityLoading;
+  const sidebarProfile = useMemo(() => {
+    if (isPro) {
+      const ownerStats = (resolvedOwnerProfile?.stats || {}) as Record<string, any>;
+      const ownerLocation =
+        (typeof resolvedOwnerProfile?.location === "object" && resolvedOwnerProfile?.location
+          ? `${String(resolvedOwnerProfile.location.city || "").trim()} ${String(resolvedOwnerProfile.location.country || "").trim()}`.trim()
+          : String(resolvedOwnerProfile?.location || "").trim()) ||
+        "Localisation non renseignée";
+
+      const ownerSkills = Array.isArray(resolvedOwnerProfile?.skills)
+        ? resolvedOwnerProfile.skills
+            .map((skill: unknown) => String(skill || "").trim())
+            .filter(Boolean)
+            .slice(0, 4)
+        : [];
+
+      return {
+        nom: porteur.nom,
+        photo: porteur.photo,
+        poste: String(resolvedOwnerProfile?.headline || porteur.entreprise || "Client Jobty"),
+        location: ownerLocation,
+        specialite: String(resolvedOwnerProfile?.sector || resolvedOwnerProfile?.specialty || ""),
+        tarifHoraire: null as number | null,
+        note: Number(ownerStats?.averageRating ?? resolvedOwnerProfile?.averageRating ?? 0),
+        avis: Number(resolvedOwnerProfile?.reviewCount ?? 0),
+        projetsRealises: Number(ownerStats?.completedProjects ?? 0),
+        collaborationsEnCours: Number(ownerStats?.ongoingProjects ?? 0),
+        competences: ownerSkills.length > 0 ? ownerSkills : ["Profil client"],
+        verified: Boolean(resolvedOwnerProfile?.isVerified ?? resolvedOwnerProfile?.verified ?? false),
+      };
+    }
+
+    return {
+      nom: freelance.nom,
+      photo: freelance.photo,
+      poste: freelance.poste,
+      location: freelance.location,
+      specialite: freelance.specialite,
+      tarifHoraire: freelance.tarifHoraire,
+      note: Number(freelance.note || 0),
+      avis: Number(freelance.avis || 0),
+      projetsRealises: Number(freelance.projetsRealises || 0),
+      collaborationsEnCours: Number(freelance.collaborationsEnCours || 0),
+      competences: Array.isArray(freelance.competences) ? freelance.competences : ["Profil en cours"],
+      verified: Boolean(freelance.verified),
+    };
+  }, [freelance, isPro, porteur, resolvedOwnerProfile]);
 
   // Scroll automatique des messages
   useEffect(() => {
@@ -408,88 +783,59 @@ export const CollaborationSpace = () => {
 
   useEffect(() => {
     if (!currentUserId || !incomingId) return;
+    if (mySpacesQuery.isError) {
+      setBackendSpace(null);
+      return;
+    }
 
-    let isMounted = true;
+    const spaces = mySpacesQuery.data || [];
 
-    const hydrateFromBackend = async () => {
-      try {
-        setIsSyncing(true);
-        setSyncError("");
-        const spaces = await collaborationApi.listMySpaces();
+    let matchedSpace: CollaborationSpaceResponse | undefined;
 
-        if (!isMounted) return;
+    if (isUuidLike(incomingId)) {
+      matchedSpace = spaces.find((space) => space.id === incomingId);
+    }
 
-        let matchedSpace: CollaborationSpaceResponse | undefined;
-
-        if (isUuidLike(incomingId)) {
-          matchedSpace = spaces.find((space) => space.id === incomingId);
-        }
-
-        if (!matchedSpace) {
-          const pair = parseRoomPair(collaborationRoomId);
-          if (pair) {
-            matchedSpace = spaces.find(
-              (space) =>
-                space.customerId === pair.customerId && space.proId === pair.proId,
-            );
-          }
-        }
-
-        if (!matchedSpace && isUuidLike(incomingId)) {
-          matchedSpace = spaces.find(
-            (space) => space.proId === incomingId || space.customerId === incomingId,
-          );
-        }
-
-        if (matchedSpace) {
-          setBackendSpace(matchedSpace);
-          setCurrentStep(BACKEND_STATUS_TO_STEP[matchedSpace.status] ?? 1);
-          if (matchedSpace.status === "REJECTED") {
-            setDecisionState("declined");
-          }
-        } else {
-          setBackendSpace(null);
-        }
-      } catch {
-        if (!isMounted) return;
-        setBackendSpace(null);
-      } finally {
-        if (isMounted) {
-          setIsSyncing(false);
-        }
+    if (!matchedSpace) {
+      const pair = parseRoomPair(collaborationRoomId);
+      if (pair) {
+        matchedSpace = spaces.find(
+          (space) =>
+            space.customerId === pair.customerId && space.proId === pair.proId,
+        );
       }
-    };
+    }
 
-    hydrateFromBackend();
+    if (!matchedSpace && isUuidLike(incomingId)) {
+      matchedSpace = spaces.find(
+        (space) => space.proId === incomingId || space.customerId === incomingId,
+      );
+    }
 
-    return () => {
-      isMounted = false;
-    };
-  }, [collaborationRoomId, currentUserId, incomingId]);
+    if (matchedSpace) {
+      setBackendSpace(matchedSpace);
+      setCurrentStep(BACKEND_STATUS_TO_STEP[matchedSpace.status] ?? 1);
+      if (matchedSpace.status === "REJECTED") {
+        setDecisionState("declined");
+      }
+    } else {
+      setBackendSpace(null);
+    }
+  }, [
+    collaborationRoomId,
+    currentUserId,
+    incomingId,
+    mySpacesQuery.data,
+    mySpacesQuery.isError,
+  ]);
 
   useEffect(() => {
     if (!backendSpace?.id) return;
-    if (isMessageBlockedByStatus(backendSpace.status)) return;
-
-    let isMounted = true;
-
-    const loadMessages = async () => {
-      try {
-        const remoteMessages = await collaborationApi.listMessages(backendSpace.id);
-        if (!isMounted) return;
-        setMessages(remoteMessages.map(mapBackendMessageToUi));
-      } catch {
-        if (!isMounted) return;
-        setSyncError("Impossible de synchroniser les messages pour le moment.");
-      }
-    };
-
-    loadMessages();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [backendSpace?.id, backendSpace?.status, mapBackendMessageToUi]);
+    if (spaceMessagesQuery.isError) return;
+    if (Array.isArray(spaceMessagesQuery.data)) {
+      setMessages(spaceMessagesQuery.data.map(mapBackendMessageToUi));
+    }
+  }, [backendSpace?.id, mapBackendMessageToUi, spaceMessagesQuery.data, spaceMessagesQuery.isError]);
 
   useEffect(() => {
     if (backendSpace) return;
@@ -589,18 +935,18 @@ export const CollaborationSpace = () => {
     const content = newMessage.trim();
     if (!content) return;
 
-    setSyncError("");
-
     if (backendSpace?.id) {
       if (isMessageBlockedByStatus(backendSpace.status)) {
-        setSyncError(
-          "La messagerie est indisponible pour ce statut de collaboration.",
-        );
+        toast.error("La messagerie est indisponible pour ce statut de collaboration.");
         return;
       }
 
       try {
-        const sent = await collaborationApi.sendMessage(backendSpace.id, content);
+        const sentEnvelope = await sendMessageMutation.mutateAsync({
+          spaceId: backendSpace.id,
+          params: { content },
+        });
+        const sent = sentEnvelope.data;
         setMessages((prev) => [...prev, mapBackendMessageToUi(sent)]);
         appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
           sender: actor,
@@ -609,16 +955,14 @@ export const CollaborationSpace = () => {
         setNewMessage("");
         return;
       } catch (error: any) {
-        setSyncError(
-          String(error?.message || "Échec d'envoi du message. Réessayez."),
-        );
+        toast.error(String(error?.message || "Échec d'envoi du message. Réessayez."));
         return;
       }
     }
 
-    const newMsg = {
-      id: messages.length + 1,
-      sender: "porteur",
+    const newMsg: UiMessage = {
+      id: String(messages.length + 1),
+      sender: isCustomer ? "porteur" : "freelance",
       text: content,
       time: new Date().toLocaleTimeString("fr-FR", {
         hour: "2-digit",
@@ -628,15 +972,15 @@ export const CollaborationSpace = () => {
     };
     setMessages([...messages, newMsg]);
     appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-      sender: "customer",
+      sender: actor,
       mode: "local",
     });
     setNewMessage("");
 
     // Simulation réponse du freelance (fallback local)
     setTimeout(() => {
-      const reponse = {
-        id: messages.length + 2,
+      const reponse: UiMessage = {
+        id: String(messages.length + 2),
         sender: "freelance",
         text: "Merci pour ces informations ! Je serais ravi de collaborer avec vous sur ce projet. 🚀",
         time: new Date().toLocaleTimeString("fr-FR", {
@@ -672,6 +1016,38 @@ export const CollaborationSpace = () => {
 
     return "";
   }, [backendSpace?.proId, collaborationRoomId, currentUserId, incomingId]);
+
+  const resolvedReviewProId = resolveProIdForRequest();
+  const reviewsQuery = usePublicProfileReviews(
+    resolvedReviewProId,
+    currentStep === 9 && Boolean(resolvedReviewProId && isUuidLike(resolvedReviewProId)),
+  );
+  const submitReviewMutation = useSubmitReview();
+  const isSyncing = mySpacesQuery.isFetching || spaceMessagesQuery.isFetching;
+  const isCheckingExistingReview = reviewsQuery.isFetching;
+  const isMessagingLocked = isMessageBlockedByStatus(backendSpace?.status);
+  const requestContextMessage = useMemo(() => {
+    const backendMessage = String(
+      backendSpace?.brief || backendSpace?.title || "",
+    ).trim();
+    if (backendMessage) return backendMessage;
+
+    const latestCustomerMessage = [...messages]
+      .reverse()
+      .find((msg) => msg.sender === "porteur" && String(msg.text || "").trim());
+
+    return String(latestCustomerMessage?.text || "").trim();
+  }, [backendSpace?.brief, backendSpace?.title, messages]);
+  const messagingStatusNotice = isMessagingLocked
+    ? "Messagerie indisponible pour le statut actuel de collaboration."
+    : "";
+  const syncErrorMessage =
+    (mySpacesQuery.isError
+      ? "Impossible de synchroniser les collaborations pour le moment."
+      : "") ||
+    (spaceMessagesQuery.isError
+      ? "Impossible de synchroniser les messages pour le moment."
+      : "");
 
   const isReviewOwnedByCurrentUser = useCallback(
     (review: PublicReviewItem) => {
@@ -728,28 +1104,29 @@ export const CollaborationSpace = () => {
 
     const proId = resolveProIdForRequest();
     if (!proId) {
-      setSyncError("Impossible d'identifier le professionnel à contacter.");
+      toast.error("Impossible d'identifier le professionnel à contacter.");
       return;
     }
 
     try {
-      const created = await collaborationApi.createSpace({
+      const createdEnvelope = await createSpace.mutateAsync({
         proId,
         title: brief.objectif || "Demande de collaboration",
         brief:
           brief.objectif ||
           "Nouvelle demande de collaboration initiée depuis l'espace contact.",
       });
+      const created = createdEnvelope.data;
 
       setBackendSpace(created);
       setCurrentStep(BACKEND_STATUS_TO_STEP[created.status] ?? 1);
-      setSyncError("");
     } catch (error: any) {
       const status = Number(error?.status || 0);
 
       if (status === 409) {
         try {
-          const spaces = await collaborationApi.listMySpaces();
+          const refreshed = await mySpacesQuery.refetch();
+          const spaces = refreshed.data || [];
           const existing = spaces.find((space) => space.proId === proId);
           if (existing) {
             setBackendSpace(existing);
@@ -764,7 +1141,7 @@ export const CollaborationSpace = () => {
         }
       }
 
-      setSyncError(
+      toast.error(
         String(
           error?.message ||
             "Impossible de créer la collaboration pour le moment.",
@@ -782,44 +1159,29 @@ export const CollaborationSpace = () => {
       return;
     }
 
-    let isMounted = true;
+    if (reviewsQuery.isError) {
+      setHasExistingReview(false);
+      return;
+    }
 
-    const checkExistingReview = async () => {
-      try {
-        setIsCheckingExistingReview(true);
-        const reviews = await collaborationApi.getPublicProfileReviews(proId);
-        if (!isMounted) return;
+    const reviews = reviewsQuery.data || [];
+    const alreadyReviewed = reviews.some(
+      (review) =>
+        isReviewOwnedByCurrentUser(review) &&
+        isReviewForCurrentProject(review),
+    );
+    setHasExistingReview(alreadyReviewed);
 
-        const alreadyReviewed = reviews.some(
-          (review) =>
-            isReviewOwnedByCurrentUser(review) &&
-            isReviewForCurrentProject(review),
-        );
-        setHasExistingReview(alreadyReviewed);
-
-        if (alreadyReviewed) {
-          setReviewSubmitSuccess(true);
-        }
-      } catch {
-        if (!isMounted) return;
-        setHasExistingReview(false);
-      } finally {
-        if (isMounted) {
-          setIsCheckingExistingReview(false);
-        }
-      }
-    };
-
-    checkExistingReview();
-
-    return () => {
-      isMounted = false;
-    };
+    if (alreadyReviewed) {
+      setReviewSubmitSuccess(true);
+    }
   }, [
     backendSpace?.id,
     currentStep,
     isReviewForCurrentProject,
     isReviewOwnedByCurrentUser,
+    reviewsQuery.data,
+    reviewsQuery.isError,
     resolveProIdForRequest,
   ]);
 
@@ -828,9 +1190,7 @@ export const CollaborationSpace = () => {
       roleValue === "ROLE_CUSTOMER" || roleValue === "ROLE_ENTERPRISE";
 
     if (!isAllowedReviewer) {
-      setSyncError(
-        "Seuls les comptes client/entreprise peuvent publier un avis.",
-      );
+      toast.error("Seuls les comptes client/entreprise peuvent publier un avis.");
       return;
     }
 
@@ -839,30 +1199,30 @@ export const CollaborationSpace = () => {
     }
 
     if (hasExistingReview) {
-      setSyncError("Vous avez deja publie un avis pour ce projet.");
+      toast.error("Vous avez deja publie un avis pour ce projet.");
       return;
     }
 
     const rating = Number(avis.note);
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      setSyncError("Veuillez attribuer une note entre 1 et 5 étoiles.");
+      toast.error("Veuillez attribuer une note entre 1 et 5 étoiles.");
       return;
     }
 
     const targetProId = backendSpace?.proId || resolveProIdForRequest();
     if (!targetProId || !isUuidLike(targetProId)) {
-      setSyncError("Impossible d'identifier le professionnel à noter.");
+      toast.error("Impossible d'identifier le professionnel à noter.");
       return;
     }
 
     try {
-      setIsSubmittingReview(true);
-      setSyncError("");
-
-      await collaborationApi.submitReview(targetProId, {
-        rating,
-        comment: avis.commentaire?.trim() || undefined,
-        projectId: backendSpace?.id,
+      await submitReviewMutation.mutateAsync({
+        targetProId,
+        payload: {
+          rating,
+          comment: avis.commentaire?.trim() || undefined,
+          projectId: backendSpace?.id,
+        },
       });
 
       setReviewSubmitSuccess(true);
@@ -871,11 +1231,7 @@ export const CollaborationSpace = () => {
         rating,
       });
     } catch (error: any) {
-      setSyncError(
-        String(error?.message || "Impossible de publier votre avis."),
-      );
-    } finally {
-      setIsSubmittingReview(false);
+      toast.error(String(error?.message || "Impossible de publier votre avis."));
     }
   };
 
@@ -883,14 +1239,13 @@ export const CollaborationSpace = () => {
     if (!canPerformAction("accept")) return;
 
     if (!backendSpace?.id) {
-      setSyncError(
-        "Aucun projet backend trouvé. Demandez au client de créer la collaboration.",
-      );
+      toast.error("Aucun projet backend trouvé. Demandez au client de créer la collaboration.");
       return;
     }
 
     try {
-      const updated = await collaborationApi.acceptSpace(backendSpace.id);
+      const updatedEnvelope = await acceptRequest.mutateAsync(backendSpace.id);
+      const updated = updatedEnvelope.data;
       setBackendSpace(updated);
       setDecisionState("accepted");
       appendLifecycleEvent("PRO_ACCEPTED_COLLABORATION");
@@ -903,9 +1258,7 @@ export const CollaborationSpace = () => {
         });
       }, 3000);
     } catch (error: any) {
-      setSyncError(
-        String(error?.message || "Impossible d'accepter la collaboration."),
-      );
+      toast.error(String(error?.message || "Impossible d'accepter la collaboration."));
     }
   };
 
@@ -921,7 +1274,7 @@ export const CollaborationSpace = () => {
     setMessages((prev) => [
       ...prev,
       {
-        id: prev.length + 1,
+        id: String(prev.length + 1),
         sender: "freelance",
         text: "Merci pour votre demande. J'ai besoin de précisions supplémentaires avant d'accepter : objectif détaillé, livrables prioritaires et contraintes techniques.",
         time: now,
@@ -934,19 +1287,16 @@ export const CollaborationSpace = () => {
     if (!canPerformAction("decline")) return;
 
     if (!backendSpace?.id) {
-      setSyncError(
-        "Aucun projet backend trouvé. Demandez au client de créer la collaboration.",
-      );
+      toast.error("Aucun projet backend trouvé. Demandez au client de créer la collaboration.");
       return;
     }
 
     try {
-      const updated = await collaborationApi.rejectSpace(backendSpace.id);
+      const updatedEnvelope = await rejectRequest.mutateAsync(backendSpace.id);
+      const updated = updatedEnvelope.data;
       setBackendSpace(updated);
     } catch (error: any) {
-      setSyncError(
-        String(error?.message || "Impossible de refuser la collaboration."),
-      );
+      toast.error(String(error?.message || "Impossible de refuser la collaboration."));
       return;
     }
 
@@ -959,7 +1309,7 @@ export const CollaborationSpace = () => {
     setMessages((prev) => [
       ...prev,
       {
-        id: prev.length + 1,
+        id: String(prev.length + 1),
         sender: "freelance",
         text: "Je ne peux pas accepter cette collaboration pour le moment. Vous pouvez ajuster votre besoin et relancer une nouvelle demande.",
         time: now,
@@ -980,16 +1330,25 @@ export const CollaborationSpace = () => {
   };
 
   const validerBrief = () => {
+    if (!isCustomer) return;
     if (briefProgress === 100) {
       setCurrentStep(4);
     }
   };
 
+  const confirmerReceptionBrief = () => {
+    if (!isPro) return;
+    setCurrentStep(4);
+  };
+
   const accepterContrat = (partie) => {
-    setContratAccepte({ ...contratAccepte, [partie]: true });
-    if (partie === "porteur" && contratAccepte.freelance) {
-      setTimeout(() => setCurrentStep(5), 1000);
-    }
+    setContratAccepte((prev) => {
+      const next = { ...prev, [partie]: true };
+      if (next.porteur && next.freelance) {
+        setTimeout(() => setCurrentStep(5), 1000);
+      }
+      return next;
+    });
   };
 
   const deposerPaiement = () => {
@@ -1169,50 +1528,74 @@ export const CollaborationSpace = () => {
             <div className="collab-freelance-card">
               <div className="collab-freelance-header">
                 <div className="collab-freelance-photo-wrapper">
-                  <img
-                    src={freelance.photo}
-                    alt={freelance.nom}
-                    className="collab-freelance-photo"
-                  />
-                  {freelance.verified && (
+                  {sidebarIdentityLoading ? (
+                    <div className="collab-skeleton collab-avatar-skeleton" />
+                  ) : (
+                    <img
+                      src={sidebarProfile.photo}
+                      alt={sidebarProfile.nom}
+                      className="collab-freelance-photo"
+                    />
+                  )}
+                  {sidebarProfile.verified && (
                     <span className="collab-verified-badge">
                       <FiCheckCircle />
                     </span>
                   )}
                 </div>
                 <div className="collab-freelance-info">
-                  <h3>{freelance.nom}</h3>
-                  <p>{freelance.poste}</p>
-                  <div className="collab-freelance-location">
-                    <FiMapPin /> {freelance.ville}, {freelance.pays}
-                  </div>
+                  {sidebarIdentityLoading ? (
+                    <>
+                      <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name" />
+                      <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-subtitle" />
+                      <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-location" />
+                    </>
+                  ) : (
+                    <>
+                      <h3>{sidebarProfile.nom}</h3>
+                      <p>{sidebarProfile.poste}</p>
+                      <div className="collab-freelance-location">
+                        <FiMapPin /> {sidebarProfile.location}
+                      </div>
+                      {sidebarProfile.specialite && (
+                        <div className="collab-freelance-location">
+                          <FiBriefcase /> {sidebarProfile.specialite}
+                        </div>
+                      )}
+                      {sidebarProfile.tarifHoraire !== null && (
+                        <div className="collab-freelance-location">
+                          <FiDollarSign /> {Math.round(sidebarProfile.tarifHoraire).toLocaleString("fr-FR")} FCFA / h
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="collab-freelance-stats">
                 <div className="collab-stat-item">
                   <div className="collab-stat-value">
-                    {renderStars(Math.floor(freelance.note))}
-                    <span>{freelance.note}</span>
+                    {renderStars(Math.floor(sidebarProfile.note))}
                   </div>
-                  <div className="collab-stat-label">{freelance.avis} avis</div>
+                  <div className="collab-stat-label">{sidebarProfile.avis} avis</div>
                 </div>
                 <div className="collab-stat-item">
                   <div className="collab-stat-value">
-                    {freelance.projetsRealises}
+                    {sidebarProfile.projetsRealises}
                   </div>
                   <div className="collab-stat-label">Projets</div>
                 </div>
+                
                 <div className="collab-stat-item">
                   <div className="collab-stat-value">
-                    {freelance.tauxReponse}
+                    {sidebarProfile.collaborationsEnCours}
                   </div>
-                  <div className="collab-stat-label">Réponse</div>
+                  <div className="collab-stat-label">Projets en cours</div>
                 </div>
               </div>
 
               <div className="collab-freelance-competences">
-                {freelance.competences.map((comp, index) => (
+                {sidebarProfile.competences.map((comp, index) => (
                   <span key={index} className="collab-comp-tag">
                     {comp}
                   </span>
@@ -1270,10 +1653,10 @@ export const CollaborationSpace = () => {
               </div>
             )}
 
-            {syncError && (
+            {syncErrorMessage && (
               <div className="collab-alert-info" style={{ marginBottom: 16 }}>
                 <FiAlertCircle />
-                <span>{syncError}</span>
+                <span>{syncErrorMessage}</span>
               </div>
             )}
 
@@ -1346,7 +1729,7 @@ export const CollaborationSpace = () => {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      disabled={isMessageBlockedByStatus(backendSpace?.status)}
+                      disabled={isMessagingLocked}
                       rows={1}
                     />
                     <button className="collab-input-btn">
@@ -1361,11 +1744,17 @@ export const CollaborationSpace = () => {
                     <button
                       className="collab-send-btn"
                       onClick={() => void sendMessage()}
-                      disabled={isMessageBlockedByStatus(backendSpace?.status)}
+                      disabled={isMessagingLocked}
                     >
                       <FiSend />
                     </button>
                   </div>
+                  {messagingStatusNotice && (
+                    <div className="collab-alert-info" style={{ marginTop: 12 }}>
+                      <FiAlertCircle />
+                      <span>{messagingStatusNotice}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="collab-step-actions">
@@ -1402,7 +1791,9 @@ export const CollaborationSpace = () => {
                   <div>
                     <h2>En attente de réponse</h2>
                     <p>
-                      Le professionnel examine votre demande de collaboration
+                      {isPro
+                        ? "Un porteur de projet vous a envoye une demande de collaboration."
+                        : "Le professionnel examine votre demande de collaboration"}
                     </p>
                   </div>
                 </div>
@@ -1417,22 +1808,31 @@ export const CollaborationSpace = () => {
                     />
                   </div>
                   <h3>{freelance.nom}</h3>
-                  <p>Délai de réponse habituel : {freelance.delaiReponse}</p>
+                  {/* <p>Délai de réponse habituel : {freelance.delaiReponse}</p> */}
 
-                  <div className="collab-waiting-options">
-                    <div className="collab-option-card accept">
-                      <FiCheckCircle />
-                      <span>Accepter</span>
-                    </div>
-                    <div className="collab-option-card info">
+                  {isPro && requestContextMessage && (
+                    <div className="collab-alert-info" style={{ marginTop: 12 }}>
                       <FiMessageCircle />
-                      <span>Plus d'infos</span>
+                      <span>{requestContextMessage}</span>
                     </div>
-                    <div className="collab-option-card decline">
-                      <FiX />
-                      <span>Refuser</span>
+                  )}
+
+                  {isPro && (
+                    <div className="collab-waiting-options">
+                      <div className="collab-option-card accept">
+                        <FiCheckCircle />
+                        <span>Accepter</span>
+                      </div>
+                      <div className="collab-option-card info">
+                        <FiMessageCircle />
+                        <span>Plus d'infos</span>
+                      </div>
+                      <div className="collab-option-card decline">
+                        <FiX />
+                        <span>Refuser</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {actor === "pro" && decisionState === "pending" && (
@@ -1509,16 +1909,32 @@ export const CollaborationSpace = () => {
                 <div className="collab-match-success-card">
                   <div className="collab-match-users">
                     <div className="collab-match-user">
-                      <img src={porteur.photo} alt={porteur.nom} />
-                      <span>{porteur.nom}</span>
+                      {isOwnerIdentityLoading ? (
+                        <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
+                      ) : (
+                        <img src={porteur.photo} alt={porteur.nom} />
+                      )}
+                      {isOwnerIdentityLoading ? (
+                        <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
+                      ) : (
+                        <span>{porteur.nom}</span>
+                      )}
                       <span className="collab-role">Porteur de projet</span>
                     </div>
                     <div className="collab-match-connector">
                       <FaHandshake />
                     </div>
                     <div className="collab-match-user">
-                      <img src={freelance.photo} alt={freelance.nom} />
-                      <span>{freelance.nom}</span>
+                      {isFreelanceIdentityLoading ? (
+                        <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
+                      ) : (
+                        <img src={freelance.photo} alt={freelance.nom} />
+                      )}
+                      {isFreelanceIdentityLoading ? (
+                        <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
+                      ) : (
+                        <span>{freelance.nom}</span>
+                      )}
                       <span className="collab-role">Professionnel</span>
                     </div>
                   </div>
@@ -1613,6 +2029,7 @@ export const CollaborationSpace = () => {
                       onChange={(e) =>
                         setBrief({ ...brief, objectif: e.target.value })
                       }
+                      disabled={!isCustomer}
                       rows={3}
                     />
                   </div>
@@ -1627,7 +2044,7 @@ export const CollaborationSpace = () => {
                         <div
                           key={index}
                           className={`collab-livrable-item ${brief.livrables.includes(livrable) ? "selected" : ""}`}
-                          onClick={() => toggleLivrable(livrable)}
+                          onClick={() => isCustomer && toggleLivrable(livrable)}
                         >
                           <FiCheckCircle />
                           <span>{livrable}</span>
@@ -1646,6 +2063,7 @@ export const CollaborationSpace = () => {
                       onChange={(e) =>
                         setBrief({ ...brief, delai: e.target.value })
                       }
+                      disabled={!isCustomer}
                     >
                       <option value="">Sélectionnez un délai</option>
                       <option value="Moins d'1 semaine">
@@ -1671,6 +2089,7 @@ export const CollaborationSpace = () => {
                         onChange={(e) =>
                           setBrief({ ...brief, budget: e.target.value })
                         }
+                        disabled={!isCustomer}
                       />
                       <span className="collab-currency">FCFA</span>
                     </div>
@@ -1689,6 +2108,16 @@ export const CollaborationSpace = () => {
                       <small>PDF, Images, Documents (max 10MB)</small>
                     </div>
                   </div>
+
+                  {!isCustomer && (
+                    <div className="collab-alert-info">
+                      <FiAlertCircle />
+                      <span>
+                        Le brief est saisi par le client. Vous pouvez l'examiner et confirmer
+                        sa reception.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Zone commentaire du pro */}
@@ -1706,19 +2135,27 @@ export const CollaborationSpace = () => {
                 </div>
 
                 <div className="collab-step-actions">
-                  <button
-                    className="collab-btn-secondary"
-                    onClick={() => setCurrentStep(2)}
-                  >
-                    <FiArrowLeft /> Retour
-                  </button>
-                  <button
-                    className={`collab-btn-primary ${briefProgress < 100 ? "disabled" : ""}`}
-                    onClick={validerBrief}
-                    disabled={briefProgress < 100}
-                  >
-                    <FiCheck /> Valider le brief
-                  </button>
+                  {isCustomer ? (
+                    <>
+                      <button
+                        className="collab-btn-secondary"
+                        onClick={() => setCurrentStep(2)}
+                      >
+                        <FiArrowLeft /> Retour
+                      </button>
+                      <button
+                        className={`collab-btn-primary ${briefProgress < 100 ? "disabled" : ""}`}
+                        onClick={validerBrief}
+                        disabled={briefProgress < 100}
+                      >
+                        <FiCheck /> Valider le brief
+                      </button>
+                    </>
+                  ) : (
+                    <button className="collab-btn-primary" onClick={confirmerReceptionBrief}>
+                      <FiCheck /> Confirmer la reception du brief
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -1830,12 +2267,22 @@ export const CollaborationSpace = () => {
                     <div
                       className={`collab-signature ${contratAccepte.porteur ? "signed" : ""}`}
                     >
-                      <img src={porteur.photo} alt={porteur.nom} />
-                      <span>{porteur.nom}</span>
+                      {isOwnerIdentityLoading ? (
+                        <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-xs" />
+                      ) : (
+                        <img src={porteur.photo} alt={porteur.nom} />
+                      )}
+                      {isOwnerIdentityLoading ? (
+                        <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
+                      ) : (
+                        <span>{porteur.nom}</span>
+                      )}
                       {contratAccepte.porteur ? (
                         <div className="collab-signature-done">
                           <FiCheckCircle /> Signé
                         </div>
+                      ) : !isCustomer ? (
+                        <div className="collab-demo-note">En attente de signature client</div>
                       ) : (
                         <button
                           className="collab-sign-btn"
@@ -1849,12 +2296,22 @@ export const CollaborationSpace = () => {
                     <div
                       className={`collab-signature ${contratAccepte.freelance ? "signed" : ""}`}
                     >
-                      <img src={freelance.photo} alt={freelance.nom} />
-                      <span>{freelance.nom}</span>
+                      {isFreelanceIdentityLoading ? (
+                        <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-xs" />
+                      ) : (
+                        <img src={freelance.photo} alt={freelance.nom} />
+                      )}
+                      {isFreelanceIdentityLoading ? (
+                        <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
+                      ) : (
+                        <span>{freelance.nom}</span>
+                      )}
                       {contratAccepte.freelance ? (
                         <div className="collab-signature-done">
                           <FiCheckCircle /> Signé
                         </div>
+                      ) : !isPro ? (
+                        <div className="collab-demo-note">En attente de signature pro</div>
                       ) : (
                         <button
                           className="collab-sign-btn"
@@ -1868,7 +2325,7 @@ export const CollaborationSpace = () => {
                 </div>
 
                 {/* Simulation pour la démo */}
-                {!contratAccepte.freelance && (
+                {isCustomer && !contratAccepte.freelance && (
                   <div className="collab-demo-actions">
                     <p className="collab-demo-note">
                       🎮 Demo : Simuler la signature du freelance
@@ -1909,6 +2366,15 @@ export const CollaborationSpace = () => {
                 </div>
 
                 <div className="collab-paiement-card">
+                  {!isCustomer && (
+                    <div className="collab-alert-info" style={{ marginBottom: 16 }}>
+                      <FiClock />
+                      <span>
+                        Seul le client depose le paiement. Vous serez notifie une fois les
+                        fonds securises.
+                      </span>
+                    </div>
+                  )}
                   <div className="collab-paiement-mode">
                     <label className="collab-radio-card">
                       <input
@@ -1917,6 +2383,7 @@ export const CollaborationSpace = () => {
                         value="etapes"
                         checked={modePaiement === "etapes"}
                         onChange={() => setModePaiement("etapes")}
+                        disabled={!isCustomer}
                       />
                       <div className="collab-radio-content">
                         <div className="collab-radio-icon recommended">
@@ -1936,6 +2403,7 @@ export const CollaborationSpace = () => {
                         value="total"
                         checked={modePaiement === "total"}
                         onChange={() => setModePaiement("total")}
+                        disabled={!isCustomer}
                       />
                       <div className="collab-radio-content">
                         <div className="collab-radio-icon">
@@ -2007,7 +2475,7 @@ export const CollaborationSpace = () => {
                   <button
                     className={`collab-btn-primary collab-btn-large ${paiementDepose ? "success" : ""}`}
                     onClick={deposerPaiement}
-                    disabled={paiementDepose}
+                    disabled={paiementDepose || !isCustomer}
                   >
                     {paiementDepose ? (
                       <>
@@ -2101,7 +2569,7 @@ export const CollaborationSpace = () => {
                           </div>
 
                           {/* Actions selon statut */}
-                          {etape.statut === "en_cours" && (
+                          {isPro && etape.statut === "en_cours" && (
                             <div className="collab-timeline-actions">
                               <button
                                 className="collab-btn-sm collab-btn-outline"
@@ -2111,7 +2579,7 @@ export const CollaborationSpace = () => {
                               </button>
                             </div>
                           )}
-                          {etape.statut === "livree" && (
+                          {isCustomer && etape.statut === "livree" && (
                             <div className="collab-timeline-actions">
                               <button
                                 className="collab-btn-sm collab-btn-success"
@@ -2173,30 +2641,43 @@ export const CollaborationSpace = () => {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
+                        disabled={isMessagingLocked}
                       />
-                      <button className="collab-send-btn" onClick={sendMessage}>
+                      <button
+                        className="collab-send-btn"
+                        onClick={sendMessage}
+                        disabled={isMessagingLocked}
+                      >
                         <FiSend />
                       </button>
                     </div>
+                    {messagingStatusNotice && (
+                      <div className="collab-alert-info" style={{ marginTop: 12 }}>
+                        <FiAlertCircle />
+                        <span>{messagingStatusNotice}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="collab-demo-actions">
-                  <p className="collab-demo-note">
-                    🎮 Demo : Simuler la validation de toutes les étapes
-                  </p>
-                  <button
-                    className="collab-btn-outline"
-                    onClick={() => {
-                      setEtapes(
-                        etapes.map((e) => ({ ...e, statut: "validee" })),
-                      );
-                      setTimeout(() => setCurrentStep(9), 1500);
-                    }}
-                  >
-                    <FiCheck /> Tout valider et clôturer
-                  </button>
-                </div>
+                {isCustomer && (
+                  <div className="collab-demo-actions">
+                    <p className="collab-demo-note">
+                      🎮 Demo : Simuler la validation de toutes les étapes
+                    </p>
+                    <button
+                      className="collab-btn-outline"
+                      onClick={() => {
+                        setEtapes(
+                          etapes.map((e) => ({ ...e, statut: "validee" })),
+                        );
+                        setTimeout(() => setCurrentStep(9), 1500);
+                      }}
+                    >
+                      <FiCheck /> Tout valider et clôturer
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2261,56 +2742,64 @@ export const CollaborationSpace = () => {
                     </div>
                   </div>
 
-                  {/* Notation */}
-                  <div className="collab-rating-section">
-                    <h3>
-                      Notez votre collaboration avec{" "}
-                      {freelance.nom.split(" ")[0]}
-                    </h3>
-                    {isCheckingExistingReview && (
-                      <p className="collab-demo-note">
-                        Verification d'un avis existant en cours...
-                      </p>
-                    )}
-                    {hasExistingReview && (
-                      <div className="collab-alert-info" style={{ marginBottom: 12 }}>
-                        <FiCheckCircle />
-                        <span>
-                          Vous avez deja depose un avis pour ce projet. Merci !
-                        </span>
+                  {isCustomer ? (
+                    <div className="collab-rating-section">
+                      <h3>
+                        Notez votre collaboration avec{" "}
+                        {freelance.nom.split(" ")[0]}
+                      </h3>
+                      {isCheckingExistingReview && (
+                        <p className="collab-demo-note">
+                          Verification d'un avis existant en cours...
+                        </p>
+                      )}
+                      {hasExistingReview && (
+                        <div className="collab-alert-info" style={{ marginBottom: 12 }}>
+                          <FiCheckCircle />
+                          <span>
+                            Vous avez deja depose un avis pour ce projet. Merci !
+                          </span>
+                        </div>
+                      )}
+                      <div className="collab-rating-stars">
+                        {renderStars(avis.note, true)}
                       </div>
-                    )}
-                    <div className="collab-rating-stars">
-                      {renderStars(avis.note, true)}
-                    </div>
-                    <textarea
-                      placeholder="Partagez votre expérience (optionnel)"
-                      value={avis.commentaire}
-                      onChange={(e) =>
-                        setAvis({ ...avis, commentaire: e.target.value })
-                      }
-                      rows={3}
-                    />
-                    <div className="collab-recommande">
-                      <span>Recommanderiez-vous ce professionnel ?</span>
-                      <div className="collab-recommande-btns">
-                        <button
-                          className={`collab-recommande-btn ${avis.recommande === true ? "active yes" : ""}`}
-                          onClick={() => setAvis({ ...avis, recommande: true })}
-                        >
-                          <FiThumbsUp /> Oui
-                        </button>
-                        <button
-                          className={`collab-recommande-btn ${avis.recommande === false ? "active no" : ""}`}
-                          onClick={() =>
-                            setAvis({ ...avis, recommande: false })
-                          }
-                        >
-                          <FiThumbsDown /> Non
-                        </button>
+                      <textarea
+                        placeholder="Partagez votre expérience (optionnel)"
+                        value={avis.commentaire}
+                        onChange={(e) =>
+                          setAvis({ ...avis, commentaire: e.target.value })
+                        }
+                        rows={3}
+                      />
+                      <div className="collab-recommande">
+                        <span>Recommanderiez-vous ce professionnel ?</span>
+                        <div className="collab-recommande-btns">
+                          <button
+                            className={`collab-recommande-btn ${avis.recommande === true ? "active yes" : ""}`}
+                            onClick={() => setAvis({ ...avis, recommande: true })}
+                          >
+                            <FiThumbsUp /> Oui
+                          </button>
+                          <button
+                            className={`collab-recommande-btn ${avis.recommande === false ? "active no" : ""}`}
+                            onClick={() =>
+                              setAvis({ ...avis, recommande: false })
+                            }
+                          >
+                            <FiThumbsDown /> Non
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="collab-alert-info" style={{ marginBottom: 12 }}>
+                      <FiCheckCircle />
+                      <span>
+                        Le client peut laisser un avis final. Merci pour votre collaboration.
+                      </span>
+                    </div>
+                  )}
 
                   {/* Badges gagnés */}
                   <div className="collab-badges-section">
@@ -2346,30 +2835,32 @@ export const CollaborationSpace = () => {
                     >
                       <FiArrowLeft /> Retour au marketplace
                     </button>
-                    <button
-                      className="collab-btn-primary"
-                      onClick={() => void submitReview()}
-                      disabled={
-                        isSubmittingReview ||
-                        reviewSubmitSuccess ||
-                        hasExistingReview ||
-                        isCheckingExistingReview
-                      }
-                    >
-                      {reviewSubmitSuccess ? (
-                        <>
-                          <FiCheckCircle /> Avis publié
-                        </>
-                      ) : isSubmittingReview ? (
-                        <>
-                          <FiClock /> Publication...
-                        </>
-                      ) : (
-                        <>
-                          <FiSend /> Publier mon avis
-                        </>
-                      )}
-                    </button>
+                    {isCustomer && (
+                      <button
+                        className="collab-btn-primary"
+                        onClick={() => void submitReview()}
+                        disabled={
+                          submitReviewMutation.isPending ||
+                          reviewSubmitSuccess ||
+                          hasExistingReview ||
+                          isCheckingExistingReview
+                        }
+                      >
+                        {reviewSubmitSuccess ? (
+                          <>
+                            <FiCheckCircle /> Avis publié
+                          </>
+                        ) : submitReviewMutation.isPending ? (
+                          <>
+                            <FiClock /> Publication...
+                          </>
+                        ) : (
+                          <>
+                            <FiSend /> Publier mon avis
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                   {reviewSubmitSuccess && (
                     <div className="collab-success-message" style={{ marginTop: 16 }}>
