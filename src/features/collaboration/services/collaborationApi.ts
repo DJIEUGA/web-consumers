@@ -94,7 +94,7 @@ const extractPayload = <T>(response: unknown): MaybeEnvelope<T> => {
   return response as MaybeEnvelope<T>;
 };
 
-const unwrapEnvelope = <T>(response: unknown): T => {
+export const unwrapEnvelope = <T>(response: unknown): T => {
   const payload = extractPayload<T>(response);
   const envelope = payload as ApiEnvelope<T>;
   if (
@@ -284,7 +284,6 @@ export const collaborationApi = {
   ): Promise<CustomerProfileDetails> {
     const encodedId = encodeURIComponent(customerProfileId);
     const candidateEndpoints = [
-      `/api/v1/api/v1/customer/profiles/${encodedId}/details`,
       `/api/v1/customer/profiles/${encodedId}/details`,
       `/customer/profiles/${encodedId}/details`,
     ];
