@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../../../../features/auth/hooks/useAuthMutations";
 import {
@@ -77,7 +77,12 @@ import NotificationsDrawer from '../../../../components/shared/NotificationsDraw
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
 import { useDashboardProfile } from '../../hooks/useDashboardProfile';
 import { useCollaborations, useStatsOverview } from '../../hooks/useDashboardData';
-import { useAuthStore } from '../../../../stores/auth.store';
+import {
+  getCollaborationStatusMeta,
+  isCollaborationActive,
+  isCollaborationCompleted,
+  isCollaborationPending,
+} from '../../utils/collaborationStatus';
 import "./css/style.css";
 
 const CustomerDashboard = () => {
@@ -87,7 +92,6 @@ const CustomerDashboard = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("apercu");
-  const authUserId = useAuthStore((state) => state.user?.id);
   const { profile: dashboardProfile } = useDashboardProfile();
   const {
     data: collaborations = [],
@@ -107,29 +111,45 @@ const CustomerDashboard = () => {
     ...statsData,
   };
 
-  const suggestedPros = [
-    {
-      id: "pro-frontend-dakar",
-      name: "Aminata N'Diaye",
-      speciality: "Développeuse Frontend",
-      city: "Dakar",
-      rating: 4.9,
-    },
-    {
-      id: "pro-plomberie-abidjan",
-      name: "Moussa Traore",
-      speciality: "Plomberie & Maintenance",
-      city: "Abidjan",
-      rating: 4.7,
-    },
-    {
-      id: "pro-ux-yaounde",
-      name: "Clarisse Ngono",
-      speciality: "UX Designer",
-      city: "Yaoundé",
-      rating: 4.8,
-    },
-  ];
+  const collaborationSummary = useMemo(() => {
+    const total = collaborations.length;
+    const active = collaborations.filter((collab) =>
+      isCollaborationActive({
+        backendStatus: collab.backendStatus,
+        statut: collab.statut,
+      }),
+    ).length;
+    const pending = collaborations.filter((collab) =>
+      isCollaborationPending({
+        backendStatus: collab.backendStatus,
+        statut: collab.statut,
+      }),
+    ).length;
+    const completed = collaborations.filter((collab) =>
+      isCollaborationCompleted({
+        backendStatus: collab.backendStatus,
+        statut: collab.statut,
+      }),
+    ).length;
+
+    return {
+      total,
+      active,
+      pending,
+      completed,
+    };
+  }, [collaborations]);
+
+  const ongoingCollaborations = useMemo(
+    () =>
+      collaborations.filter((collab) =>
+        isCollaborationActive({
+          backendStatus: collab.backendStatus,
+          statut: collab.statut,
+        }),
+      ),
+    [collaborations],
+  );
 
   const adminUser = {
     nom: dashboardProfile.lastName,
@@ -142,17 +162,6 @@ const CustomerDashboard = () => {
   const closeMenu = () => setMenuOpen(false);
   const openProfile = () => setProfileOpen(true);
   const closeProfile = () => setProfileOpen(false);
-  const handleStartCollaboration = (freelanceId: string) => {
-    const normalizedFreelanceId = String(freelanceId || "").trim();
-    if (!normalizedFreelanceId) return;
-
-    // Shared room id so customer and pro can open the same collaboration space.
-    const roomId = authUserId
-      ? `room:${authUserId}::${normalizedFreelanceId}`
-      : normalizedFreelanceId;
-
-    navigate(`/collaboration/${encodeURIComponent(roomId)}`);
-  };
   const handleLeaveReview = (collaborationId: string) => {
     navigate(`/collaboration/${encodeURIComponent(collaborationId)}?step=9`);
   };
@@ -250,7 +259,7 @@ const CustomerDashboard = () => {
                   </div>
                   <div className="admin-stat-content">
                     <span className="admin-stat-label">Projets en cours</span>
-                    <span className="admin-stat-value">{overviewStats.projetsEnCours}</span>
+                    <span className="admin-stat-value">{collaborationSummary.active}</span>
                     <span className="admin-stat-info">collaborations actives</span>
                   </div>
                 </div>
@@ -261,7 +270,7 @@ const CustomerDashboard = () => {
                   </div>
                   <div className="admin-stat-content">
                     <span className="admin-stat-label">Collaborations réalisées</span>
-                    <span className="admin-stat-value">{overviewStats.projetsRealises}</span>
+                    <span className="admin-stat-value">{collaborationSummary.completed}</span>
                     <span className="admin-stat-info">missions complétées</span>
                   </div>
                 </div>
@@ -306,9 +315,9 @@ const CustomerDashboard = () => {
                 </div>
 
                 <div style={{ display: "grid", gap: "12px" }}>
-                  {suggestedPros.slice(0, 2).map((pro) => (
+                  {ongoingCollaborations.slice(0, 2).map((collab) => (
                     <div
-                      key={`overview-${pro.id}`}
+                      key={`overview-${collab.id}`}
                       style={{
                         border: "1px solid var(--gray-200)",
                         borderRadius: "var(--radius-sm)",
@@ -320,18 +329,26 @@ const CustomerDashboard = () => {
                       }}
                     >
                       <div>
-                        <p style={{ margin: 0, fontWeight: 600 }}>{pro.name}</p>
+                        <p style={{ margin: 0, fontWeight: 600 }}>
+                          {collab.titre || `Collaboration ${collab.id}`}
+                        </p>
                         <p style={{ margin: "4px 0 0 0", color: "var(--gray-600)", fontSize: "13px" }}>
-                          {pro.speciality} • {pro.city}
+                          {collab.nom || "Professionnel"} • Statut: {getCollaborationStatusMeta({
+                            backendStatus: collab.backendStatus,
+                            statut: collab.statut,
+                          }).label}
                         </p>
                       </div>
-                      <button className="admin-public-btn" onClick={() => handleStartCollaboration(pro.id)}>
+                      <button
+                        className="admin-public-btn"
+                        onClick={() => navigate(`/collaboration/${encodeURIComponent(String(collab.id))}`)}
+                      >
                         <FiArrowRight /> Ouvrir
                       </button>
                     </div>
                   ))}
 
-                  {suggestedPros.length === 0 && (
+                  {ongoingCollaborations.length === 0 && (
                     <p style={{ margin: 0, color: "var(--gray-600)" }}>
                       Aucun projet actif pour le moment.
                     </p>
@@ -404,12 +421,17 @@ const CustomerDashboard = () => {
                           {collab.nom || "Professionnel"}
                         </p>
                         <p style={{ margin: "4px 0 0 0", color: "var(--gray-600)", fontSize: "13px" }}>
-                          {collab.role || "Collaboration"} • Statut: {collab.statut}
+                          {collab.role || "Collaboration"} • Statut: {getCollaborationStatusMeta({
+                            backendStatus: collab.backendStatus,
+                            statut: collab.statut,
+                          }).label}
                         </p>
                       </div>
                       <button
                         className="admin-public-btn"
-                        onClick={() => handleStartCollaboration(String(collab.id))}
+                        onClick={() =>
+                          navigate(`/collaboration/${encodeURIComponent(String(collab.id))}`)
+                        }
                       >
                         <FiArrowRight /> Ouvrir
                       </button>

@@ -55,6 +55,7 @@ type StepContactProps = {
     e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>,
   ) => void;
   onSendMessage: () => Promise<void>;
+  onRetryMessage: (messageId: string) => Promise<void>;
   isMessagingLocked: boolean;
   messagingStatusNotice: string;
   messagesEndRef: React.RefObject<HTMLDivElement>;
@@ -72,6 +73,7 @@ export const StepContact = ({
   onMessageChange,
   handleKeyPress,
   onSendMessage,
+  onRetryMessage,
   isMessagingLocked,
   messagingStatusNotice,
   messagesEndRef,
@@ -115,6 +117,9 @@ export const StepContact = ({
         onKeyPress={handleKeyPress}
         onSend={() => {
           void onSendMessage();
+        }}
+        onRetryMessage={(messageId) => {
+          void onRetryMessage(messageId);
         }}
         isMessagingLocked={isMessagingLocked}
         messagingStatusNotice={messagingStatusNotice}
@@ -965,6 +970,7 @@ type StepExecutionProps = {
     e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>,
   ) => void;
   sendMessage: () => Promise<void>;
+  onRetryMessage: (messageId: string) => Promise<void>;
   isMessagingLocked: boolean;
   messagingStatusNotice: string;
   porteurPhoto: string;
@@ -991,6 +997,7 @@ export const StepExecution = ({
   setNewMessage,
   handleKeyPress,
   sendMessage,
+  onRetryMessage,
   isMessagingLocked,
   messagingStatusNotice,
   porteurPhoto,
@@ -1105,6 +1112,9 @@ export const StepExecution = ({
           onKeyPress={handleKeyPress}
           onSend={() => {
             void sendMessage();
+          }}
+          onRetryMessage={(messageId) => {
+            void onRetryMessage(messageId);
           }}
           isMessagingLocked={isMessagingLocked}
           messagingStatusNotice={messagingStatusNotice}

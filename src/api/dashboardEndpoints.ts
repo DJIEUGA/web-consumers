@@ -336,6 +336,7 @@ export interface CollaborationDto {
   progression: any;
   prochaineLivraison: any;
   clientImage: any;
+  backendStatus?: string;
   id: string;
   nom: string;
   role: string;

@@ -52,6 +52,7 @@ export type UiMessage = {
   text: string;
   time: string;
   date: string;
+  deliveryStatus?: "sending" | "failed";
 };
 
 export type BriefState = {

@@ -53,7 +53,13 @@ export function useSpaceDetail(id: string | undefined) {
 /**
  * Fetch messages inside a workspace
  */
-export function useSpaceMessages(spaceId: string | undefined) {
+export function useSpaceMessages(
+  spaceId: string | undefined,
+  options?: {
+    refetchInterval?: number;
+    refetchOnWindowFocus?: boolean;
+  },
+) {
   return useQuery({
     queryKey: COLLABORATION_KEYS.messages(spaceId!),
     queryFn: async () => {
@@ -61,8 +67,8 @@ export function useSpaceMessages(spaceId: string | undefined) {
       return response.data;
     },
     enabled: !!spaceId,
-    // Realtime behavior placeholder:
-    // refetchInterval: 5000, 
+    refetchInterval: options?.refetchInterval,
+    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? true,
   });
 }
 

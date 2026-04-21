@@ -8,6 +8,8 @@
 
 import axios from '../../../api/axios';
 import { PROFILE_ENDPOINTS } from '../../../api/profileEndpoints';
+import { collaborationApi, type CollaborationStatus, type CollaborationSpaceResponse } from '../../collaboration/services/collaborationApi';
+import { mapBackendStatusToUiStatut } from '../utils/collaborationStatus';
 import {
   DASHBOARD_ENDPOINTS,
   type StatsTodayDto,
@@ -538,26 +540,40 @@ export async function fetchPosts(): Promise<DashboardResponse<PostDto[]>> {
  * @pro @enterprise
  */
 export async function fetchCollaborations(): Promise<DashboardResponse<CollaborationDto[]>> {
-  // TODO: Backend to implement GET /dashboard/collaborations
+  const mapSpaceToCollaboration = (space: CollaborationSpaceResponse): CollaborationDto => {
+    const customerName = String(space.customerName || '').trim();
+    const proName = String(space.proName || '').trim();
+    const title = String(space.title || '').trim();
+
+    const counterpartName = proName || customerName || 'Collaboration';
+    const displayTitle = title || `Mission avec ${counterpartName}`;
+
+    const avatarSeed = encodeURIComponent(counterpartName || space.id);
+    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
+
+    return {
+      id: space.id,
+      nom: counterpartName,
+      role: 'Collaboration',
+      photo: avatar,
+      backendStatus: space.status,
+      statut: mapBackendStatusToUiStatut(space.status),
+      clientPhoto: avatar,
+      client: customerName || counterpartName,
+      titre: displayTitle,
+      montant: 0,
+      progression: space.status === 'COMPLETED' ? 100 : space.status === 'ACTIVE' ? 60 : 0,
+      prochaineLivraison: space.status === 'COMPLETED' ? 'Livrée' : 'À planifier',
+      clientImage: avatar,
+    };
+  };
+
+  const spaces = await collaborationApi.listMySpaces();
+
   return {
     success: true,
-    data: [
-      {
-          id: 'COL-001',
-          nom: 'Jean Kouadio',
-          role: 'Designer',
-          photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jean',
-          statut: 'actif',
-          clientPhoto: '',
-          client: '',
-          titre: undefined,
-          montant: undefined,
-          progression: undefined,
-          prochaineLivraison: undefined,
-          clientImage: undefined
-      },
-    ],
-    message: 'Mock data - backend not implemented',
+    data: (spaces || []).map(mapSpaceToCollaboration),
+    message: 'Collaborations chargées depuis le backend',
   };
 }
 

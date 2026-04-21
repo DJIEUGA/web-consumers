@@ -73,6 +73,7 @@ import {
   useAdCampaigns,
   useAnalytics,
 } from "../../hooks/useDashboardData";
+import { getCollaborationStatusMeta, isCollaborationPending } from "../../utils/collaborationStatus";
 import "./css/style.css";
 
 const TAB_TO_ROUTE_SEGMENT: Record<string, string> = {
@@ -181,7 +182,12 @@ function ProDashboard() {
             "https://api.dicebear.com/7.x/avataaars/svg?seed=" +
             encodeURIComponent(project.clientName || `client-${index}`),
         }))
-      : collaborations.filter((c) => c.statut === "en_attente");
+      : collaborations.filter((c) =>
+          isCollaborationPending({
+            backendStatus: c.backendStatus,
+            statut: c.statut,
+          }),
+        );
 
   // Map actionButtonType from API to form button type
   const mapActionButtonToFormType = (
@@ -592,20 +598,11 @@ function ProDashboard() {
     return stars;
   };
 
-  const getStatutBadge = (statut) => {
-    const key = String(statut ?? "").toLowerCase();
-
-    const statuts = {
-      en_cours: { label: "En cours", color: "#3DC7C9" },
-      termine: { label: "Terminé", color: "#28a745" },
-      en_attente: { label: "En attente", color: "#ffc107" },
-      recu: { label: "Reçu", color: "#28a745" },
-      complete: { label: "Complété", color: "#28a745" },
-      active: { label: "Active", color: "#28a745" },
-      pause: { label: "En pause", color: "#6b7280" },
-    };
-
-    const s = statuts[key] ?? { label: "Inconnu", color: "#64748b" };
+  const getStatutBadge = (collab: { backendStatus?: string; statut?: string }) => {
+    const s = getCollaborationStatusMeta({
+      backendStatus: collab.backendStatus,
+      statut: collab.statut,
+    });
 
     return (
       <span
@@ -1299,10 +1296,13 @@ function ProDashboard() {
                         <h3>{collab.titre}</h3>
                         <p>{collab.client}</p>
                       </div>
-                      {getStatutBadge(collab.statut)}
+                      {getStatutBadge(collab)}
                     </div>
 
-                    {collab.statut === "en_attente" && (
+                    {isCollaborationPending({
+                      backendStatus: collab.backendStatus,
+                      statut: collab.statut,
+                    }) && (
                       <>
                         <div className="dash-collab-progress">
                           <div className="dash-progress-bar">
@@ -1374,7 +1374,7 @@ function ProDashboard() {
                         <span className="dash-transaction-amount">
                           +{trans.montant} FCFA
                         </span>
-                        {getStatutBadge(trans.statut)}
+                        {getStatutBadge({ statut: trans.statut })}
                       </div>
                     </div>
                   ))}

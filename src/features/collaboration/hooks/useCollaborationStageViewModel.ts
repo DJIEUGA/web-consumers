@@ -24,6 +24,7 @@ type UseCollaborationStageViewModelParams = {
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
   handleKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
   sendMessage: () => Promise<void>;
+  onRetryMessage: (messageId: string) => Promise<void>;
   isMessagingLocked: boolean;
   messagingStatusNotice: string;
   messagesEndRef: React.RefObject<HTMLDivElement>;
@@ -86,6 +87,7 @@ export const useCollaborationStageViewModel = ({
   setNewMessage,
   handleKeyPress,
   sendMessage,
+  onRetryMessage,
   isMessagingLocked,
   messagingStatusNotice,
   messagesEndRef,
@@ -143,6 +145,7 @@ export const useCollaborationStageViewModel = ({
     onMessageChange: setNewMessage,
     handleKeyPress,
     onSendMessage: sendMessage,
+    onRetryMessage,
     isMessagingLocked,
     messagingStatusNotice,
     messagesEndRef,
@@ -228,6 +231,7 @@ export const useCollaborationStageViewModel = ({
     setNewMessage,
     handleKeyPress,
     sendMessage,
+    onRetryMessage,
     isMessagingLocked,
     messagingStatusNotice,
     porteurPhoto: porteur.photo,

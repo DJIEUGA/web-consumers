@@ -138,18 +138,28 @@ export const CollaborationSpace = () => {
     return incomingId;
   })();
 
-  const defaultMessages = React.useMemo(
-    (): UiMessage[] => [
-      {
-        id: "1",
-        sender: "freelance",
-        text: "Bonjour ! Merci de m'avoir contacté. Je suis disponible pour discuter de votre projet. Pouvez-vous m'en dire plus sur vos besoins ?",
-        time: "10:30",
-        date: "Aujourd'hui",
-      },
-    ],
-    [],
-  );
+  const resolvedSpaceId = useMemo(() => {
+    if (backendSpace?.id) return backendSpace.id;
+
+    const spaces = mySpacesQuery.data || [];
+
+    if (incomingId && isUuidLike(incomingId)) {
+      const exactSpace = spaces.find((space) => space.id === incomingId);
+      if (exactSpace?.id) return exactSpace.id;
+    }
+
+    const pair = parseRoomPair(collaborationRoomId);
+    if (pair) {
+      const matchedByPair = spaces.find(
+        (space) =>
+          space.customerId === pair.customerId && space.proId === pair.proId,
+      );
+      if (matchedByPair?.id) return matchedByPair.id;
+    }
+
+    return "";
+  }, [backendSpace?.id, collaborationRoomId, incomingId, mySpacesQuery.data]);
+
 
   // États de la collaboration
   const [currentStep, setCurrentStep] = useState(0); // 0 à 9
@@ -163,7 +173,7 @@ export const CollaborationSpace = () => {
   const [hasExistingReview, setHasExistingReview] = useState(false);
 
   // États des données
-  const [messages, setMessages] = useState(defaultMessages);
+  const [messages, setMessages] = useState<UiMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
 
@@ -225,15 +235,20 @@ export const CollaborationSpace = () => {
       content: string;
       sentAt?: string;
       createdAt?: string;
-    }): UiMessage => ({
-      ...createUiMessage({
-        id: String(msg.id),
-        sender: msg.senderId === currentUserId ? "porteur" : "freelance",
-        text: msg.content,
-        dateInput: msg.sentAt || msg.createdAt,
-      }),
-    }),
-    [currentUserId],
+    }): UiMessage => {
+      const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
+      const otherSender: UiMessage["sender"] = selfSender === "porteur" ? "freelance" : "porteur";
+
+      return {
+        ...createUiMessage({
+          id: String(msg.id),
+          sender: msg.senderId === currentUserId ? selfSender : otherSender,
+          text: msg.content,
+          dateInput: msg.sentAt || msg.createdAt,
+        }),
+      };
+    },
+    [currentUserId, isCustomer],
   );
 
   const {
@@ -262,6 +277,7 @@ export const CollaborationSpace = () => {
   const { spaceMessagesQuery } = useCollaborationWorkspaceSync({
     incomingId,
     collaborationRoomId,
+    resolvedSpaceId,
     currentUserId,
     navigate,
     mySpacesData: mySpacesQuery.data,
@@ -270,7 +286,6 @@ export const CollaborationSpace = () => {
     setBackendSpace,
     messages,
     setMessages,
-    defaultMessages,
     currentStep,
     setCurrentStep,
     decisionState,
@@ -285,36 +300,85 @@ export const CollaborationSpace = () => {
   // Fonctions utilitaires
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
+  const sendBackendMessage = async (content: string, optimisticId: string) => {
+    const spaceId = backendSpace?.id || resolvedSpaceId;
+    if (!spaceId) return false;
+
+    try {
+      const sentEnvelope = await sendMessageMutation.mutateAsync({
+        spaceId,
+        params: { content },
+      });
+      const sent = sentEnvelope.data;
+      const sentUi = mapBackendMessageToUi(sent);
+
+      setMessages((prev: UiMessage[]) => {
+        const withoutOptimistic = prev.filter((msg) => msg.id !== optimisticId);
+
+        const alreadyExistsById = withoutOptimistic.some((msg) => msg.id === sentUi.id);
+        if (alreadyExistsById) return withoutOptimistic;
+
+        const alreadyExistsByContent = withoutOptimistic.some(
+          (msg) =>
+            msg.sender === sentUi.sender &&
+            msg.text.trim() === sentUi.text.trim(),
+        );
+        if (alreadyExistsByContent) return withoutOptimistic;
+
+        return [...withoutOptimistic, sentUi];
+      });
+      appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
+        sender: actor,
+        mode: "backend",
+      });
+      return true;
+    } catch (error: any) {
+      setMessages((prev: UiMessage[]) =>
+        prev.map((msg) =>
+          msg.id === optimisticId ? { ...msg, deliveryStatus: "failed" } : msg,
+        ),
+      );
+      toast.error(String(error?.message || "Échec d'envoi du message. Réessayez."));
+      return false;
+    }
+  };
+
   const sendMessage = async () => {
     const content = newMessage.trim();
     if (!content) return;
 
-    if (backendSpace?.id) {
-      if (isMessageBlockedByStatus(backendSpace.status)) {
+    const activeSpaceId = backendSpace?.id || resolvedSpaceId;
+
+    if (activeSpaceId) {
+      if (backendSpace?.status && isMessageBlockedByStatus(backendSpace.status)) {
         toast.error("La messagerie est indisponible pour ce statut de collaboration.");
         return;
       }
 
-      try {
-        const sentEnvelope = await sendMessageMutation.mutateAsync({
-          spaceId: backendSpace.id,
-          params: { content },
-        });
-        const sent = sentEnvelope.data;
-        setMessages((prev) => [...prev, mapBackendMessageToUi(sent)]);
-        appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-          sender: actor,
-          mode: "backend",
-        });
-        setNewMessage("");
-        return;
-      } catch (error: any) {
-        toast.error(String(error?.message || "Échec d'envoi du message. Réessayez."));
-        return;
+      const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
+      const optimisticId = `optimistic:${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      setMessages((prev: UiMessage[]) => [
+        ...prev,
+        {
+          ...createUiMessage({
+          id: optimisticId,
+          sender: selfSender,
+          text: content,
+          }),
+          deliveryStatus: "sending",
+        },
+      ]);
+      setNewMessage("");
+
+      const sent = await sendBackendMessage(content, optimisticId);
+      if (!sent) {
+        setNewMessage(content);
       }
+      return;
     }
 
-    setMessages((prev) => [
+    setMessages((prev: UiMessage[]) => [
       ...prev,
       createUiMessage({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -329,20 +393,42 @@ export const CollaborationSpace = () => {
     setNewMessage("");
 
     // Simulation réponse du freelance (fallback local)
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        createUiMessage({
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          sender: "freelance",
-          text: "Merci pour ces informations ! Je serais ravi de collaborer avec vous sur ce projet. 🚀",
-        }),
-      ]);
-      appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-        sender: "pro",
-        mode: "local",
-      });
-    }, 2000);
+    // setTimeout(() => {
+    //   setMessages((prev: UiMessage[]) => [
+    //     ...prev,
+    //     mapBackendMessageToUi({
+    //       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    //       senderId: "pro",
+    //       content: "Merci pour ces informations ! Je serais ravi de collaborer avec vous sur ce projet. 🚀",
+    //       sentAt: new Date().toISOString(),
+    //     }),
+    //   ]);
+    //   appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
+    //     sender: "pro",
+    //     mode: "local",
+    //   });
+    // }, 2000);
+  };
+
+  const retryMessage = async (messageId: string) => {
+    const activeSpaceId = backendSpace?.id || resolvedSpaceId;
+    if (!activeSpaceId) return;
+
+    const failedMessage = messages.find((msg) => msg.id === messageId);
+    if (!failedMessage || failedMessage.deliveryStatus !== "failed") return;
+
+    if (backendSpace?.status && isMessageBlockedByStatus(backendSpace.status)) {
+      toast.error("La messagerie est indisponible pour ce statut de collaboration.");
+      return;
+    }
+
+    setMessages((prev: UiMessage[]) =>
+      prev.map((msg) =>
+        msg.id === messageId ? { ...msg, deliveryStatus: "sending" } : msg,
+      ),
+    );
+
+    await sendBackendMessage(failedMessage.text, messageId);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -729,6 +815,7 @@ export const CollaborationSpace = () => {
     setNewMessage,
     handleKeyPress,
     sendMessage,
+    onRetryMessage: retryMessage,
     isMessagingLocked,
     messagingStatusNotice,
     messagesEndRef,

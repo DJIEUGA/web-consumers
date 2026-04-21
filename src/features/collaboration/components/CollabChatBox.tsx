@@ -24,6 +24,7 @@ type CollabChatBoxProps = {
   showComposerTools?: boolean;
   isRecording?: boolean;
   onToggleRecording?: () => void;
+  onRetryMessage?: (messageId: string) => void;
 };
 
 export const CollabChatBox = ({
@@ -41,6 +42,7 @@ export const CollabChatBox = ({
   showComposerTools = false,
   isRecording = false,
   onToggleRecording,
+  onRetryMessage,
 }: CollabChatBoxProps) => {
   return (
     <div className={`collab-chat-container ${compact ? "small" : ""}`.trim()}>
@@ -58,6 +60,27 @@ export const CollabChatBox = ({
             <div className="collab-message-content">
               <div className="collab-message-bubble">{msg.text}</div>
               <span className="collab-message-time">{msg.time}</span>
+              {msg.deliveryStatus === "sending" && (
+                <span className="collab-message-time" style={{ color: "#fd7e14" }}>
+                  Envoi...
+                </span>
+              )}
+              {msg.deliveryStatus === "failed" && (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                  <span className="collab-message-time" style={{ color: "#dc3545" }}>
+                    Echec d'envoi
+                  </span>
+                  {onRetryMessage && (
+                    <button
+                      type="button"
+                      className="collab-btn-sm collab-btn-outline"
+                      onClick={() => onRetryMessage(msg.id)}
+                    >
+                      Reessayer
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}

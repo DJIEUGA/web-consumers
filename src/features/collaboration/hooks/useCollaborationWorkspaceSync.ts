@@ -8,7 +8,6 @@ import {
   BACKEND_STATUS_TO_STEP,
   clampStep,
   getStorageKey,
-  isMessageBlockedByStatus,
   isUuidLike,
   parseRoomPair,
   parseStoredDecisionState,
@@ -30,6 +29,7 @@ type BackendMessage = {
 type UseCollaborationWorkspaceSyncParams = {
   incomingId: string;
   collaborationRoomId: string;
+  resolvedSpaceId: string;
   currentUserId: string;
   navigate: NavigateFunction;
   mySpacesData?: CollaborationSpaceResponse[];
@@ -38,7 +38,6 @@ type UseCollaborationWorkspaceSyncParams = {
   setBackendSpace: React.Dispatch<React.SetStateAction<CollaborationSpaceResponse | null>>;
   messages: UiMessage[];
   setMessages: React.Dispatch<React.SetStateAction<UiMessage[]>>;
-  defaultMessages: UiMessage[];
   currentStep: number;
   setCurrentStep: React.Dispatch<React.SetStateAction<number>>;
   decisionState: CollaborationDecisionState;
@@ -53,6 +52,7 @@ type UseCollaborationWorkspaceSyncParams = {
 export const useCollaborationWorkspaceSync = ({
   incomingId,
   collaborationRoomId,
+  resolvedSpaceId,
   currentUserId,
   navigate,
   mySpacesData,
@@ -61,7 +61,6 @@ export const useCollaborationWorkspaceSync = ({
   setBackendSpace,
   messages,
   setMessages,
-  defaultMessages,
   currentStep,
   setCurrentStep,
   decisionState,
@@ -73,9 +72,11 @@ export const useCollaborationWorkspaceSync = ({
   messagesEndRef,
 }: UseCollaborationWorkspaceSyncParams) => {
   const spaceMessagesQuery = useSpaceMessages(
-    backendSpace?.id && !isMessageBlockedByStatus(backendSpace.status)
-      ? backendSpace.id
-      : undefined,
+    resolvedSpaceId || undefined,
+    {
+      refetchInterval: resolvedSpaceId ? 5000 : undefined,
+      refetchOnWindowFocus: true,
+    },
   );
 
   useEffect(() => {
@@ -144,13 +145,34 @@ export const useCollaborationWorkspaceSync = ({
   ]);
 
   useEffect(() => {
-    if (!backendSpace?.id) return;
+    if (!resolvedSpaceId) return;
     if (spaceMessagesQuery.isError) return;
     if (Array.isArray(spaceMessagesQuery.data)) {
-      setMessages(spaceMessagesQuery.data.map(mapBackendMessageToUi));
+      const serverMessages = spaceMessagesQuery.data.map(mapBackendMessageToUi);
+      const uniqueServerMessages = serverMessages.filter(
+        (msg, index, arr) => arr.findIndex((candidate) => candidate.id === msg.id) === index,
+      );
+
+      setMessages((prev) => {
+        const optimisticMessages = prev.filter((msg) => String(msg.id).startsWith("optimistic:"));
+        if (optimisticMessages.length === 0) {
+          return uniqueServerMessages;
+        }
+
+        const pendingOptimistic = optimisticMessages.filter(
+          (optimistic) =>
+            !uniqueServerMessages.some(
+              (server) =>
+                server.sender === optimistic.sender &&
+                server.text.trim() === optimistic.text.trim(),
+            ),
+        );
+
+        return [...uniqueServerMessages, ...pendingOptimistic];
+      });
     }
   }, [
-    backendSpace?.id,
+    resolvedSpaceId,
     mapBackendMessageToUi,
     setMessages,
     spaceMessagesQuery.data,
@@ -158,14 +180,14 @@ export const useCollaborationWorkspaceSync = ({
   ]);
 
   useEffect(() => {
-    if (backendSpace) return;
+    if (backendSpace || resolvedSpaceId) return;
 
     const storageKey = getStorageKey(COLLAB_STORAGE_PREFIX, collaborationRoomId);
 
     try {
       const storedRaw = localStorage.getItem(storageKey);
       if (!storedRaw) {
-        setMessages(defaultMessages);
+        setMessages([]);
         setCurrentStep(0);
         return;
       }
@@ -174,7 +196,7 @@ export const useCollaborationWorkspaceSync = ({
       if (Array.isArray(stored.messages)) {
         setMessages(stored.messages);
       } else {
-        setMessages(defaultMessages);
+        setMessages([]);
       }
 
       if (Number.isFinite(stored.currentStep)) {
@@ -191,15 +213,15 @@ export const useCollaborationWorkspaceSync = ({
         setLifecycleEvents([]);
       }
     } catch {
-      setMessages(defaultMessages);
+      setMessages([]);
       setCurrentStep(0);
       setDecisionState("pending");
       setLifecycleEvents([]);
     }
   }, [
     backendSpace,
+    resolvedSpaceId,
     collaborationRoomId,
-    defaultMessages,
     setCurrentStep,
     setDecisionState,
     setLifecycleEvents,
