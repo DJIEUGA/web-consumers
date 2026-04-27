@@ -13,7 +13,6 @@ export const BACKEND_STATUS_TO_STEP: BackendStatusToStepMap = {
 };
 
 export const MESSAGE_BLOCKED_STATUSES: CollaborationStatus[] = [
-  "PENDING",
   "REJECTED",
   "CANCELLED",
 ];

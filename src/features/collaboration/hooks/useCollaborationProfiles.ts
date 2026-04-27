@@ -57,6 +57,8 @@ type UseCollaborationProfilesParams = {
   incomingId: string;
   backendSpace: CollaborationSpaceResponse | null;
   authUser?: AuthUserLike | null;
+  resolvedSpaceId?: string;
+  isSpaceLoading?: boolean;
 };
 
 export const useCollaborationProfiles = ({
@@ -66,6 +68,8 @@ export const useCollaborationProfiles = ({
   incomingId,
   backendSpace,
   authUser,
+  resolvedSpaceId,
+  isSpaceLoading,
 }: UseCollaborationProfilesParams) => {
   const proProfileLookupId = useMemo(() => {
     if (isPro && currentUserId && isUuidLike(currentUserId)) {
@@ -77,11 +81,14 @@ export const useCollaborationProfiles = ({
       return backendProId;
     }
 
+    const isIncomingSpaceId = resolvedSpaceId === incomingId || (isSpaceLoading && isUuidLike(incomingId));
+
     if (
       isCustomer &&
       incomingId &&
       isUuidLike(incomingId) &&
-      incomingId !== currentUserId
+      incomingId !== currentUserId &&
+      !isIncomingSpaceId
     ) {
       return incomingId;
     }
@@ -93,7 +100,7 @@ export const useCollaborationProfiles = ({
     }
 
     return "";
-  }, [backendSpace?.proId, currentUserId, incomingId, isCustomer, isPro]);
+  }, [backendSpace?.proId, currentUserId, incomingId, isCustomer, isPro, resolvedSpaceId, isSpaceLoading]);
 
   const publicProProfileQuery = usePublicProfile(
     proProfileLookupId || undefined,
@@ -109,11 +116,14 @@ export const useCollaborationProfiles = ({
       return backendCustomerId;
     }
 
+    const isIncomingSpaceId = resolvedSpaceId === incomingId || (isSpaceLoading && isUuidLike(incomingId));
+
     if (
       isPro &&
       incomingId &&
       isUuidLike(incomingId) &&
-      incomingId !== currentUserId
+      incomingId !== currentUserId &&
+      !isIncomingSpaceId
     ) {
       return incomingId;
     }
@@ -125,7 +135,7 @@ export const useCollaborationProfiles = ({
     }
 
     return "";
-  }, [backendSpace?.customerId, currentUserId, incomingId, isPro]);
+  }, [backendSpace?.customerId, currentUserId, incomingId, isPro, resolvedSpaceId, isSpaceLoading]);
 
   const publicOwnerProfileQuery = usePublicProfile(
     !isPro ? ownerProfileLookupId || undefined : undefined,
@@ -166,15 +176,15 @@ export const useCollaborationProfiles = ({
 
   const freelance = useMemo<PersonSummary>(() => {
     const liveProPayload = (publicProProfile || {}) as Record<string, any>;
-    const fullName = [publicProProfile?.firstName, publicProProfile?.lastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
+    const fullName = [
+      publicProProfile?.firstName, 
+      publicProProfile?.lastName
+    ].filter(Boolean).join(" ").trim();
 
     const displayName =
+      backendSpace?.proName ||
       fullName ||
       publicProProfile?.displayName ||
-      backendSpace?.proName ||
       "Professionnel Jobty";
 
     const rating = Number(
@@ -364,15 +374,15 @@ export const useCollaborationProfiles = ({
     ).trim();
 
     const displayName =
+      backendSpace?.customerName ||
       fullName ||
       resolvedOwnerProfile?.displayName ||
       companyName ||
-      backendSpace?.customerName ||
       [authUser?.firstName, authUser?.lastName]
         .filter(Boolean)
         .join(" ")
         .trim() ||
-      "Marc Dubois";
+      "Client Jobty";
 
     const companyOrLabel =
       resolvedOwnerProfile?.headline ||
@@ -399,6 +409,10 @@ export const useCollaborationProfiles = ({
   const sidebarIdentityLoading = isPro
     ? isOwnerIdentityLoading
     : isFreelanceIdentityLoading;
+
+  const profileError = 
+    Boolean(proProfileLookupId && publicProProfileQuery.isError) ||
+    Boolean(ownerProfileLookupId && (isPro ? customerOwnerProfileQuery.isError : publicOwnerProfileQuery.isError));
 
   const sidebarProfile = useMemo<SidebarProfile>(() => {
     if (!isPro) {
@@ -474,5 +488,6 @@ export const useCollaborationProfiles = ({
     isOwnerIdentityLoading,
     sidebarIdentityLoading,
     sidebarProfile,
+    profileError,
   };
 };

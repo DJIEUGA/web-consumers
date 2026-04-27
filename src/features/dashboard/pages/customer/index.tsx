@@ -76,7 +76,7 @@ import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import NotificationsDrawer from '../../../../components/shared/NotificationsDrawer';
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
 import { useDashboardProfile } from '../../hooks/useDashboardProfile';
-import { useCollaborations, useStatsOverview } from '../../hooks/useDashboardData';
+import { useCollaborations } from '../../hooks/useDashboardData';
 import {
   getCollaborationStatusMeta,
   isCollaborationActive,
@@ -99,7 +99,6 @@ const CustomerDashboard = () => {
     isError: isCollaborationsError,
     refetch: refetchCollaborations,
   } = useCollaborations();
-  const { data: statsData } = useStatsOverview();
 
   const overviewStats = {
     gainsTotal: 0,
@@ -108,7 +107,6 @@ const CustomerDashboard = () => {
     vuesProfile: 0,
     messagesRecus: 0,
     favoritesCount: 0,
-    ...statsData,
   };
 
   const collaborationSummary = useMemo(() => {

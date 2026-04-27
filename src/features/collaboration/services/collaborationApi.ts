@@ -284,7 +284,7 @@ export const collaborationApi = {
   ): Promise<CustomerProfileDetails> {
     const encodedId = encodeURIComponent(customerProfileId);
     const candidateEndpoints = [
-      `/api/v1/customer/profiles/${encodedId}/details`,
+      `/customer/profiles/${encodedId}/details`,
       `/customer/profiles/${encodedId}/details`,
     ];
 

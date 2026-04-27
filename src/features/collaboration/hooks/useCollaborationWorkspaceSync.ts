@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type React from "react";
 import type { NavigateFunction } from "react-router-dom";
 import type { CollaborationSpaceResponse } from "@/features/collaboration/services/collaborationApi";
-import { useSpaceMessages } from "@/features/collaboration/hooks/useCollaboration";
+import { useSpaceMessages, useSpaceDetail } from "@/features/collaboration/hooks/useCollaboration";
 import { COLLAB_STORAGE_PREFIX } from "@/features/collaboration/constants/workflow";
 import {
   BACKEND_STATUS_TO_STEP,
@@ -79,6 +79,8 @@ export const useCollaborationWorkspaceSync = ({
     },
   );
 
+  const spaceDetailQuery = useSpaceDetail(isUuidLike(incomingId) ? incomingId : undefined);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, messagesEndRef]);
@@ -105,7 +107,12 @@ export const useCollaborationWorkspaceSync = ({
     let matchedSpace: CollaborationSpaceResponse | undefined;
 
     if (isUuidLike(incomingId)) {
-      matchedSpace = spaces.find((space) => space.id === incomingId);
+      // Prioritize the detailed response from the specific endpoint if available
+      if (spaceDetailQuery.data && spaceDetailQuery.data.id === incomingId) {
+        matchedSpace = spaceDetailQuery.data;
+      } else {
+        matchedSpace = spaces.find((space) => space.id === incomingId);
+      }
     }
 
     if (!matchedSpace) {
@@ -124,13 +131,23 @@ export const useCollaborationWorkspaceSync = ({
       );
     }
 
+    // If still no matched space and we have a UUID-like incomingId, try fetching directly
+    if (!matchedSpace && isUuidLike(incomingId)) {
+      if (spaceDetailQuery.data) {
+        matchedSpace = spaceDetailQuery.data;
+      }
+    }
+
     if (matchedSpace) {
       setBackendSpace(matchedSpace);
       setCurrentStep(BACKEND_STATUS_TO_STEP[matchedSpace.status] ?? 1);
       if (matchedSpace.status === "REJECTED") {
         setDecisionState("declined");
       }
-    } else {
+    } else if (!isUuidLike(incomingId) || spaceDetailQuery.isError) {
+      // Only set backendSpace to null if it's explicitly not a space UUID request,
+      // or if the specific space query definitively failed.
+      // Otherwise, it might just be loading.
       setBackendSpace(null);
     }
   }, [
@@ -142,6 +159,8 @@ export const useCollaborationWorkspaceSync = ({
     setBackendSpace,
     setCurrentStep,
     setDecisionState,
+    spaceDetailQuery.data,
+    spaceDetailQuery.isError,
   ]);
 
   useEffect(() => {
@@ -258,5 +277,6 @@ export const useCollaborationWorkspaceSync = ({
 
   return {
     spaceMessagesQuery,
+    spaceDetailQuery,
   };
 };

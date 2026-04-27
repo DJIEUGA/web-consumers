@@ -30,6 +30,8 @@ import {
   type AnalyticsDataDto,
 } from '../../../api/dashboardEndpoints';
 
+import { useAuthStore } from '../../../stores/auth.store';
+
 // Simple response wrapper for dashboard endpoints
 interface DashboardResponse<T> {
   success: boolean;
@@ -540,13 +542,17 @@ export async function fetchPosts(): Promise<DashboardResponse<PostDto[]>> {
  * @pro @enterprise
  */
 export async function fetchCollaborations(): Promise<DashboardResponse<CollaborationDto[]>> {
-  const mapSpaceToCollaboration = (space: CollaborationSpaceResponse): CollaborationDto => {
-    const customerName = String(space.customerName || '').trim();
-    const proName = String(space.proName || '').trim();
-    const title = String(space.title || '').trim();
+  const currentUserId = useAuthStore.getState().user?.id;
 
-    const counterpartName = proName || customerName || 'Collaboration';
-    const displayTitle = title || `Mission avec ${counterpartName}`;
+  const mapSpaceToCollaboration = (space: CollaborationSpaceResponse): CollaborationDto => {
+    const isPro = currentUserId && (space.proId === currentUserId || space.proId === String(currentUserId));
+    
+    // Si l'utilisateur actuel est le pro, la contrepartie est le client, sinon c'est le pro
+    const targetName = isPro ? space.customerName : space.proName;
+    const fallbackName = isPro ? space.proName : space.customerName;
+
+    const counterpartName = String(targetName || fallbackName || 'Collaboration').trim();
+    const displayTitle = String(space.title || `Mission avec ${counterpartName}`).trim();
 
     const avatarSeed = encodeURIComponent(counterpartName || space.id);
     const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
@@ -559,7 +565,7 @@ export async function fetchCollaborations(): Promise<DashboardResponse<Collabora
       backendStatus: space.status,
       statut: mapBackendStatusToUiStatut(space.status),
       clientPhoto: avatar,
-      client: customerName || counterpartName,
+      client: counterpartName,
       titre: displayTitle,
       montant: 0,
       progression: space.status === 'COMPLETED' ? 100 : space.status === 'ACTIVE' ? 60 : 0,
@@ -576,6 +582,8 @@ export async function fetchCollaborations(): Promise<DashboardResponse<Collabora
     message: 'Collaborations chargées depuis le backend',
   };
 }
+
+
 
 /* ========================================
  * ADVERTISEMENTS (Pro/Enterprise)

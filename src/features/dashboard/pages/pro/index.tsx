@@ -75,6 +75,7 @@ import {
 } from "../../hooks/useDashboardData";
 import { getCollaborationStatusMeta, isCollaborationPending } from "../../utils/collaborationStatus";
 import "./css/style.css";
+import collaborationApi from "@/features/collaboration/services/collaborationApi";
 
 const TAB_TO_ROUTE_SEGMENT: Record<string, string> = {
   apercu: "overview",
@@ -1327,7 +1328,10 @@ function ProDashboard() {
 
                     <button
                       className="dash-btn-outline dash-btn-sm"
-                      onClick={() => navigate(`/collaboration/${collab.id}`)}
+                      onClick={async () => {
+                        await collaborationApi.getSpaceDetail(collab.id);
+                        navigate(`/dashboard/my/collaborations/${collab.id}`);
+                      }}
                     >
                       Ouvrir l'espace projet
                     </button>

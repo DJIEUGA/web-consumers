@@ -27,7 +27,7 @@ type CollabChatBoxProps = {
   onRetryMessage?: (messageId: string) => void;
 };
 
-export const CollabChatBox = ({
+export const CollabChatBox = ({  
   messages,
   porteurPhoto,
   freelancePhoto,
@@ -94,7 +94,7 @@ export const CollabChatBox = ({
             placeholder="Votre message..."
             value={newMessage}
             onChange={(e) => onMessageChange(e.target.value)}
-            onKeyPress={onKeyPress}
+            onKeyDown={onKeyPress}
             disabled={isMessagingLocked}
           />
           <button className="collab-send-btn" onClick={onSend} disabled={isMessagingLocked}>
@@ -117,7 +117,7 @@ export const CollabChatBox = ({
             placeholder="Écrivez votre message..."
             value={newMessage}
             onChange={(e) => onMessageChange(e.target.value)}
-            onKeyPress={onKeyPress}
+            onKeyDown={onKeyPress}
             disabled={isMessagingLocked}
             rows={1}
           />

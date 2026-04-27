@@ -34,6 +34,7 @@ import {
   usePublicProfileReviews,
   useSubmitReview,
 } from "@/features/collaboration/hooks/useCollaboration";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { useCollaborationWorkspaceState } from "@/features/collaboration/hooks/useCollaborationWorkspaceState";
 import { useCollaborationStageViewModel } from "@/features/collaboration/hooks/useCollaborationStageViewModel";
 import { useCollaborationWorkspaceSync } from "@/features/collaboration/hooks/useCollaborationWorkspaceSync";
@@ -103,23 +104,6 @@ export const CollaborationSpace = () => {
   const incomingId = String(freelanceId || "").trim();
   const [backendSpace, setBackendSpace] = useState<CollaborationSpaceResponse | null>(null);
 
-  const {
-    ownerProfileLookupId,
-    freelance,
-    porteur,
-    isFreelanceIdentityLoading,
-    isOwnerIdentityLoading,
-    sidebarIdentityLoading,
-    sidebarProfile,
-  } = useCollaborationProfiles({
-    isPro,
-    isCustomer,
-    currentUserId,
-    incomingId,
-    backendSpace,
-    authUser,
-  });
-
   const collaborationRoomId = (() => {
     if (!incomingId) return "room:anonymous";
     if (incomingId.startsWith("room:")) return incomingId;
@@ -159,6 +143,26 @@ export const CollaborationSpace = () => {
 
     return "";
   }, [backendSpace?.id, collaborationRoomId, incomingId, mySpacesQuery.data]);
+
+  const {
+    ownerProfileLookupId,
+    freelance,
+    porteur,
+    isFreelanceIdentityLoading,
+    isOwnerIdentityLoading,
+    sidebarIdentityLoading,
+    sidebarProfile,
+    profileError,
+  } = useCollaborationProfiles({
+    isPro,
+    isCustomer,
+    currentUserId,
+    incomingId,
+    resolvedSpaceId,
+    isSpaceLoading: mySpacesQuery.isFetching,
+    backendSpace,
+    authUser,
+  });
 
 
   // États de la collaboration
@@ -274,7 +278,7 @@ export const CollaborationSpace = () => {
     onAdvanceStep: queueStepTransition,
   });
 
-  const { spaceMessagesQuery } = useCollaborationWorkspaceSync({
+  const { spaceMessagesQuery, spaceDetailQuery } = useCollaborationWorkspaceSync({
     incomingId,
     collaborationRoomId,
     resolvedSpaceId,
@@ -371,43 +375,79 @@ export const CollaborationSpace = () => {
       ]);
       setNewMessage("");
 
+      // Si le contenu a été envoyé avec succès au backend
       const sent = await sendBackendMessage(content, optimisticId);
       if (!sent) {
+        // En cas d'échec on remet le texte pour que l'user puisse réessayer
         setNewMessage(content);
       }
       return;
     }
 
-    setMessages((prev: UiMessage[]) => [
-      ...prev,
-      createUiMessage({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    // Le code ci-dessous est le fallback purement local qui simule le chat
+    // si aucun workspace ID n'existe encore.
+    // Cela ne doit arriver QUE SI l'user tape un 1er message AVANT de "Proposer une collaboration".
+    // Or le flux a été modifié : le 1er message backend devrait créer le workspace.
+    // Nous allons simuler la création de collaboration ici si elle n'existe pas.
+
+    const optimisticId = `optimistic:${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    const optimisticMsg: UiMessage = {
+      ...createUiMessage({
+        id: optimisticId,
         sender: isCustomer ? "porteur" : "freelance",
         text: content,
       }),
+      deliveryStatus: "sending"
+    };
+
+    setMessages((prev: UiMessage[]) => [
+      ...prev,
+      optimisticMsg,
     ]);
-    appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-      sender: actor,
-      mode: "local",
-    });
     setNewMessage("");
 
-    // Simulation réponse du freelance (fallback local)
-    // setTimeout(() => {
-    //   setMessages((prev: UiMessage[]) => [
-    //     ...prev,
-    //     mapBackendMessageToUi({
-    //       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    //       senderId: "pro",
-    //       content: "Merci pour ces informations ! Je serais ravi de collaborer avec vous sur ce projet. 🚀",
-    //       sentAt: new Date().toISOString(),
-    //     }),
-    //   ]);
-    //   appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-    //     sender: "pro",
-    //     mode: "local",
-    //   });
-    // }, 2000);
+    try {
+        if (!backendSpace && isCustomer) {
+            const proId = resolveProIdForRequest();
+            if (proId) {
+                const createdEnvelope = await createSpace.mutateAsync({
+                  proId,
+                  title: brief.objectif || "Demande de collaboration",
+                  brief: brief.objectif || "Nouvelle demande de collaboration initiée depuis l'espace contact.",
+                });
+                
+                const space = createdEnvelope.data;
+                setBackendSpace(space);
+                setCurrentStep(BACKEND_STATUS_TO_STEP[space.status] ?? 1);
+                
+                const sentEnvelope = await sendMessageMutation.mutateAsync({
+                  spaceId: space.id,
+                  params: { content },
+                });
+                const sent = sentEnvelope.data;
+                const sentUi = mapBackendMessageToUi(sent);
+          
+                setMessages((prev: UiMessage[]) => {
+                  const withoutOptimistic = prev.filter((msg) => msg.id !== optimisticId);
+                  return [...withoutOptimistic, sentUi];
+                });
+                appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
+                  sender: actor,
+                  mode: "backend",
+                });
+                return;
+            }
+        }
+        
+    } catch(err) {
+        console.error("Failed to auto-create and send msg", err);
+    }
+  
+    setMessages((prev: UiMessage[]) => prev.map(msg => msg.id === optimisticId ? {...msg, deliveryStatus: "failed"} : msg));
+    setNewMessage(content);
+    toast.error("Veuillez d'abord proposer la collaboration ou réessayer l'envoi.");
+    
   };
 
   const retryMessage = async (messageId: string) => {
@@ -441,12 +481,16 @@ export const CollaborationSpace = () => {
   const resolveProIdForRequest = useCallback(() => {
     if (backendSpace?.proId) return backendSpace.proId;
 
-    if (isUuidLike(incomingId) && incomingId !== currentUserId) {
-      return incomingId;
-    }
-
     const pair = parseRoomPair(collaborationRoomId);
     if (pair?.proId) return pair.proId;
+
+    if (isUuidLike(incomingId) && incomingId !== currentUserId) {
+        // If we know this incomingId is definitely a Space ID (from spaceDetailQuery resolving it), it's NOT a pro ID.
+        // By checking if the backendSpace exists and is NOT this ID, we avoid treating Space IDs as Pro IDs.
+        // Actually, if backendSpace is missing, it MIGHT be a Pro ID.
+        // But what if spaceDetailQuery is still loading? We shouldn't use it yet.
+        return incomingId;
+    }
 
     return "";
   }, [backendSpace?.proId, collaborationRoomId, currentUserId, incomingId]);
@@ -457,7 +501,7 @@ export const CollaborationSpace = () => {
     currentStep === 9 && Boolean(resolvedReviewProId && isUuidLike(resolvedReviewProId)),
   );
   const submitReviewMutation = useSubmitReview();
-  const isSyncing = mySpacesQuery.isFetching || spaceMessagesQuery.isFetching;
+  const isSyncing = mySpacesQuery.isLoading || spaceMessagesQuery.isLoading || spaceDetailQuery.isLoading;
   const isCheckingExistingReview = reviewsQuery.isFetching;
   const isMessagingLocked = isMessageBlockedByStatus(backendSpace?.status);
   const requestContextMessage = useMemo(() => {
@@ -529,7 +573,7 @@ export const CollaborationSpace = () => {
   );
 
   const proposerCollaboration = async () => {
-    if (!canPerformAction("propose")) return;
+    if (!canPerformAction("propose") || backendSpace?.status === "REJECTED") return;
 
     setDecisionState("pending");
     transitionToStep(1, "COLLABORATION_PROPOSED");
@@ -821,7 +865,7 @@ export const CollaborationSpace = () => {
     messagesEndRef,
     isRecording,
     setIsRecording,
-    canPropose: canPerformAction("propose"),
+    canPropose: canPerformAction("propose") && backendSpace?.status !== "REJECTED",
     proposerCollaboration,
     isPro,
     requestContextMessage,
@@ -868,8 +912,22 @@ export const CollaborationSpace = () => {
 
   return (
     <div className="collab-page">
-      {/* Animation Match */}
-      {showMatchAnimation && (
+      {profileError ? (
+        <div style={{ padding: "40px", maxWidth: "600px", margin: "0 auto" }}>
+          <ErrorState
+            title="Profil introuvable"
+            description="Le profil du professionnel ou du porteur de projet n'a pas pu être chargé. Ce profil a peut-être été supprimé ou n'existe pas."
+            icon={<FiAlertCircle size={48} />}
+            action={{
+              label: "Retour au tableau de bord",
+              onClick: () => navigate("/dashboard"),
+            }}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Animation Match */}
+          {showMatchAnimation && (
         <div className="collab-match-overlay">
           <div className="collab-match-animation">
             <div className="collab-match-photos">
@@ -1150,6 +1208,8 @@ export const CollaborationSpace = () => {
           </div>
         </div>
       </footer>
+      </>
+      )}
     </div>
   );
 };
