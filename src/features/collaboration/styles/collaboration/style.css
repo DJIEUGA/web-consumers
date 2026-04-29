@@ -4,8 +4,8 @@
 
 .collab-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #eef0f3;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   overflow-x: hidden;
 }
 
@@ -15,7 +15,7 @@
 
 .collab-header {
   background: #ffffff;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -99,8 +99,8 @@
 
 .collab-progress-bar {
   background: white;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
   overflow-x: auto;
 }
 
@@ -123,15 +123,15 @@
 }
 
 .collab-progress-icon {
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: #e9ecef;
   color: #adb5bd;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 16px;
   transition: all 0.3s ease;
   border: 3px solid transparent;
 }
@@ -167,9 +167,9 @@
 
 .collab-progress-line {
   position: absolute;
-  top: 25px;
-  left: calc(50% + 25px);
-  width: calc(100% - 50px);
+  top: 22px;
+  left: calc(50% + 22px);
+  width: calc(100% - 44px);
   height: 3px;
   background: #e9ecef;
   z-index: 1;
@@ -186,13 +186,13 @@
 .collab-main {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 30px 20px;
+  padding: 22px 16px;
 }
 
 .collab-container {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 30px;
+  grid-template-columns: 292px 1fr;
+  gap: 20px;
 }
 
 /* ========================================
@@ -207,9 +207,9 @@
 
 .collab-freelance-card {
   background: white;
-  border-radius: 20px;
-  padding: 25px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
 }
 
 .collab-freelance-header {
@@ -218,6 +218,75 @@
   align-items: center;
   text-align: center;
   margin-bottom: 20px;
+}
+
+.collab-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e6eaf0;
+}
+
+.collab-skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 150%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: collabShimmer 1.2s infinite;
+}
+
+@keyframes collabShimmer {
+  100% {
+    left: 150%;
+  }
+}
+
+.collab-avatar-skeleton {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid #d7deea;
+}
+
+.collab-avatar-skeleton-sm {
+  width: 70px;
+  height: 70px;
+}
+
+.collab-avatar-skeleton-xs {
+  width: 50px;
+  height: 50px;
+}
+
+.collab-text-skeleton {
+  display: block;
+  border-radius: 8px;
+  height: 12px;
+}
+
+.collab-text-skeleton-name {
+  height: 18px;
+  width: 140px;
+  margin: 0 auto 8px;
+}
+
+.collab-text-skeleton-subtitle {
+  height: 14px;
+  width: 180px;
+  margin: 0 auto 10px;
+}
+
+.collab-text-skeleton-location {
+  height: 12px;
+  width: 155px;
+  margin: 0 auto;
+}
+
+.collab-text-skeleton-name-sm {
+  width: 110px;
+  height: 14px;
 }
 
 .collab-freelance-photo-wrapper {
@@ -316,7 +385,7 @@
 .collab-comp-tag {
   background: #667eea15;
   color: #6852a3;
-  padding: 5px 12px;
+  padding: 4px 11px;
   border-radius: 15px;
   font-size: 12px;
   font-weight: 600;
@@ -342,9 +411,9 @@
 /* Résumé du projet */
 .collab-project-summary {
   background: white;
-  border-radius: 20px;
+  border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
 }
 
 .collab-project-summary h4 {
@@ -389,9 +458,9 @@
 
 .collab-workspace {
   background: white;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
   min-height: 600px;
 }
 

@@ -2,21 +2,18 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FiDollarSign, FiTarget } from "react-icons/fi";
 import { useCollaborations } from "../../hooks/useDashboardData";
+import { getCollaborationStatusMeta, isCollaborationPending } from "../../utils/collaborationStatus";
 
 const CollaborationsTab: React.FC = () => {
   const navigate = useNavigate();
   const { data: collaborations = [] } = useCollaborations();
 
-  const getStatutBadge = (statut: string) => {
-    const key = String(statut ?? "").toLowerCase();
-    const statuts = {
-      en_cours: { label: "En cours", color: "#3DC7C9" },
-      termine: { label: "Terminé", color: "#28a745" },
-      en_attente: { label: "En attente", color: "#ffc107" },
-      recu: { label: "Reçu", color: "#28a745" },
-      complete: { label: "Complété", color: "#28a745" },
-    };
-    const s = statuts[key] ?? { label: "Inconnu", color: "#64748b" };
+  const getStatutBadge = (collab: { backendStatus?: string; statut?: string }) => {
+    const s = getCollaborationStatusMeta({
+      backendStatus: collab.backendStatus,
+      statut: collab.statut,
+    });
+
     return (
       <span
         className="dash-statut-badge"
@@ -47,10 +44,13 @@ const CollaborationsTab: React.FC = () => {
                 <h3>{collab.titre}</h3>
                 <p>{collab.client}</p>
               </div>
-              {getStatutBadge(collab.statut)}
+              {getStatutBadge(collab)}
             </div>
 
-            {collab.statut === "en_attente" && (
+            {isCollaborationPending({
+              backendStatus: collab.backendStatus,
+              statut: collab.statut,
+            }) && (
               <>
                 <div className="dash-collab-progress">
                   <div className="dash-progress-bar">

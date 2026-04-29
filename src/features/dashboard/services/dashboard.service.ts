@@ -8,6 +8,8 @@
 
 import axios from '../../../api/axios';
 import { PROFILE_ENDPOINTS } from '../../../api/profileEndpoints';
+import { collaborationApi, type CollaborationStatus, type CollaborationSpaceResponse } from '../../collaboration/services/collaborationApi';
+import { mapBackendStatusToUiStatut } from '../utils/collaborationStatus';
 import {
   DASHBOARD_ENDPOINTS,
   type StatsTodayDto,
@@ -27,6 +29,8 @@ import {
   type AdCampaignDto,
   type AnalyticsDataDto,
 } from '../../../api/dashboardEndpoints';
+
+import { useAuthStore } from '../../../stores/auth.store';
 
 // Simple response wrapper for dashboard endpoints
 interface DashboardResponse<T> {
@@ -538,28 +542,48 @@ export async function fetchPosts(): Promise<DashboardResponse<PostDto[]>> {
  * @pro @enterprise
  */
 export async function fetchCollaborations(): Promise<DashboardResponse<CollaborationDto[]>> {
-  // TODO: Backend to implement GET /dashboard/collaborations
+  const currentUserId = useAuthStore.getState().user?.id;
+
+  const mapSpaceToCollaboration = (space: CollaborationSpaceResponse): CollaborationDto => {
+    const isPro = currentUserId && (space.proId === currentUserId || space.proId === String(currentUserId));
+    
+    // Si l'utilisateur actuel est le pro, la contrepartie est le client, sinon c'est le pro
+    const targetName = isPro ? space.customerName : space.proName;
+    const fallbackName = isPro ? space.proName : space.customerName;
+
+    const counterpartName = String(targetName || fallbackName || 'Collaboration').trim();
+    const displayTitle = String(space.title || `Mission avec ${counterpartName}`).trim();
+
+    const avatarSeed = encodeURIComponent(counterpartName || space.id);
+    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
+
+    return {
+      id: space.id,
+      nom: counterpartName,
+      role: 'Collaboration',
+      photo: avatar,
+      backendStatus: space.status,
+      statut: mapBackendStatusToUiStatut(space.status),
+      clientPhoto: avatar,
+      client: counterpartName,
+      titre: displayTitle,
+      montant: 0,
+      progression: space.status === 'COMPLETED' ? 100 : space.status === 'ACTIVE' ? 60 : 0,
+      prochaineLivraison: space.status === 'COMPLETED' ? 'Livrée' : 'À planifier',
+      clientImage: avatar,
+    };
+  };
+
+  const spaces = await collaborationApi.listMySpaces();
+
   return {
     success: true,
-    data: [
-      {
-          id: 'COL-001',
-          nom: 'Jean Kouadio',
-          role: 'Designer',
-          photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jean',
-          statut: 'actif',
-          clientPhoto: '',
-          client: '',
-          titre: undefined,
-          montant: undefined,
-          progression: undefined,
-          prochaineLivraison: undefined,
-          clientImage: undefined
-      },
-    ],
-    message: 'Mock data - backend not implemented',
+    data: (spaces || []).map(mapSpaceToCollaboration),
+    message: 'Collaborations chargées depuis le backend',
   };
 }
+
+
 
 /* ========================================
  * ADVERTISEMENTS (Pro/Enterprise)
