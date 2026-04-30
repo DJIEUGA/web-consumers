@@ -13,6 +13,7 @@ import {
 type AuthUserLike = {
   firstName?: string;
   lastName?: string;
+  avatar?: string;
 };
 
 type PersonSummary = {
@@ -57,8 +58,65 @@ type UseCollaborationProfilesParams = {
   incomingId: string;
   backendSpace: CollaborationSpaceResponse | null;
   authUser?: AuthUserLike | null;
+  currentUserProfile?: Record<string, unknown> | null;
   resolvedSpaceId?: string;
   isSpaceLoading?: boolean;
+};
+
+const toStringValue = (value: unknown): string =>
+  value === null || value === undefined ? "" : String(value).trim();
+
+const toNumberValue = (value: unknown, fallback = 0): number => {
+  if (value === null || value === undefined) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const pickString = (...values: unknown[]): string => {
+  for (const value of values) {
+    const normalized = toStringValue(value);
+    if (normalized) return normalized;
+  }
+  return "";
+};
+
+const resolveLocationLabel = (profile: Record<string, any>): string => {
+  const locationRaw = profile.location;
+  if (locationRaw && typeof locationRaw === "object") {
+    const asObj = locationRaw as Record<string, unknown>;
+    const composed = [
+      toStringValue(asObj.city ?? asObj.ville),
+      toStringValue(asObj.country ?? asObj.pays),
+    ]
+      .filter(Boolean)
+      .join(", ");
+    if (composed) return composed;
+  }
+
+  return pickString(
+    locationRaw,
+    [toStringValue(profile.city ?? profile.ville), toStringValue(profile.country ?? profile.pays)]
+      .filter(Boolean)
+      .join(", "),
+  );
+};
+
+const normalizeSkillsList = (...candidates: unknown[]): string[] => {
+  const normalizeSkill = (skill: unknown): string => {
+    if (typeof skill === "string") return skill.trim();
+    if (skill && typeof skill === "object") {
+      const s = skill as Record<string, unknown>;
+      return pickString(s.name, s.title, s.label, s.value, s.skill);
+    }
+    return "";
+  };
+
+  const flattened = candidates
+    .filter(Array.isArray)
+    .flatMap((arr) => (arr as unknown[]).map(normalizeSkill))
+    .filter(Boolean);
+
+  return Array.from(new Set(flattened));
 };
 
 export const useCollaborationProfiles = ({
@@ -68,20 +126,42 @@ export const useCollaborationProfiles = ({
   incomingId,
   backendSpace,
   authUser,
+  currentUserProfile,
   resolvedSpaceId,
   isSpaceLoading,
 }: UseCollaborationProfilesParams) => {
+  const hasCurrentUserProfile = Boolean(
+    currentUserProfile && Object.keys(currentUserProfile).length > 0,
+  );
+
+  const normalizeProfile = (value: unknown): Record<string, any> => {
+    const payload = getProfilePayload(value);
+    const nestedUser =
+      payload?.user && typeof payload.user === "object"
+        ? (payload.user as Record<string, unknown>)
+        : {};
+
+    return {
+      ...nestedUser,
+      ...(payload || {}),
+    } as Record<string, any>;
+  };
+
   const proProfileLookupId = useMemo(() => {
-    if (isPro && currentUserId && isUuidLike(currentUserId)) {
-      return currentUserId;
-    }
+    // If current user is a Pro, we don't need to look up our own public profile via public API here,
+    // as we rely on currentUserProfile for self-details. This prevents false errors if the pro is not yet public.
+    if (isPro) return "";
 
     const backendProId = String(backendSpace?.proId || "").trim();
     if (backendProId && isUuidLike(backendProId)) {
       return backendProId;
     }
 
-    const isIncomingSpaceId = resolvedSpaceId === incomingId || (isSpaceLoading && isUuidLike(incomingId));
+    // Never speculate on incoming UUID while spaces are still loading.
+    if (isSpaceLoading) return "";
+
+    // Only treat incomingId as participant ID if it's not confirmed as a space ID.
+    const isIncomingSpaceId = resolvedSpaceId === incomingId;
 
     if (
       isCustomer &&
@@ -100,14 +180,14 @@ export const useCollaborationProfiles = ({
     }
 
     return "";
-  }, [backendSpace?.proId, currentUserId, incomingId, isCustomer, isPro, resolvedSpaceId, isSpaceLoading]);
+  }, [backendSpace?.proId, currentUserId, incomingId, isCustomer, isPro, isSpaceLoading, resolvedSpaceId]);
 
   const publicProProfileQuery = usePublicProfile(
     proProfileLookupId || undefined,
   );
   const publicProProfile = useMemo(
-    () => getProfilePayload(publicProProfileQuery.data?.data),
-    [publicProProfileQuery.data?.data],
+    () => normalizeProfile(publicProProfileQuery.data),
+    [publicProProfileQuery.data],
   );
 
   const ownerProfileLookupId = useMemo(() => {
@@ -116,7 +196,9 @@ export const useCollaborationProfiles = ({
       return backendCustomerId;
     }
 
-    const isIncomingSpaceId = resolvedSpaceId === incomingId || (isSpaceLoading && isUuidLike(incomingId));
+    if (isSpaceLoading) return "";
+
+    const isIncomingSpaceId = resolvedSpaceId === incomingId;
 
     if (
       isPro &&
@@ -135,14 +217,14 @@ export const useCollaborationProfiles = ({
     }
 
     return "";
-  }, [backendSpace?.customerId, currentUserId, incomingId, isPro, resolvedSpaceId, isSpaceLoading]);
+  }, [backendSpace?.customerId, currentUserId, incomingId, isPro, isSpaceLoading, resolvedSpaceId]);
 
   const publicOwnerProfileQuery = usePublicProfile(
     !isPro ? ownerProfileLookupId || undefined : undefined,
   );
   const publicOwnerProfile = useMemo(
-    () => getProfilePayload(publicOwnerProfileQuery.data?.data),
-    [publicOwnerProfileQuery.data?.data],
+    () => normalizeProfile(publicOwnerProfileQuery.data),
+    [publicOwnerProfileQuery.data],
   );
 
   const customerOwnerProfileQuery = useQuery({
@@ -154,13 +236,15 @@ export const useCollaborationProfiles = ({
   });
 
   const customer = useMemo(
-    () => getProfilePayload(customerOwnerProfileQuery.data),
+    () => normalizeProfile(customerOwnerProfileQuery.data),
     [customerOwnerProfileQuery.data],
   );
 
   const resolvedOwnerProfile = isPro
     ? customer
-    : publicOwnerProfile;
+    : (hasCurrentUserProfile
+      ? normalizeProfile(currentUserProfile)
+      : publicOwnerProfile);
 
   const isFreelanceIdentityLoading =
     Boolean(proProfileLookupId) &&
@@ -175,41 +259,90 @@ export const useCollaborationProfiles = ({
     Object.keys(resolvedOwnerProfile).length === 0;
 
   const freelance = useMemo<PersonSummary>(() => {
-    const liveProPayload = (publicProProfile || {}) as Record<string, any>;
-    const fullName = [
-      publicProProfile?.firstName, 
-      publicProProfile?.lastName
-    ].filter(Boolean).join(" ").trim();
+    const p = ((isPro
+      ? { ...(publicProProfile || {}), ...(currentUserProfile || {}) }
+      : publicProProfile) || {}) as Record<string, any>;
 
-    const displayName =
-      backendSpace?.proName ||
-      fullName ||
-      publicProProfile?.displayName ||
-      "Professionnel Jobty";
-
-    const rating = Number(
-      liveProPayload?.stats?.averageRating ??
-        publicProProfile?.averageRating ??
-        0,
+    // --- Name ---
+    const fullName = [p.firstName, p.lastName].filter(Boolean).join(" ").trim();
+    const displayName = pickString(
+      backendSpace?.proName,
+      fullName,
+      p.displayName,
+      p.username,
+      p.companyName,
+      "Professionnel Jobty",
     );
 
-    const reviewCount = Number(
-      Array.isArray(liveProPayload?.reviews)
-        ? liveProPayload.reviews.length
-        : (publicProProfile?.reviewCount ?? 0),
+    // --- Rating & reviews ---
+    const rating = toNumberValue(p.averageRating ?? p.stats?.averageRating ?? p.rating, 0);
+    const reviewCount = toNumberValue(
+      p.reviewCount ?? p.stats?.reviewCount ??
+      (Array.isArray(p.reviews) ? p.reviews.length : 0),
+      0,
     );
 
-    const completedProjects = Number(
-      liveProPayload?.stats?.completedProjects ??
-        publicProProfile?.completedProjects ??
-        0,
+    // --- Projects ---
+    const completedProjects = toNumberValue(
+      p.completedProjects ?? p.stats?.completedProjects ?? 0,
+      0,
+    );
+    const collaborationsEnCours = toNumberValue(
+      p.stats?.ongoingProjects ?? p.ongoingProjects ?? p.collaborationsEnCours ?? 0,
+      0,
     );
 
-    const responseRateRaw =
-      liveProPayload?.stats?.responseRate ??
-      liveProPayload?.responseRate ??
-      liveProPayload?.stats?.responseRatePercent;
+    // --- Hourly rate ---
+    const hourlyRate = Number(p.hourlyRate ?? p.tarifHoraire ?? NaN);
 
+    // --- Headline / position ---
+    const headline = pickString(
+      p.headline,
+      p.poste,
+      p.jobTitle,
+      p.specialty,
+      p.specialization,
+      p.specialite,
+      p.bio,
+    );
+
+    // --- Specialty ---
+    const specialty = pickString(
+      p.specialty,
+      p.specialization,
+      p.specialite,
+      p.sector,
+      p.secteur,
+    );
+
+    // --- Location: handle LocationDto object OR top-level city/country strings ---
+    const locationStr = resolveLocationLabel(p);
+
+    // --- Verified ---
+    const isVerified = Boolean(p.isVerified ?? p.verified ?? false);
+
+    // --- Skills aggregation ---
+    const skillArrays = normalizeSkillsList(
+      p.skills,
+      p.competences,
+      p.expertises,
+      p.technologies,
+      p.stack,
+      p.tags,
+      p.topSkills,
+    );
+
+    const skillsFromServices = (publicProProfile?.services ?? [])
+      .map((s: any) => String(s?.title ?? "").trim())
+      .filter(Boolean)
+      .slice(0, 4);
+
+    const normalizedSkills = Array.from(
+      new Set([...skillArrays, ...skillsFromServices, specialty].filter(Boolean)),
+    ).slice(0, 5);
+
+    // --- Response rate ---
+    const responseRateRaw = p.stats?.responseRate ?? p.responseRate ?? p.stats?.responseRatePercent;
     const responseRate =
       typeof responseRateRaw === "number"
         ? responseRateRaw > 1
@@ -217,186 +350,51 @@ export const useCollaborationProfiles = ({
           : `${Math.round(responseRateRaw * 100)}%`
         : "N/A";
 
-    const normalizeSkillValue = (skill: unknown): string => {
-      if (typeof skill === "string") return skill.trim();
-      if (skill && typeof skill === "object") {
-        const candidate =
-          (skill as { name?: string }).name ||
-          (skill as { title?: string }).title ||
-          (skill as { label?: string }).label ||
-          (skill as { value?: string }).value;
-        return String(candidate || "").trim();
-      }
-      return "";
-    };
-
-    const skillsFromPayload = Array.isArray(liveProPayload?.skills)
-      ? liveProPayload.skills.map(normalizeSkillValue).filter(Boolean)
-      : [];
-
-    const skillsFromAltArrays = [
-      liveProPayload?.competences,
-      liveProPayload?.expertises,
-      liveProPayload?.technologies,
-      liveProPayload?.stack,
-      liveProPayload?.tags,
-    ]
-      .filter(Array.isArray)
-      .flatMap((list) => (list as unknown[]).map(normalizeSkillValue))
-      .filter(Boolean);
-
-    const skillsFromDelimitedFields = [
-      liveProPayload?.liveProPayload?.competences,
-      liveProPayload?.expertises,
-      liveProPayload?.technologies,
-      liveProPayload?.stack,
-      liveProPayload?.tags,
-    ]
-      .filter((value) => typeof value === "string")
-      .flatMap((value) =>
-        String(value)
-          .split(/[,;|]/)
-          .map((item) => item.trim())
-          .filter(Boolean),
-      );
-
-    const skillsFromServices = (publicProProfile?.services || [])
-      .map((service) => String(service?.title || "").trim())
-      .filter(Boolean)
-      .slice(0, 4);
-
-    const specialtySkill = String(
-      liveProPayload?.specialty || liveProPayload?.specialite || "",
-    ).trim();
-
-    const sectorSkill = String(liveProPayload?.sector || "").trim();
-
-    const normalizedSkills = Array.from(
-      new Set(
-        [
-          ...skillsFromPayload,
-          ...skillsFromAltArrays,
-          ...skillsFromDelimitedFields,
-          ...skillsFromServices,
-          specialtySkill,
-          sectorSkill,
-        ].filter(Boolean),
-      ),
-    ).slice(0, 4);
-
-    const headline = String(
-      publicProProfile?.headline ||
-        liveProPayload?.specialty ||
-        liveProPayload?.specialite ||
-        liveProPayload?.bio ||
-        "",
-    ).trim();
-
-    const specialty = String(
-      liveProPayload?.specialty ||
-        liveProPayload?.specialite ||
-        liveProPayload?.sector ||
-        "",
-    ).trim();
-
-    const hourlyRate = Number(
-      liveProPayload?.hourlyRate ??
-        liveProPayload?.tarifHoraire ??
-        publicProProfile?.hourlyRate ??
-        NaN,
-    );
-
-    const isVerified = Boolean(
-      (liveProPayload as any)?.isVerified ??
-      (liveProPayload as any)?.verified ??
-      false,
-    );
-
-    const responseDelay = String(
-      liveProPayload?.stats?.avgResponseTime ||
-        liveProPayload?.stats?.durationOnPlatform ||
-        "< 2h",
-    ).trim();
-
-    const anciennete = String(
-      liveProPayload?.stats?.durationOnPlatform ||
-        liveProPayload?.anciennete ||
-        "N/A",
-    ).trim();
-
-    const collaborationsEnCours = Number(
-      liveProPayload?.stats?.ongoingProjects ??
-        liveProPayload?.collaborationsEnCours ??
-        0,
-    );
-
     return {
       id: proProfileLookupId || 1,
       nom: displayName,
       poste: headline || "Profil non renseigné",
       photo:
-        publicProProfile?.avatarUrl ||
-        `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
-      location: liveProPayload?.location || "localisation non renseignée",
+        p.avatarUrl ||
+        p.avatar ||
+        "/images/avatars/avatar1.jpg",
+      location: locationStr || "Localisation non renseignée",
       note: Number.isFinite(rating) ? rating : 0,
       avis: Number.isFinite(reviewCount) ? reviewCount : 0,
-      projetsRealises: Number.isFinite(completedProjects)
-        ? completedProjects
-        : 0,
+      projetsRealises: Number.isFinite(completedProjects) ? completedProjects : 0,
       tauxReponse: responseRate,
-      delaiReponse: responseDelay || "pas definir",
-      competences:
-        normalizedSkills.length > 0 ? normalizedSkills : ["Profil en cours"],
+      delaiReponse: String(p.stats?.avgResponseTime ?? "< 2h").trim(),
+      competences: normalizedSkills.length > 0 ? normalizedSkills : [],
       verified: isVerified,
       specialite: specialty,
       tarifHoraire: Number.isFinite(hourlyRate) ? hourlyRate : null,
-      anciennete: anciennete || "N/A",
-      collaborationsEnCours: Number.isFinite(collaborationsEnCours)
-        ? collaborationsEnCours
-        : 0,
+      anciennete: String(p.stats?.durationOnPlatform ?? p.anciennete ?? "N/A").trim(),
+      collaborationsEnCours: Number.isFinite(collaborationsEnCours) ? collaborationsEnCours : 0,
     };
-  }, [backendSpace?.proName, proProfileLookupId, publicProProfile]);
+  }, [backendSpace?.proName, currentUserProfile, isPro, proProfileLookupId, publicProProfile]);
 
   const porteur = useMemo<PersonSummary>(() => {
-    const fullName = [
-      resolvedOwnerProfile?.firstName,
-      resolvedOwnerProfile?.lastName,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    const companyName = String(
-      resolvedOwnerProfile?.companyName ||
-        resolvedOwnerProfile?.businessName ||
-        resolvedOwnerProfile?.entreprise ||
-        "",
-    ).trim();
-
-    const displayName =
-      backendSpace?.customerName ||
-      fullName ||
-      resolvedOwnerProfile?.displayName ||
-      companyName ||
-      [authUser?.firstName, authUser?.lastName]
-        .filter(Boolean)
-        .join(" ")
-        .trim() ||
-      "Client Jobty";
-
-    const companyOrLabel =
-      resolvedOwnerProfile?.headline ||
-      companyName ||
-      resolvedOwnerProfile?.displayName ||
-      "Client Jobty";
+    const o = (resolvedOwnerProfile || {}) as Record<string, any>;
+    const fullName = [o.firstName, o.lastName].filter(Boolean).join(" ").trim();
+    const companyName = pickString(o.companyName, o.businessName, o.entreprise, o.nomEntreprise);
+    const displayName = pickString(
+      backendSpace?.customerName,
+      fullName,
+      o.displayName,
+      o.username,
+      companyName,
+      [authUser?.firstName, authUser?.lastName].filter(Boolean).join(" ").trim(),
+      "Client Jobty",
+    );
 
     return {
       id: ownerProfileLookupId || "owner",
       nom: displayName,
       photo:
-        resolvedOwnerProfile?.avatarUrl ||
-        `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
-      entreprise: companyOrLabel,
+        o.avatarUrl ||
+        o.avatar ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=F3F4F6&color=6B7280&bold=true`,
+      entreprise: pickString(o.headline, o.poste, o.jobTitle, companyName, o.displayName, "Client Jobty"),
     };
   }, [
     authUser?.firstName,
@@ -406,62 +404,83 @@ export const useCollaborationProfiles = ({
     resolvedOwnerProfile,
   ]);
 
-  const sidebarIdentityLoading = isPro
-    ? isOwnerIdentityLoading
-    : isFreelanceIdentityLoading;
+  const sidebarIdentityLoading =
+    (isPro ? isOwnerIdentityLoading : isFreelanceIdentityLoading) ||
+    Boolean(isSpaceLoading);
 
-  const profileError = 
-    Boolean(proProfileLookupId && publicProProfileQuery.isError) ||
-    Boolean(ownerProfileLookupId && (isPro ? customerOwnerProfileQuery.isError : publicOwnerProfileQuery.isError));
+  // Error states for Customer view (looking at a Professional)
+  const proProfileLoadError = Boolean(isCustomer && proProfileLookupId && publicProProfileQuery.isError);
+  const cannotIdentifyPro = isCustomer && !proProfileLookupId && !backendSpace?.proId && !isSpaceLoading;
+
+  // Error states for Pro view (looking at a Customer)
+  const ownerProfileLoadError = Boolean(isPro && ownerProfileLookupId && customerOwnerProfileQuery.isError);
+  const cannotIdentifyCustomer = isPro && !ownerProfileLookupId && !backendSpace?.customerId && !isSpaceLoading;
+
+  const sidebarError = isCustomer
+    ? proProfileLoadError || cannotIdentifyPro
+    : ownerProfileLoadError || cannotIdentifyCustomer;
+
+  const sidebarErrorMessage = useMemo(() => {
+    if (isCustomer) {
+      if (proProfileLoadError) return "Le profil du professionnel n'a pas pu être chargé.";
+      if (cannotIdentifyPro) return "Impossible d'identifier le professionnel associé.";
+    } else if (isPro) {
+      if (ownerProfileLoadError) return "Le profil du porteur de projet n'a pas pu être chargé.";
+      if (cannotIdentifyCustomer) return "Impossible d'identifier le porteur de projet associé.";
+    }
+    return "";
+  }, [
+    isCustomer,
+    isPro,
+    proProfileLoadError,
+    cannotIdentifyPro,
+    ownerProfileLoadError,
+    cannotIdentifyCustomer,
+  ]);
+
+  /**
+   * profileError determines if we show the "Profil introuvable" full-page ErrorState.
+   * We only block the page if the lookup for the OTHER participant fails.
+   * We don't block if our own redundant public profile lookup fails.
+   */
+  const profileError = isCustomer
+    ? proProfileLoadError
+    : isPro
+      ? customerOwnerProfileQuery.isError
+      : false;
 
   const sidebarProfile = useMemo<SidebarProfile>(() => {
-    if (!isPro) {
-      const ownerStats = (resolvedOwnerProfile?.stats || {}) as Record<
-        string,
-        any
-      >;
-      const ownerLocation =
-        (typeof resolvedOwnerProfile?.location === "object" &&
-        resolvedOwnerProfile?.location
-          ? `${String(resolvedOwnerProfile.location.city || "").trim()} ${String(resolvedOwnerProfile.location.country || "").trim()}`.trim()
-          : String(resolvedOwnerProfile?.location || "").trim()) ||
-        "Localisation non renseignée";
+    if (isPro) {
+      // Pro sees the customer/porteur profile in sidebar
+      const o = (resolvedOwnerProfile || {}) as Record<string, any>;
 
-      const ownerSkills = Array.isArray(resolvedOwnerProfile?.skills)
-        ? resolvedOwnerProfile.skills
-            .map((skill: unknown) => String(skill || "").trim())
-            .filter(Boolean)
-            .slice(0, 4)
-        : [];
+      const ownerLocation = resolveLocationLabel(o);
+
+      const ownerSkills = normalizeSkillsList(
+        o.skills,
+        o.competences,
+        o.expertises,
+        o.tags,
+        o.topSkills,
+      ).slice(0, 4);
 
       return {
         nom: porteur.nom,
         photo: porteur.photo,
-        poste: String(
-          resolvedOwnerProfile?.headline ||
-            porteur.entreprise ||
-            "Client Jobty",
-        ),
-        location: ownerLocation,
-        specialite: String(
-          resolvedOwnerProfile?.sector || resolvedOwnerProfile?.specialty || "",
-        ),
+        poste: pickString(o.headline, o.poste, o.jobTitle, porteur.entreprise, "Client Jobty"),
+        location: ownerLocation || "Localisation non renseignée",
+        specialite: pickString(o.specialization, o.specialty, o.specialite, o.sector, o.secteur),
         tarifHoraire: null,
-        note: Number(
-          ownerStats?.averageRating ?? resolvedOwnerProfile?.averageRating ?? 0,
-        ),
-        avis: Number(resolvedOwnerProfile?.reviewCount ?? 0),
-        projetsRealises: Number(ownerStats?.completedProjects ?? 0),
-        collaborationsEnCours: Number(ownerStats?.ongoingProjects ?? 0),
-        competences: ownerSkills.length > 0 ? ownerSkills : ["Profil client"],
-        verified: Boolean(
-          resolvedOwnerProfile?.isVerified ??
-          resolvedOwnerProfile?.verified ??
-          false,
-        ),
+        note: toNumberValue(o.averageRating ?? o.stats?.averageRating ?? o.rating, 0),
+        avis: toNumberValue(o.reviewCount ?? o.stats?.reviewCount, 0),
+        projetsRealises: toNumberValue(o.completedProjects ?? o.stats?.completedProjects, 0),
+        collaborationsEnCours: toNumberValue(o.stats?.ongoingProjects ?? o.ongoingProjects, 0),
+        competences: ownerSkills.length > 0 ? ownerSkills : [],
+        verified: Boolean(o.isVerified ?? o.verified ?? false),
       };
     }
 
+    // Customer sees the pro/freelance profile in sidebar
     return {
       nom: freelance.nom,
       photo: freelance.photo,
@@ -489,5 +508,10 @@ export const useCollaborationProfiles = ({
     sidebarIdentityLoading,
     sidebarProfile,
     profileError,
+    proProfileLoadError,
+    cannotIdentifyPro,
+    sidebarError,
+    sidebarErrorMessage,
+    publicProProfileQuery,
   };
 };

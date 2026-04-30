@@ -21,6 +21,7 @@ import {
   FiTarget,
   FiThumbsDown,
   FiThumbsUp,
+  FiUnlock,
   FiUpload,
   FiX,
   FiZap,
@@ -233,33 +234,17 @@ export const StepDecision = ({
 
         {isPro && (
           <div className="collab-waiting-options">
-            <div className="collab-option-card accept">
+            <div className="collab-option-card accept" onClick={() => void onAcceptCollaboration()}>
               <FiCheckCircle />
-              <button
-                className="cursor-pointer"
-                onClick={() => {
-                  void onAcceptCollaboration();
-                }}
-              >
-                <span>Accepter</span>
-              </button>
+              <span>Accepter</span>
             </div>
-            <div className="collab-option-card info">
+            <div className="collab-option-card info" onClick={onRequestMoreInfo}>
               <FiMessageCircle />
-              <button className="cursor-pointer" onClick={onRequestMoreInfo}>
-                <span>Plus d'infos</span>
-              </button>
+              <span>Plus d'infos</span>
             </div>
-            <div className="collab-option-card decline">
+            <div className="collab-option-card decline" onClick={() => void onDeclineCollaboration()}>
               <FiX />
-              <button
-                className="cursor-pointer"
-                onClick={() => {
-                  void onDeclineCollaboration();
-                }}
-              >
-                <span>Refuser</span>
-              </button>
+              <span>Refuser</span>
             </div>
           </div>
         )}
@@ -397,7 +382,7 @@ type StepBriefProps = {
   livrablesSuggestions: string[];
   isCustomer: boolean;
   onBackToMatch: () => void;
-  validerBrief: () => void;
+  validerBrief: () => Promise<void>;
   confirmerReceptionBrief: () => void;
   toggleLivrable: (livrable: string) => void;
   freelance: PersonSummary;
@@ -561,7 +546,7 @@ export const StepBrief = ({
             </button>
             <button
               className={`collab-btn-primary ${briefProgress < 100 ? "disabled" : ""}`}
-              onClick={validerBrief}
+              onClick={() => { void validerBrief(); }}
               disabled={briefProgress < 100}
             >
               <FiCheck /> Valider le brief
@@ -590,7 +575,7 @@ type StepContractProps = {
   isPro: boolean;
   isOwnerIdentityLoading: boolean;
   isFreelanceIdentityLoading: boolean;
-  accepterContrat: (partie: keyof ContratAccepteState) => void;
+  accepterContrat: (partie: keyof ContratAccepteState) => Promise<void>;
 };
 
 export const StepContract = ({
@@ -731,7 +716,7 @@ export const StepContract = ({
             ) : (
               <button
                 className="collab-sign-btn"
-                onClick={() => accepterContrat("porteur")}
+                onClick={() => { void accepterContrat("porteur"); }}
               >
                 J'accepte
               </button>
@@ -762,7 +747,7 @@ export const StepContract = ({
             ) : (
               <button
                 className="collab-sign-btn"
-                onClick={() => accepterContrat("freelance")}
+                onClick={() => { void accepterContrat("freelance"); }}
               >
                 J'accepte
               </button>
@@ -797,7 +782,7 @@ type StepPaymentProps = {
   etapes: ProjectEtape[];
   briefBudget: string;
   paiementDepose: boolean;
-  deposerPaiement: () => void;
+  deposerPaiement: () => Promise<void>;
 };
 
 export const StepPayment = ({
@@ -925,7 +910,7 @@ export const StepPayment = ({
 
         <button
           className={`collab-btn-primary collab-btn-large ${paiementDepose ? "success" : ""}`}
-          onClick={deposerPaiement}
+          onClick={() => { void deposerPaiement(); }}
           disabled={paiementDepose || !isCustomer}
         >
           {paiementDepose ? (
@@ -982,6 +967,7 @@ type StepExecutionProps = {
     eventType: "STEP_CHANGED",
     payload?: Record<string, unknown>,
   ) => void;
+  onSubmitDeliverable: () => Promise<void>;
 };
 
 export const StepExecution = ({
@@ -1005,6 +991,7 @@ export const StepExecution = ({
   messagesEndRef,
   setEtapes,
   transitionToStep,
+  onSubmitDeliverable,
 }: StepExecutionProps) => {
   return (
     <div className="collab-step-content collab-workspace-view">
@@ -1123,27 +1110,13 @@ export const StepExecution = ({
         />
       </div>
 
-      {isCustomer && (
-        <div className="collab-demo-actions">
-          <p className="collab-demo-note">
-            🎮 Demo : Simuler la validation de toutes les étapes
-          </p>
+      {isPro && etapes.every((e) => e.statut === "livree" || e.statut === "validee") && (
+        <div className="collab-step-actions" style={{ marginTop: 16 }}>
           <button
-            className="collab-btn-outline"
-            onClick={() => {
-              setEtapes((prev) =>
-                prev.map((e) => ({ ...e, statut: "validee" as const })),
-              );
-              setTimeout(
-                () =>
-                  transitionToStep(9, "STEP_CHANGED", {
-                    reason: "all_milestones_validated_demo",
-                  }),
-                1500,
-              );
-            }}
+            className="collab-btn-primary"
+            onClick={() => { void onSubmitDeliverable(); }}
           >
-            <FiCheck /> Tout valider et clôturer
+            <FiUpload /> Soumettre la livraison finale
           </button>
         </div>
       )}
@@ -1164,6 +1137,7 @@ type StepClosureProps = {
   submitReview: () => Promise<void>;
   submitReviewPending: boolean;
   reviewSubmitSuccess: boolean;
+  onCloturerEspace: () => Promise<void>;
 };
 
 export const StepClosure = ({
@@ -1179,6 +1153,7 @@ export const StepClosure = ({
   submitReview,
   submitReviewPending,
   reviewSubmitSuccess,
+  onCloturerEspace,
 }: StepClosureProps) => {
   return (
     <div className="collab-step-content">
@@ -1323,6 +1298,12 @@ export const StepClosure = ({
           <button className="collab-btn-secondary" onClick={onBackMarketplace}>
             <FiArrowLeft /> Retour au marketplace
           </button>
+          <button
+            className="collab-btn-outline"
+            onClick={() => { void onCloturerEspace(); }}
+          >
+            <FiCheckCircle /> Clôturer l'espace
+          </button>
           {isCustomer && (
             <button
               className="collab-btn-primary"
@@ -1359,6 +1340,179 @@ export const StepClosure = ({
             <div>
               <h4>Merci, votre avis a été enregistré.</h4>
               <p>Votre retour aide la communauté Jobty.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+type StepDeliveryProps = {
+  isPro: boolean;
+  isCustomer: boolean;
+  freelance: PersonSummary;
+  onSubmitDeliverable: () => Promise<void>;
+  onLibererPaiement: () => Promise<void>;
+};
+
+export const StepDelivery = ({
+  isPro,
+  isCustomer,
+  freelance,
+  onSubmitDeliverable,
+  onLibererPaiement,
+}: StepDeliveryProps) => {
+  return (
+    <div className="collab-step-content">
+      <div className="collab-step-header">
+        <div className="collab-step-icon" style={{ backgroundColor: "#17a2b820" }}>
+          <FiUpload style={{ color: "#17a2b8" }} />
+        </div>
+        <div>
+          <h2>Livraison</h2>
+          <p>
+            {isPro
+              ? "Soumettez vos livrables finaux pour validation client."
+              : "Le professionnel a soumis la livraison. Vérifiez et validez."}
+          </p>
+        </div>
+      </div>
+
+      <div className="collab-paiement-card">
+        <div className="collab-match-users" style={{ justifyContent: "center", marginBottom: 24 }}>
+          <div className="collab-match-user">
+            <img src={freelance.photo} alt={freelance.nom} />
+            <span>{freelance.nom}</span>
+            <span className="collab-role">Prestataire</span>
+          </div>
+        </div>
+
+        {isPro && (
+          <>
+            <div className="collab-alert-info" style={{ marginBottom: 16 }}>
+              <FiUpload />
+              <span>
+                Confirmez que tous les livrables ont été transmis au client avant de soumettre la livraison.
+              </span>
+            </div>
+            <div className="collab-step-actions">
+              <button
+                className="collab-btn-primary"
+                onClick={() => { void onSubmitDeliverable(); }}
+              >
+                <FiUpload /> Confirmer la livraison
+              </button>
+            </div>
+          </>
+        )}
+
+        {isCustomer && (
+          <>
+            <div className="collab-alert-info" style={{ marginBottom: 16 }}>
+              <FiCheckCircle />
+              <span>
+                Le professionnel a soumis ses livrables. Vérifiez-les et libérez le paiement pour clôturer le projet.
+              </span>
+            </div>
+            <div className="collab-step-actions">
+              <button
+                className="collab-btn-primary"
+                onClick={() => { void onLibererPaiement(); }}
+              >
+                <FiUnlock /> Valider et libérer le paiement
+              </button>
+            </div>
+          </>
+        )}
+
+        <div className="collab-paiement-secure-info" style={{ marginTop: 16 }}>
+          <FiShield />
+          <div>
+            <h5>Paiement sécurisé par Jobty</h5>
+            <p>
+              Les fonds sont libérés uniquement après votre validation. En cas de litige, le support Jobty intervient.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+type StepReleaseProps = {
+  isCustomer: boolean;
+  freelance: PersonSummary;
+  onLibererPaiement: () => Promise<void>;
+};
+
+export const StepRelease = ({
+  isCustomer,
+  freelance,
+  onLibererPaiement,
+}: StepReleaseProps) => {
+  return (
+    <div className="collab-step-content">
+      <div className="collab-step-header success">
+        <div className="collab-step-icon" style={{ backgroundColor: "#28a74520" }}>
+          <FiUnlock style={{ color: "#28a745" }} />
+        </div>
+        <div>
+          <h2>Paiement libéré</h2>
+          <p>Les fonds ont été débloqués et transférés au prestataire.</p>
+        </div>
+      </div>
+
+      <div className="collab-paiement-card">
+        <div className="collab-match-success-card" style={{ marginBottom: 16 }}>
+          <div className="collab-match-users" style={{ justifyContent: "center" }}>
+            <div className="collab-match-user">
+              <img src={freelance.photo} alt={freelance.nom} />
+              <span>{freelance.nom}</span>
+              <span className="collab-role">Prestataire</span>
+            </div>
+          </div>
+          <div className="collab-features-list">
+            <div className="collab-feature-item">
+              <FiCheckCircle className="collab-feature-check" />
+              <span>Livrables validés par le client</span>
+            </div>
+            <div className="collab-feature-item">
+              <FiCheckCircle className="collab-feature-check" />
+              <span>Paiement transféré au prestataire</span>
+            </div>
+            <div className="collab-feature-item">
+              <FiCheckCircle className="collab-feature-check" />
+              <span>Historique complet archivé</span>
+            </div>
+          </div>
+        </div>
+
+        {isCustomer && (
+          <>
+            <div className="collab-alert-info" style={{ marginBottom: 16 }}>
+              <FiUnlock />
+              <span>
+                Vous pouvez confirmer la libération du paiement maintenant pour finaliser la collaboration.
+              </span>
+            </div>
+            <div className="collab-step-actions">
+              <button
+                className="collab-btn-primary"
+                onClick={() => { void onLibererPaiement(); }}
+              >
+                <FiUnlock /> Libérer le paiement
+              </button>
+            </div>
+          </>
+        )}
+
+        {!isCustomer && (
+          <div className="collab-success-message">
+            <FiCheckCircle />
+            <div>
+              <h4>Paiement en cours de traitement</h4>
+              <p>Le client valide la libération. Vous recevrez les fonds sous 24-48h.</p>
             </div>
           </div>
         )}

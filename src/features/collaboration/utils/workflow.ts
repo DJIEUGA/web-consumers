@@ -8,6 +8,12 @@ export const BACKEND_STATUS_TO_STEP: BackendStatusToStepMap = {
   ACCEPTED: 2,
   REJECTED: 1,
   ACTIVE: 2,
+  BRIEFING: 3,
+  CONTRACTING: 4,
+  PAYMENT_PENDING: 5,
+  IN_PROGRESS: 6,
+  DELIVERED: 7,
+  PAYMENT_RELEASED: 8,
   COMPLETED: 9,
   CANCELLED: 1,
 };
@@ -15,6 +21,7 @@ export const BACKEND_STATUS_TO_STEP: BackendStatusToStepMap = {
 export const MESSAGE_BLOCKED_STATUSES: CollaborationStatus[] = [
   "REJECTED",
   "CANCELLED",
+  "COMPLETED",
 ];
 
 export const isUuidLike = (value: string) =>

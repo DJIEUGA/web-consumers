@@ -2,17 +2,18 @@
  * Collaboration Entities and Request Types
  */
 
-export type CollaborationStatus = 
+export type CollaborationStatus =
   | 'PENDING'
   | 'ACCEPTED'
+  | 'REJECTED'
   | 'ACTIVE'
   | 'BRIEFING'
   | 'CONTRACTING'
   | 'PAYMENT_PENDING'
   | 'IN_PROGRESS'
   | 'DELIVERED'
+  | 'PAYMENT_RELEASED'
   | 'COMPLETED'
-  | 'REJECTED'
   | 'CANCELLED';
 
 // Representing a minimal generic space. Can be expanded matching backend responses

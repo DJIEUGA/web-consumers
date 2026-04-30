@@ -21,13 +21,12 @@ import type {
 } from '@/types/api';
 
 const PROFILE_ENDPOINTS = {
-  PUBLIC: (id: string) => `/api/v1/public/profiles/${id}/details`,
-  ME: '/api/v1/profiles/me',
-  SERVICES: '/api/v1/profiles/me/services',
-  SERVICE_BY_ID: (serviceId: string) => `/api/v1/profiles/me/services/${serviceId}`,
-  PORTFOLIO: '/api/v1/profiles/me/portfolio',
-  PORTFOLIO_BY_ID: (portfolioId: string) =>
-    `/api/v1/profiles/me/portfolio/${portfolioId}`,
+  PUBLIC: (id: string) => `/public/profiles/${id}/details`,
+  ME: '/profiles/me',
+  SERVICES: '/profiles/me/services',
+  SERVICE_BY_ID: (serviceId: string) => `/profiles/me/services/${serviceId}`,
+  PORTFOLIO: '/profiles/me/portfolio',
+  PORTFOLIO_BY_ID: (portfolioId: string) => `/profiles/me/portfolio/${portfolioId}`,
 } as const;
 
 export const profileQueryKeys = {

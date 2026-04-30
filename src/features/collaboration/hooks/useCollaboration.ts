@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collaborationService } from '../services/collaboration.service';
 import collaborationApi, { type PublicReviewItem, type ReviewRequest } from '../services/collaborationApi';
-import type { 
-  CreateSpaceParams, 
-  SendMessageParams, 
-  SubmitDeliverableParams
+import type {
+  CreateSpaceParams,
+  SendMessageParams,
+  SubmitDeliverableParams,
 } from '../types';
 import { toast } from 'sonner';
 
@@ -132,11 +132,10 @@ export function useCollaborationActions() {
   });
 
   const sendMessage = useMutation({
-    mutationFn: ({ spaceId, params }: { spaceId: string; params: SendMessageParams }) => 
+    mutationFn: ({ spaceId, params }: { spaceId: string; params: SendMessageParams }) =>
       collaborationService.sendMessage(spaceId, params),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: COLLABORATION_KEYS.messages(variables.spaceId) });
-      handleSuccess('Message sent');
     },
     onError: handleError,
   });
@@ -153,28 +152,47 @@ export function useCollaborationActions() {
     onError: handleError,
   });
 
+  const submitBrief = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload?: Record<string, unknown> }) =>
+      collaborationService.submitBrief(id, payload),
+    onSuccess: (_, { id }) => handleSuccess('Brief soumis avec succès', id),
+    onError: handleError,
+  });
+
   const signContract = useMutation({
     mutationFn: (id: string) => collaborationService.signContract(id),
-    onSuccess: (_, id) => handleSuccess('Contract signed successfully', id),
+    onSuccess: (_, id) => handleSuccess('Contrat signé avec succès', id),
+    onError: handleError,
+  });
+
+  const confirmPayment = useMutation({
+    mutationFn: (id: string) => collaborationService.confirmPayment(id),
+    onSuccess: (_, id) => handleSuccess('Paiement confirmé', id),
+    onError: handleError,
+  });
+
+  const startCollaboration = useMutation({
+    mutationFn: (id: string) => collaborationService.startCollaboration(id),
+    onSuccess: (_, id) => handleSuccess('Collaboration démarrée', id),
     onError: handleError,
   });
 
   const submitDeliverable = useMutation({
     mutationFn: ({ id, params }: { id: string; params: SubmitDeliverableParams }) =>
       collaborationService.submitDeliverable(id, params),
-    onSuccess: (_, variables) => handleSuccess('Deliverable submitted successfully', variables.id),
+    onSuccess: (_, { id }) => handleSuccess('Livrable soumis avec succès', id),
     onError: handleError,
   });
 
   const releasePayment = useMutation({
     mutationFn: (id: string) => collaborationService.releasePayment(id),
-    onSuccess: (_, id) => handleSuccess('Payment released successfully', id),
+    onSuccess: (_, id) => handleSuccess('Paiement libéré avec succès', id),
     onError: handleError,
   });
 
   const closeSpace = useMutation({
     mutationFn: (id: string) => collaborationService.closeSpace(id),
-    onSuccess: (_, id) => handleSuccess('Collaboration space closed', id),
+    onSuccess: (_, id) => handleSuccess('Collaboration clôturée', id),
     onError: handleError,
   });
 
@@ -183,7 +201,10 @@ export function useCollaborationActions() {
     sendMessage,
     acceptRequest,
     rejectRequest,
+    submitBrief,
     signContract,
+    confirmPayment,
+    startCollaboration,
     submitDeliverable,
     releasePayment,
     closeSpace,

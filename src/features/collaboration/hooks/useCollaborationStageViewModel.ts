@@ -52,22 +52,25 @@ type UseCollaborationStageViewModelParams = {
   briefProgress: number;
   livrablesSuggestions: string[];
   isCustomer: boolean;
-  validerBrief: () => void;
+  validerBrief: () => Promise<void>;
   confirmerReceptionBrief: () => void;
   toggleLivrable: (livrable: string) => void;
   contratAccepte: ContratAccepteState;
   setContratAccepte: React.Dispatch<React.SetStateAction<ContratAccepteState>>;
-  accepterContrat: (partie: keyof ContratAccepteState) => void;
+  accepterContrat: (partie: keyof ContratAccepteState) => Promise<void>;
   modePaiement: string;
   setModePaiement: React.Dispatch<React.SetStateAction<string>>;
   etapes: ProjectEtape[];
   paiementDepose: boolean;
-  deposerPaiement: () => void;
+  deposerPaiement: () => Promise<void>;
   getStatutBadge: (statut: string) => React.ReactNode;
   livrerEtape: (etapeId: number) => void;
   validerEtape: (etapeId: number) => void;
   demanderModification: (etapeId: number) => void;
   setEtapes: React.Dispatch<React.SetStateAction<ProjectEtape[]>>;
+  soumettrelivrable: () => Promise<void>;
+  libererPaiement: () => Promise<void>;
+  cloturerEspace: () => Promise<void>;
   isCheckingExistingReview: boolean;
   hasExistingReview: boolean;
   avis: AvisState;
@@ -127,6 +130,9 @@ export const useCollaborationStageViewModel = ({
   validerEtape,
   demanderModification,
   setEtapes,
+  soumettrelivrable,
+  libererPaiement,
+  cloturerEspace,
   isCheckingExistingReview,
   hasExistingReview,
   avis,
@@ -239,6 +245,21 @@ export const useCollaborationStageViewModel = ({
     messagesEndRef,
     setEtapes,
     transitionToStep,
+    onSubmitDeliverable: soumettrelivrable,
+  };
+
+  const delivery = {
+    isPro,
+    isCustomer,
+    freelance,
+    onSubmitDeliverable: soumettrelivrable,
+    onLibererPaiement: libererPaiement,
+  };
+
+  const release = {
+    isCustomer,
+    freelance,
+    onLibererPaiement: libererPaiement,
   };
 
   const closure = {
@@ -254,6 +275,7 @@ export const useCollaborationStageViewModel = ({
     submitReview,
     submitReviewPending,
     reviewSubmitSuccess,
+    onCloturerEspace: cloturerEspace,
   };
 
   return {
@@ -264,6 +286,8 @@ export const useCollaborationStageViewModel = ({
     contract,
     payment,
     execution,
+    delivery,
+    release,
     closure,
   };
 };

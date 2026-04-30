@@ -1,6 +1,5 @@
 import axiosInstance from '@/api/axios';
 import { COLLABORATION_ENDPOINTS } from '@/api/collaborationEndpoints';
-import {unwrapEnvelope} from "./collaborationApi";
 import type { ApiResponse } from '@/types/api';
 import type {
   CreateSpaceParams,
@@ -14,162 +13,102 @@ import type {
   MessageDTO,
 } from './collaborationApi';
 
-/**
- * Collaboration Spaces Service
- * Provides access to the /collaborations/spaces endpoint group
- */
+// The axios response interceptor already strips the AxiosResponse wrapper and returns
+// response.data, which is the raw API envelope: { success, status, message, data, ... }.
+// Every method here returns that envelope directly — no further unwrapping needed.
+
+const asEnvelope = <T>(response: unknown): ApiResponse<T> =>
+  response as ApiResponse<T>;
+
 export const collaborationService = {
-  /**
-   * Retrieves all spaces currently belonging to the authenticated user.
-   */
   async getMySpaces(): Promise<ApiResponse<CollaborationSpaceResponse[]>> {
-    const response = await axiosInstance.get<ApiResponse<CollaborationSpaceResponse[]>>(
-      COLLABORATION_ENDPOINTS.MY_SPACES
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.MY_SPACES);
+    return asEnvelope<CollaborationSpaceResponse[]>(response);
   },
 
-  /**
-   * Retrieves details of a single collaboration space
-   */
   async getSpaceDetail(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.get<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.SPACE_DETAIL(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.SPACE_DETAIL(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
-  /**
-   * Fetches the list of messages in a given space
-   */
   async getMessages(spaceId: string): Promise<ApiResponse<MessageDTO[]>> {
-    const response = await axiosInstance.get<ApiResponse<MessageDTO[]>>(
-      COLLABORATION_ENDPOINTS.MESSAGES(spaceId)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.MESSAGES(spaceId));
+    return asEnvelope<MessageDTO[]>(response);
   },
 
-  /**
-   * Creates a brand new collaboration space (or request)
-   */
   async createSpace(params: CreateSpaceParams): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.CREATE_SPACE,
-      params
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.CREATE_SPACE, params);
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
-  /**
-   * Finds or creates a collaboration space context
-   */
   async openSpace(params: OpenSpaceParams): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.OPEN_SPACE,
-      params
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.OPEN_SPACE, params);
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
-  /**
-   * Sends a message within a specific space
-   */
   async sendMessage(spaceId: string, params: SendMessageParams): Promise<ApiResponse<MessageDTO>> {
-    const response = await axiosInstance.post<ApiResponse<MessageDTO>>(
-      COLLABORATION_ENDPOINTS.SEND_MESSAGE(spaceId),
-      params
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.SEND_MESSAGE(spaceId), params);
+    return asEnvelope<MessageDTO>(response);
   },
-
-  // =====================
-  // Lifecycle Actions
-  // =====================
 
   async acceptRequest(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.ACCEPT(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.ACCEPT(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async rejectRequest(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.REJECT(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.REJECT(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
-  async decide(id: string, payload?: any): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.DECISION(id),
-      payload
-    );
-    return unwrapEnvelope(response);
+  async decide(id: string, payload?: unknown): Promise<ApiResponse<CollaborationSpaceResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.DECISION(id), payload);
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
-  async submitBrief(id: string, payload?: any): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.SUBMIT_BRIEF(id),
-      payload
-    );
-    return unwrapEnvelope(response);
+  async submitBrief(id: string, payload?: unknown): Promise<ApiResponse<CollaborationSpaceResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.SUBMIT_BRIEF(id), payload);
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async signContract(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.SIGN_CONTRACT(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.SIGN_CONTRACT(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async confirmPayment(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.CONFIRM_PAYMENT(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.CONFIRM_PAYMENT(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async startCollaboration(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.START_COLLABORATION(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.START_COLLABORATION(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async submitDeliverable(
     id: string,
-    params: SubmitDeliverableParams
+    params: SubmitDeliverableParams,
   ): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.SUBMIT_DELIVERABLE(id),
-      params
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.SUBMIT_DELIVERABLE(id), params);
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async releasePayment(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.RELEASE_PAYMENT(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.RELEASE_PAYMENT(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async closeSpace(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.CLOSE(id)
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.CLOSE(id));
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
   async applyLifecycleAction(
     id: string,
-    params: LifecycleActionParams
+    params: LifecycleActionParams,
   ): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post<ApiResponse<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.LIFECYCLE_ACTION(id),
-      params
-    );
-    return unwrapEnvelope(response);
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.LIFECYCLE_ACTION(id), params);
+    return asEnvelope<CollaborationSpaceResponse>(response);
   },
 };

@@ -7,6 +7,12 @@ export type CollaborationStatus =
   | "ACCEPTED"
   | "REJECTED"
   | "ACTIVE"
+  | "BRIEFING"
+  | "CONTRACTING"
+  | "PAYMENT_PENDING"
+  | "IN_PROGRESS"
+  | "DELIVERED"
+  | "PAYMENT_RELEASED"
   | "COMPLETED"
   | "CANCELLED";
 
@@ -283,23 +289,10 @@ export const collaborationApi = {
     customerProfileId: string,
   ): Promise<CustomerProfileDetails> {
     const encodedId = encodeURIComponent(customerProfileId);
-    const candidateEndpoints = [
+    const response = await axiosInstance.get<MaybeEnvelope<CustomerProfileDetails>>(
       `/customer/profiles/${encodedId}/details`,
-      `/customer/profiles/${encodedId}/details`,
-    ];
-
-    let lastError: unknown;
-
-    for (const endpoint of candidateEndpoints) {
-      try {
-        const response = await axiosInstance.get<MaybeEnvelope<CustomerProfileDetails>>(endpoint);
-        return unwrapEnvelope<CustomerProfileDetails>(response) || {};
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    throw lastError;
+    );
+    return unwrapEnvelope<CustomerProfileDetails>(response) || {};
   },
 };
 

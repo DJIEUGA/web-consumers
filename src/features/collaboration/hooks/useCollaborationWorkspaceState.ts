@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { INITIAL_ETAPES } from "@/features/collaboration/constants/workflow";
 import type { AvisState, BriefState, ContratAccepteState, EtapeStatut, ProjectEtape } from "@/features/collaboration/types/workflow";
 
 const INITIAL_BRIEF: BriefState = {
@@ -30,7 +29,7 @@ export const useCollaborationWorkspaceState = ({
   onAdvanceStep,
 }: UseCollaborationWorkspaceStateArgs) => {
   const [brief, setBrief] = useState<BriefState>(INITIAL_BRIEF);
-  const [etapes, setEtapes] = useState<ProjectEtape[]>(INITIAL_ETAPES);
+  const [etapes, setEtapes] = useState<ProjectEtape[]>([]);
   const [contratAccepte, setContratAccepte] = useState<ContratAccepteState>(INITIAL_CONTRAT);
   const [paiementDepose, setPaiementDepose] = useState(false);
   const [modePaiement, setModePaiement] = useState("etapes");
@@ -99,6 +98,21 @@ export const useCollaborationWorkspaceState = ({
     updateEtapeStatut(etapeId, "modification");
   };
 
+  const initEtapesFromBrief = (livrables: string[], budget: string) => {
+    if (livrables.length === 0) return;
+    const total = Number(budget) || 0;
+    const perEtape = livrables.length > 0 ? Math.round(total / livrables.length) : 0;
+    setEtapes(
+      livrables.map((titre, index) => ({
+        id: index + 1,
+        titre,
+        statut: index === 0 ? ("en_cours" as const) : ("a_venir" as const),
+        montant: perEtape,
+        progression: 0,
+      })),
+    );
+  };
+
   return {
     brief,
     setBrief,
@@ -119,5 +133,6 @@ export const useCollaborationWorkspaceState = ({
     livrerEtape,
     validerEtape,
     demanderModification,
+    initEtapesFromBrief,
   };
 };

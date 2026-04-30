@@ -50,10 +50,12 @@ import {
   buildRoomId,
   clampStep,
   createUiMessage,
+  getProfilePayload,
   isMessageBlockedByStatus,
   isUuidLike,
   parseRoomPair,
 } from "@/features/collaboration/utils/workflow";
+import { useMyProfile } from "@/features/profile/hooks/useProfileActions";
 import type {
   CollaborationActor,
   CollaborationAction,
@@ -68,23 +70,61 @@ import {
   StepBrief,
   StepClosure,
   StepContract,
+  StepDelivery,
   StepExecution,
   StepMatch,
   StepPayment,
+  StepRelease,
 } from "@/features/collaboration/components/CollaborationStages";
 import { toast } from "sonner";
 import "../styles/collaboration/style.css";
 
 export const CollaborationSpace = () => {
   const navigate = useNavigate();
-  const { freelanceId } = useParams();
+  const { freelanceId, spaceId } = useParams();
   const [searchParams] = useSearchParams();
   const authUser = useAuthStore((state) => state.user);
   const authRole = useAuthStore((state) => state.role);
+  const myProfileQuery = useMyProfile();
   const [menuOpen, setMenuOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const roleValue = String(authRole || authUser?.role || "").toUpperCase();
+  const myProfilePayload = useMemo(
+    () => getProfilePayload(myProfileQuery.data),
+    [myProfileQuery.data],
+  );
+
+  const currentUserProfile = useMemo(() => {
+    const profile =
+      myProfilePayload?.profile && typeof myProfilePayload.profile === "object"
+        ? (myProfilePayload.profile as Record<string, unknown>)
+        : (myProfilePayload as Record<string, unknown>);
+
+    return profile && Object.keys(profile).length > 0 ? profile : null;
+  }, [myProfilePayload]);
+
+  const currentUserFromProfile = useMemo(() => {
+    if (!currentUserProfile) return null;
+    const nestedUser =
+      currentUserProfile.user && typeof currentUserProfile.user === "object"
+        ? (currentUserProfile.user as Record<string, unknown>)
+        : null;
+
+    return {
+      ...nestedUser,
+      ...currentUserProfile,
+    } as Record<string, unknown>;
+  }, [currentUserProfile]);
+
+  const roleValue = String(
+    currentUserFromProfile?.role ||
+      currentUserFromProfile?.userRole ||
+      myProfilePayload?.role ||
+      myProfilePayload?.userRole ||
+      authRole ||
+      authUser?.role ||
+      "",
+  ).toUpperCase();
   const actor: CollaborationActor =
     roleValue === "ROLE_CUSTOMER" || roleValue === "ROLE_ENTERPRISE"
     ? "customer"
@@ -98,10 +138,21 @@ export const CollaborationSpace = () => {
     sendMessage: sendMessageMutation,
     acceptRequest,
     rejectRequest,
+    submitBrief: submitBriefMutation,
+    signContract: signContractMutation,
+    confirmPayment: confirmPaymentMutation,
+    submitDeliverable: submitDeliverableMutation,
+    releasePayment: releasePaymentMutation,
+    closeSpace: closeSpaceMutation,
   } = useCollaborationActions();
   const mySpacesQuery = useMySpaces();
-  const currentUserId = String(authUser?.id || "").trim();
-  const incomingId = String(freelanceId || "").trim();
+  const currentUserId = String(
+    currentUserFromProfile?.userId ||
+      currentUserFromProfile?.id ||
+      authUser?.id ||
+      "",
+  ).trim();
+  const incomingId = String(spaceId || freelanceId || "").trim();
   const [backendSpace, setBackendSpace] = useState<CollaborationSpaceResponse | null>(null);
 
   const collaborationRoomId = (() => {
@@ -153,16 +204,21 @@ export const CollaborationSpace = () => {
     sidebarIdentityLoading,
     sidebarProfile,
     profileError,
+    proProfileLoadError,
+    cannotIdentifyPro,
+    sidebarError,
+    sidebarErrorMessage,
   } = useCollaborationProfiles({
     isPro,
     isCustomer,
     currentUserId,
     incomingId,
     resolvedSpaceId,
-    isSpaceLoading: mySpacesQuery.isFetching,
+    isSpaceLoading: mySpacesQuery.isLoading || (!!incomingId && isUuidLike(incomingId) && !backendSpace),
     backendSpace,
     authUser,
-  });
+    currentUserProfile,
+  }); // isOwnerIdentityLoading is removed from here
 
 
   // États de la collaboration
@@ -274,6 +330,7 @@ export const CollaborationSpace = () => {
     livrerEtape,
     validerEtape,
     demanderModification,
+    initEtapesFromBrief,
   } = useCollaborationWorkspaceState({
     onAdvanceStep: queueStepTransition,
   });
@@ -411,6 +468,13 @@ export const CollaborationSpace = () => {
         if (!backendSpace && isCustomer) {
             const proId = resolveProIdForRequest();
             if (proId) {
+                if (proProfileLoadError) {
+                  toast.error("Le profil du professionnel est introuvable. Impossible de démarrer la collaboration.");
+                  setMessages((prev: UiMessage[]) => prev.map(msg => msg.id === optimisticId ? {...msg, deliveryStatus: "failed"} : msg));
+                  setNewMessage(content);
+                  return;
+                }
+
                 const createdEnvelope = await createSpace.mutateAsync({
                   proId,
                   title: brief.objectif || "Demande de collaboration",
@@ -501,7 +565,11 @@ export const CollaborationSpace = () => {
     currentStep === 9 && Boolean(resolvedReviewProId && isUuidLike(resolvedReviewProId)),
   );
   const submitReviewMutation = useSubmitReview();
-  const isSyncing = mySpacesQuery.isLoading || spaceMessagesQuery.isLoading || spaceDetailQuery.isLoading;
+  const isSyncing =
+    myProfileQuery.isLoading ||
+    mySpacesQuery.isLoading ||
+    spaceMessagesQuery.isLoading ||
+    spaceDetailQuery.isLoading;
   const isCheckingExistingReview = reviewsQuery.isFetching;
   const isMessagingLocked = isMessageBlockedByStatus(backendSpace?.status);
   const requestContextMessage = useMemo(() => {
@@ -583,6 +651,11 @@ export const CollaborationSpace = () => {
     const proId = resolveProIdForRequest();
     if (!proId) {
       toast.error("Impossible d'identifier le professionnel à contacter.");
+      return;
+    }
+
+    if (proProfileLoadError) {
+      toast.error("Le profil du professionnel est introuvable. Vérifiez le lien ou réessayez plus tard.");
       return;
     }
 
@@ -718,6 +791,93 @@ export const CollaborationSpace = () => {
     transitionToStep(4, "STEP_CHANGED", { reason: "brief_received" });
   };
 
+  const signerContrat = async (partie: "porteur" | "freelance") => {
+    setContratAccepte((prev) => ({ ...prev, [partie]: true }));
+
+    const spaceId = backendSpace?.id || resolvedSpaceId;
+    if (!spaceId) return;
+
+    try {
+      const envelope = await signContractMutation.mutateAsync(spaceId);
+      const updated = envelope.data;
+      setBackendSpace(updated);
+
+      const next = {
+        porteur: partie === "porteur" ? true : contratAccepte.porteur,
+        freelance: partie === "freelance" ? true : contratAccepte.freelance,
+      };
+      if (next.porteur && next.freelance) {
+        setTimeout(() => transitionToStep(5, "STEP_CHANGED", { reason: "contract_signed" }), 1000);
+      }
+    } catch {
+      // toast already shown by mutation onError
+    }
+  };
+
+  const deposerPaiementBackend = async () => {
+    const spaceId = backendSpace?.id || resolvedSpaceId;
+    if (!spaceId) {
+      toast.error("Espace de collaboration introuvable.");
+      return;
+    }
+
+    try {
+      const envelope = await confirmPaymentMutation.mutateAsync(spaceId);
+      const updated = envelope.data;
+      setBackendSpace(updated);
+      deposerPaiement();
+    } catch {
+      // toast already shown by mutation onError
+    }
+  };
+
+  const soumettrelivrable = async () => {
+    const spaceId = backendSpace?.id || resolvedSpaceId;
+    if (!spaceId) {
+      toast.error("Espace de collaboration introuvable.");
+      return;
+    }
+
+    try {
+      const envelope = await submitDeliverableMutation.mutateAsync({ id: spaceId, params: {} });
+      const updated = envelope.data;
+      setBackendSpace(updated);
+      transitionToStep(7, "STEP_CHANGED", { reason: "deliverable_submitted" });
+    } catch {
+      // toast already shown by mutation onError
+    }
+  };
+
+  const libererPaiement = async () => {
+    const spaceId = backendSpace?.id || resolvedSpaceId;
+    if (!spaceId) {
+      toast.error("Espace de collaboration introuvable.");
+      return;
+    }
+
+    try {
+      const envelope = await releasePaymentMutation.mutateAsync(spaceId);
+      const updated = envelope.data;
+      setBackendSpace(updated);
+      transitionToStep(9, "STEP_CHANGED", { reason: "payment_released" });
+    } catch {
+      // toast already shown by mutation onError
+    }
+  };
+
+  const cloturerEspace = async () => {
+    const spaceId = backendSpace?.id || resolvedSpaceId;
+    if (!spaceId) return;
+
+    try {
+      const envelope = await closeSpaceMutation.mutateAsync(spaceId);
+      const updated = envelope.data;
+      setBackendSpace(updated);
+    } catch {
+      // toast already shown by mutation onError
+    }
+  };
+
    const accepterCollaboration = async () => {
     if (!canPerformAction("accept")) return;
 
@@ -783,6 +943,9 @@ export const CollaborationSpace = () => {
         date: "Aujourd'hui",
       },
     ]);
+
+    // Move back to contact step so pro can chat with customer
+    transitionToStep(0, "STEP_CHANGED", { reason: "pro_requested_info" });
   };
 
   const refuserCollaboration = async () => {
@@ -820,10 +983,33 @@ export const CollaborationSpace = () => {
     ]);
   };
 
-  const validerBrief = () => {
+  const validerBrief = async () => {
     if (!isCustomer) return;
-    if (briefProgress === 100) {
+    if (briefProgress < 100) return;
+
+    const spaceId = backendSpace?.id || resolvedSpaceId;
+    if (!spaceId) {
+      toast.error("Espace de collaboration introuvable.");
+      return;
+    }
+
+    try {
+      const envelope = await submitBriefMutation.mutateAsync({
+        id: spaceId,
+        payload: {
+          objectif: brief.objectif,
+          livrables: brief.livrables,
+          delai: brief.delai,
+          budget: brief.budget,
+          commentairePro: brief.commentairePro,
+        },
+      });
+      const updated = envelope.data;
+      setBackendSpace(updated);
+      initEtapesFromBrief(brief.livrables, brief.budget);
       transitionToStep(4, "STEP_CHANGED", { reason: "brief_validated" });
+    } catch {
+      // toast already shown by mutation onError
     }
   };
 
@@ -888,17 +1074,20 @@ export const CollaborationSpace = () => {
     toggleLivrable,
     contratAccepte,
     setContratAccepte,
-    accepterContrat,
+    accepterContrat: signerContrat,
     modePaiement,
     setModePaiement,
     etapes,
     paiementDepose,
-    deposerPaiement,
+    deposerPaiement: deposerPaiementBackend,
     getStatutBadge,
     livrerEtape,
     validerEtape,
     demanderModification,
     setEtapes,
+    soumettrelivrable,
+    libererPaiement,
+    cloturerEspace,
     isCheckingExistingReview,
     hasExistingReview,
     avis,
@@ -1013,6 +1202,22 @@ export const CollaborationSpace = () => {
         <div className="collab-container">
           {/* Sidebar - Infos acteur */}
           <aside className="collab-sidebar-info">
+            {(proProfileLoadError || cannotIdentifyPro) ? (
+              <div className="collab-freelance-card" style={{ textAlign: "center", padding: "32px 16px" }}>
+                <FiAlertCircle size={36} style={{ color: "#ef4444", marginBottom: 12 }} />
+                <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "#dc2626", marginBottom: 8 }}>
+                  Profil introuvable
+                </h3>
+                <p style={{ fontSize: "0.85rem", color: "#991b1b", marginBottom: 20, lineHeight: 1.5 }}>
+                  {proProfileLoadError
+                    ? "Le profil du professionnel n'a pas pu être chargé depuis le serveur."
+                    : "Impossible d'identifier le professionnel associé à cette collaboration."}
+                </p>
+                <button className="collab-btn-secondary" onClick={() => navigate(-1)}>
+                  <FiArrowLeft /> Retour
+                </button>
+              </div>
+            ) : (
             <div className="collab-freelance-card">
               <div className="collab-freelance-header">
                 <div className="collab-freelance-photo-wrapper">
@@ -1073,7 +1278,7 @@ export const CollaborationSpace = () => {
                   </div>
                   <div className="collab-stat-label">Projets</div>
                 </div>
-                
+
                 <div className="collab-stat-item">
                   <div className="collab-stat-value">
                     {sidebarProfile.collaborationsEnCours}
@@ -1094,6 +1299,7 @@ export const CollaborationSpace = () => {
                 <FiShield /> Collaboration sécurisée par Jobty
               </div>
             </div>
+            )}
 
             {/* Résumé du projet (affiché après le brief) */}
             {currentStep >= 3 && brief.objectif && (
@@ -1181,6 +1387,16 @@ export const CollaborationSpace = () => {
             {/* ÉTAPE 6 : Tableau de collaboration */}
             {currentStep === 6 && (
               <StepExecution {...stageViewModel.execution} />
+            )}
+
+            {/* ÉTAPE 7 : Livraison */}
+            {currentStep === 7 && (
+              <StepDelivery {...stageViewModel.delivery} />
+            )}
+
+            {/* ÉTAPE 8 : Paiement libéré */}
+            {currentStep === 8 && (
+              <StepRelease {...stageViewModel.release} />
             )}
 
             {/* ÉTAPE 9 : Clôture & Avis */}
