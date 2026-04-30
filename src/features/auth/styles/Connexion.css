@@ -871,14 +871,37 @@
   .connexion-container {
     display: flex;
     flex-direction: column;
-    padding: 60px 20px 20px 20px;
+    justify-content: center; /* Center horizontally in the viewport */
+    align-items: center;
+    padding: 40px 20px;
+    min-height: 100vh;
   }
   
   .step2-main-content {
     grid-template-columns: 1fr;
     gap: 30px;
+    padding: 0 10px;
   }
-  
+
+  .step2-submit-container {
+    justify-content: center;
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .step2-submit-btn {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .info-block .input-wrapper input,
+  .info-block .custom-select-trigger {
+    padding-left: 42px; /* Matching Step 1 text alignment exactly */
+  }
+
+  /* To match Step 1 exactly (text alignment), we'd need more padding, but Step 1 has icons. 
+     Let's use a compromise that looks balanced. */
+
   .avatar-section {
     order: -1;
   }
@@ -905,7 +928,12 @@
 /* Responsive Mobile */
 @media (max-width: 480px) {
   .connexion-container {
-    padding: 60px 15px 20px 15px;
+    padding: 40px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
   }
 
   .connexion-card {
@@ -950,6 +978,12 @@
 
   .submit-btn {
     max-width: 100%;
+    width: 100%;
+  }
+
+  .info-block .input-wrapper input,
+  .info-block .custom-select-trigger {
+    padding-left: 42px;
   }
 
   .role-item span {
