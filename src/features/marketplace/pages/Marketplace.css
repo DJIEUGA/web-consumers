@@ -233,9 +233,9 @@
 
 /* ========== FILTERS SECTION ========== */
 .marketplace-container .filters-section {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 20px 28px;
+  padding: 0 50px 28px;
 }
 
 .marketplace-container .filters-bar {
@@ -247,6 +247,8 @@
   padding: 12px;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .marketplace-container .filter-item {
@@ -436,7 +438,7 @@
 
 @media (min-width: 769px) {
   .marketplace-container .filters-section {
-    padding: 0 20px 28px;
+    padding: 0 50px 28px;
   }
 
   .marketplace-container .filters-bar {
@@ -621,13 +623,14 @@
 
 /* ========== SECTION FREELANCE ========== */
 .marketplace-container .freelance-section {
-  padding: 60px 20px;
+  padding: 60px 0; /* Removing horizontal padding here as it's handled by children containers */
   background-color: #FFFFFF;
 }
 
 .marketplace-container .section-header {
   max-width: 1400px;
   margin: 0 auto 40px;
+  padding: 0 50px;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -654,11 +657,12 @@
 }
 
 .marketplace-container .freelance-grid {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 0 50px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 25px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
 .marketplace-container .freelance-card {
@@ -667,6 +671,9 @@
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  height: 460px; /* Reduced height for 4-column layout */
+  display: flex;
+  flex-direction: column;
 }
 
 .marketplace-container .freelance-card:hover {
@@ -675,22 +682,36 @@
 }
 
 .marketplace-container .freelance-card .card-header {
-  padding: 30px 20px;
+  height: 30%; /* Reduced to 30% */
+  background-color: #6044a3; /* Specific purple */
   position: relative;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 15px;
+}
+
+.marketplace-container .card-header-views {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.marketplace-container .card-header-views svg {
+  font-size: 16px;
 }
 
 .marketplace-container .freelance-badge {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.25);
   color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11px;
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 12px;
   font-weight: 600;
+  backdrop-filter: blur(4px);
 }
 
 .marketplace-container .profile-photo-wrapper {
@@ -698,11 +719,20 @@
 }
 
 .marketplace-container .profile-photo {
-  width: 90px;
-  height: 90px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   border: 4px solid white;
   object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.marketplace-container .profile-photo-wrapper {
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
 }
 
 .marketplace-container .verified-badge {
@@ -721,29 +751,53 @@
   border: 2px solid white;
 }
 
-.marketplace-container .freelance-card .card-body {
-  padding: 20px;
-  text-align: center;
+.marketplace-container .verified-badge.pro {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
-.marketplace-container .card-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
+.marketplace-container .freelance-card .card-body {
+  height: 70%; /* Increased body to 70% */
+  padding: 75px 15px 15px; /* Increased top padding */
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  justify-content: space-between;
+}
+
+.marketplace-container .card-rating {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 4px;
+  margin-top: -5px; /* Pulling up slightly */
   margin-bottom: 5px;
 }
 
+.marketplace-container .card-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 2px;
+  text-transform: capitalize; /* Ensure first letters are uppercase, rest lowercase */
+}
+
 .marketplace-container .card-profession {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 20px;
+  color: #3DC7C9;
+  margin-bottom: 10px;
 }
 
 .marketplace-container .card-info {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 4px;
+  margin-bottom: 8px;
+  width: 100%;
 }
 
 .marketplace-container .info-item {
@@ -751,8 +805,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 13px;
-  color: #666;
+  font-size: 14px;
+  color: #4B5563;
 }
 
 .marketplace-container .info-item svg {
@@ -780,21 +834,23 @@
 }
 
 .marketplace-container .contact-btn {
-  width: 100%;
-  padding: 12px;
+  width: 90%;
+  padding: 8px 12px; /* Reduced vertical padding */
   background: transparent;
   border: 1.5px solid #3DC7C9;
-  border-radius: 25px;
+  border-radius: 100px;
   color: #3DC7C9;
-  font-size: 14px;
-  font-weight: 550;
+  font-size: 14px; /* Slightly reduced font size too */
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin-top: 5px;
 }
 
 .marketplace-container .contact-btn:hover {
   background-color: #3DC7C9;
   color: white;
+  transform: translateY(-2px);
 }
 
 .marketplace-container .voir-plus-btn {
@@ -826,145 +882,246 @@
 
 /* ========== SECTION ENTREPRISE ========== */
 .marketplace-container .entreprise-section {
-  padding: 60px 20px;
+  padding: 60px 0;
   background-color: #f5f5f5;
 }
 
 .marketplace-container .entreprise-grid {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 0 50px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 25px;
+  grid-template-columns: repeat(3, minmax(0, 420px));
+  gap: 24px;
+  justify-content: center;
 }
 
 .marketplace-container .entreprise-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
 }
 
 .marketplace-container .entreprise-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.13);
 }
 
-.marketplace-container .entreprise-image {
+.marketplace-container .entreprise-header {
+  height: 150px;
   position: relative;
-  height: 160px;
   overflow: hidden;
 }
 
-.marketplace-container .entreprise-image img {
+.marketplace-container .cover-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
-.marketplace-container .entreprise-badge {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
+.marketplace-container .entreprise-card:hover .cover-image {
+  transform: scale(1.03);
 }
 
-.marketplace-container .pro-badge {
+.marketplace-container .entreprise-badge-pill {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 16px;
+  left: 16px;
+  background-color: #3DC7C9;
   color: white;
+  padding: 6px 18px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(61, 199, 201, 0.35);
+}
+
+.marketplace-container .entreprise-header-views {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
+  border-radius: 50px;
+  color: #555;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.marketplace-container .entreprise-header-views svg {
+  color: #3DC7C9;
+  font-size: 15px;
 }
 
 .marketplace-container .entreprise-body {
-  padding: 20px;
-  text-align: center;
+  flex: 1;
+  padding: 0 18px 14px;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
-.marketplace-container .entreprise-photo-wrapper {
-  position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
+.marketplace-container .entreprise-main-content {
+  display: flex;
+  flex-direction: row;
+  gap: 18px;
+  align-items: flex-start;
 }
 
-.marketplace-container .entreprise-photo {
-  width: 90px;
-  height: 90px;
+.marketplace-container .entreprise-avatar-wrapper {
+  position: relative;
+  top: -28px;
+  width: 75px;
+  height: 75px;
+  flex-shrink: 0;
+  z-index: 10;
+  margin-bottom: -18px;
+}
+
+.marketplace-container .entreprise-avatar {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  border: 3px solid white;
+  border: 4px solid white;
   object-fit: cover;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  background: white;
 }
 
-.marketplace-container .entreprise-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-  margin-top: 35px;
-  margin-bottom: 5px;
-}
-
-.marketplace-container .entreprise-type {
-  font-size: 14px;
-  color: #888;
-  margin-bottom: 15px;
-}
-
-.marketplace-container .entreprise-secteurs {
+.marketplace-container .entreprise-card .verified-badge.pro {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  background-color: #00C853;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0, 200, 83, 0.35);
+  letter-spacing: 0.3px;
+}
+
+.marketplace-container .entreprise-content {
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.marketplace-container .entreprise-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+  text-align: left;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+}
+
+.marketplace-container .entreprise-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.marketplace-container .entreprise-info-list .info-item {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 15px;
+  font-size: 12.5px;
+  color: #4a4a5a;
+  justify-content: flex-start;
+}
+
+.marketplace-container .teal-icon {
+  color: #3DC7C9;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.marketplace-container .teal-text {
+  color: #3DC7C9;
+  font-weight: 600;
+}
+
+.marketplace-container .green-icon {
+  color: #00C853;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.marketplace-container .green-text {
+  color: #00C853;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.marketplace-container .entreprise-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 0 0 0;
 }
 
 .marketplace-container .entreprise-rating {
   display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 20px;
+  gap: 2px;
+  justify-content: flex-start;
+  margin: 4px 0 0 0;
 }
 
-.marketplace-container .star {
-  font-size: 18px;
+.marketplace-container .entreprise-rating .star {
+  font-size: 16px !important;
 }
 
 .marketplace-container .visiter-btn {
-  padding: 10px 30px;
+  padding: 7px 22px;
   background: transparent;
-  border: 1.5px solid;
-  border-radius: 25px;
+  border: 1.5px solid #3DC7C9;
+  border-radius: 50px;
+  color: #3DC7C9;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin: 0;
+  letter-spacing: 0.2px;
 }
 
 .marketplace-container .visiter-btn:hover {
-  background-color: #6852A3;
-  border-color: #6852A3;
+  background-color: #3DC7C9;
   color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(61, 199, 201, 0.3);
 }
 
 /* ========== SECTION JOB EXPERIENCE ========== */
 
 .job-experience-section {
-  padding: 60px 20px;
+  padding: 60px 0;
   background-color: #6852A3;
-
 }
 
 .section-header.light .section-title,
@@ -977,11 +1134,12 @@
 }
 
 .job-experience-grid {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 0 50px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 25px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
 .job-card {
@@ -1139,6 +1297,7 @@
 .marketplace-footer .footer-content {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 0 50px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 60px;
@@ -1183,6 +1342,7 @@
 .marketplace-footer .footer-divider {
   max-width: 1400px;
   margin: 0 auto 30px;
+  padding: 0 50px;
   height: 1px;
   background-color: #404040;
 }
@@ -1190,6 +1350,7 @@
 .marketplace-footer .footer-bottom {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 0 50px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1230,18 +1391,28 @@
 /*                            RESPONSIVE                                      */
 /* ========================================================================== */
 
-@media (max-width: 1024px) {
-  .marketplace-container .freelance-grid {
+@media (max-width: 1200px) {
+  .marketplace-container .freelance-grid,
+  .marketplace-container .job-experience-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    padding: 0 30px;
   }
-
   .marketplace-container .entreprise-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 420px));
+    padding: 0 30px;
   }
+}
 
+@media (max-width: 1024px) {
+  .marketplace-container .freelance-grid,
   .marketplace-container .job-experience-grid {
     grid-template-columns: repeat(2, 1fr);
+    padding: 0 20px;
+  }
+  .marketplace-container .entreprise-grid {
+    grid-template-columns: minmax(0, 420px);
+    padding: 0 20px;
+    justify-content: center;
   }
 }
 

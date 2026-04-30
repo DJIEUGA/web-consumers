@@ -17,7 +17,8 @@ import {
   FiUser,
   FiUsers,
   FiAward,
-  FiAlertCircle
+  FiAlertCircle,
+  FiEye
 } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
@@ -78,6 +79,7 @@ type MarketplaceCard = {
   nom: string;
   profession: string;
   photo: string;
+  coverImage?: string;
   ville: string;
   pays: string;
   tarifMin: number;
@@ -133,8 +135,14 @@ const resolveAvailability = (
 const mapSearchCard = (profile: ProEnterpriseCard): MarketplaceCard => {
   const legacyVerified = (profile as ProEnterpriseCard & { verified?: boolean }).verified;
   const legacyPremium = (profile as ProEnterpriseCard & { premium?: boolean }).premium;
+  const formatName = (str: string) => {
+    if (!str) return '';
+    return str.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
   const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();
-  const name = profile.companyName || fullName || 'Profil';
+  const name = formatName(profile.companyName || fullName || 'Profil');
   const normalizedType = String(profile.type || '').toUpperCase();
   const availability = resolveAvailability(profile);
 
@@ -144,6 +152,7 @@ const mapSearchCard = (profile: ProEnterpriseCard): MarketplaceCard => {
     nom: name,
     profession: profile.specialization || profile.sector || 'Professionnel',
     photo: profile.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.userId}`,
+    coverImage: profile.coverImage || (profile as any).bannerImage || null,
     ville: profile.city || '',
     pays: profile.country || '',
     tarifMin: Math.ceil(profile.hourlyRate || 0),
@@ -713,7 +722,6 @@ export const Marketplace = () =>{
     setMenuOpen(false);
   };
 
-  // Rendu des étoiles
   const renderStars = (note, filled = true) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -722,8 +730,9 @@ export const Marketplace = () =>{
           key={i} 
           className={`star ${i <= note ? 'filled' : ''}`}
           style={{ 
-            fill: i <= note ? (filled ? '#FFD700' : COLORS.primary) : 'none',
-            color: i <= note ? (filled ? '#FFD700' : COLORS.primary) : '#ddd'
+            fill: i <= note ? '#FFB800' : 'none',
+            color: i <= note ? '#FFB800' : '#ddd',
+            fontSize: '16px'
           }}
         />
       );
@@ -1236,11 +1245,16 @@ export const Marketplace = () =>{
         ) : activeTab === 'pros' ? (
           <div className="freelance-grid">
             {pros.map((freelance) => {
+              // Mocking views for the design
+              const mockViews = Math.floor(Math.random() * 500) + 100;
               return (
               <div key={freelance.id} className="freelance-card">
-                <div className="card-header" style={{ backgroundColor: COLORS.secondary }}>
+                <div className="card-header">
                   <span className="badge freelance-badge">Freelance</span>
-                  {freelance.isPremium && <span className="badge pro-badge">PREMIUM</span>}
+                  <div className="card-header-views">
+                    <FiEye />
+                    <span>{mockViews}</span>
+                  </div>
                   <div className="profile-photo-wrapper">
                     <img 
                       src={freelance.photo} 
@@ -1257,7 +1271,7 @@ export const Marketplace = () =>{
 
                 <div className="card-body">
                   <h3 className="card-name">{freelance.nom}</h3>
-                  <p className="card-profession" style={{ color: COLORS.primary }}>
+                  <p className="card-profession">
                     {freelance.profession}
                   </p>
 
@@ -1267,16 +1281,16 @@ export const Marketplace = () =>{
                       <span>{[freelance.ville, freelance.pays].filter(Boolean).join(', ') || 'Non renseigne'}</span>
                     </div>
                     <div className="info-item">
-                      <span>À partir de : {Math.ceil(freelance.tarifMin).toLocaleString()} {freelance.devise}</span>
+                      <span>À partir de : <strong>{Math.ceil(freelance.tarifMin).toLocaleString()} {freelance.devise}</strong></span>
                     </div>
-                    {/* <div className="info-item">
-                      <FiStar style={{ color: '#FFB800' }} />
-                      <span>{freelance.note?.toFixed(1) || '0'}</span>
-                    </div> */}
                     <div className="info-item">
                       <FiClock style={{ color: COLORS.primary }} />
                       <span className={freelance.availabilityClassName}>{freelance.availabilityLabel}</span>
                     </div>
+                  </div>
+
+                  <div className="card-rating">
+                    {renderStars(Math.floor(freelance.note), true)}
                   </div>
 
                   <button 
@@ -1284,7 +1298,7 @@ export const Marketplace = () =>{
                     onClick={() => {
                       const identifier =
                         freelance.username && String(freelance.username).trim()
-                          ? String(freelance.username).trim()
+                           ? String(freelance.username).trim()
                           : String(freelance.id);
 
                       handleProfileClick(`/profiles/${encodeURIComponent(identifier)}`, {
@@ -1303,60 +1317,74 @@ export const Marketplace = () =>{
         ) : (
           <div className="entreprise-grid">
             {enterprises.map((entreprise) => {
+              // Stable mock views seeded by enterprise id
+              const viewsSeed = entreprise.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+              const mockViews = (viewsSeed % 400) + 100;
+              const sectorLabel = entreprise.secteur || entreprise.profession || 'Services professionnels';
+              const locationLabel = [entreprise.ville, entreprise.pays].filter(Boolean).join(', ') || 'Non renseigné';
+              const isAvailable = entreprise.availabilityClassName === 'disponible';
+
               return (
-              <div key={entreprise.id} className="entreprise-card">
-                <div className="entreprise-image">
-                  <img src={entreprise.photo} alt={entreprise.nom} />
-                  <span className="badge entreprise-badge" style={{ backgroundColor: COLORS.primary }}>
-                    Entreprise
-                  </span>
-                  {entreprise.isPremium && (
-                    <span className="badge pro-badge" style={{ backgroundColor: COLORS.secondary }}>
-                      PREMIUM
-                    </span>
-                  )}
-                </div>
-
-                <div className="entreprise-body">
-                  <div className="entreprise-photo-wrapper">
+                <div key={entreprise.id} className="entreprise-card">
+                  <div className="entreprise-header">
                     <img 
-                      src={entreprise.photo} 
-                      alt={entreprise.nom}
-                      className="entreprise-photo"
+                      src={entreprise.coverImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=600"} 
+                      alt="Cover" 
+                      className="cover-image"
+                      loading="lazy"
                     />
+                    <div className="entreprise-badge-pill">Entreprise</div>
+                    <div className="entreprise-header-views">
+                      <FiEye />
+                      <span>{mockViews}</span>
+                    </div>
                   </div>
 
-                  <h3 className="entreprise-name">{entreprise.nom}</h3>
-                  <p className="entreprise-type">{entreprise.profession}</p>
+                  <div className="entreprise-body">
+                    <div className="entreprise-main-content">
+                      <div className="entreprise-avatar-wrapper">
+                        <img src={entreprise.photo} alt={entreprise.nom} className="entreprise-avatar" />
+                        {entreprise.isPremium && (
+                          <div className="verified-badge pro">
+                            Pro
+                          </div>
+                        )}
+                      </div>
 
-                  <div className="entreprise-secteurs">
-                    <FiGrid style={{ color: COLORS.secondary }} />
-                    <span>{entreprise.secteur || 'Secteur non renseigne'}</span>
+                      <div className="entreprise-content">
+                        <h3 className="entreprise-name">{entreprise.nom}</h3>
+                        
+                        <div className="entreprise-info-list">
+                          <div className="info-item">
+                            <FiBriefcase className="teal-icon" />
+                            <span>{sectorLabel} <span className="teal-text">+ 2 secteurs</span></span>
+                          </div>
+                          <div className="info-item">
+                            <FiMapPin className="teal-icon" />
+                            <span>{locationLabel}</span>
+                          </div>
+                          <div className="info-item">
+                            <FiClock className={isAvailable ? 'green-icon' : 'teal-icon'} />
+                            <span className={isAvailable ? 'green-text' : ''}>{isAvailable ? 'ouvert maintenant' : entreprise.availabilityLabel}</span>
+                          </div>
+                          <div className="entreprise-rating">
+                            {renderStars(Math.floor(entreprise.note || 4), true)}
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    <div className="entreprise-footer">
+                      <button 
+                        className="visiter-btn"
+                        onClick={() => handleProfileClick(`/profiles/${encodeURIComponent(entreprise.id)}`)}
+                      >
+                        Visiter
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="entreprise-secteurs">
-                    <FiMapPin style={{ color: COLORS.secondary }} />
-                    <span>{[entreprise.ville, entreprise.pays].filter(Boolean).join(', ') || 'Localisation non renseignee'}</span>
-                  </div>
-
-                  <div className="entreprise-rating">
-                    {renderStars(Math.floor(entreprise.note), false)}
-                  </div>
-
-                  <div className="entreprise-secteurs">
-                    <FiClock style={{ color: COLORS.primary }} />
-                    <span className={entreprise.availabilityClassName}>{entreprise.availabilityLabel}</span>
-                  </div>
-
-                  <button 
-                    className="visiter-btn"
-                    onClick={() => handleProfileClick(`/profiles/${encodeURIComponent(entreprise.id)}`)}
-                    style={{ borderColor: COLORS.secondary, color: COLORS.secondary }}
-                  >
-                    VISITER
-                  </button>
                 </div>
-              </div>
               );
             })}
           </div>

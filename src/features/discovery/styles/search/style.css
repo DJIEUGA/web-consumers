@@ -553,53 +553,33 @@
 /* DESKTOP: Style de chaque élément de la liste */
 .search-result-item {
   background: white;
-  border-radius: 16px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;  /* ← Changé en colonne */
-  gap: 16px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  position: relative;
-}
-
-.search-result-item:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
-}
-
-/* Ligne principale : Photo + Infos + Stats + Bouton */
-.search-item-main-row {
+  border-radius: 24px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
   gap: 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+  position: relative;
+  border: 1px solid #F0F0F0;
 }
 
-/* Badge sur desktop */
-.search-result-item .search-card-badge {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: #E8F8F9;
-  color: #3DC7C9;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: capitalize;
-  letter-spacing: 0.3px;
+.search-result-item:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: #E0E0E0;
 }
 
 /* Photo sur desktop */
 .search-result-item .search-card-photo {
-  width: 80px;
-  height: 80px;
-  min-width: 80px;
-  border-radius: 12px;
+  width: 120px;
+  height: 120px;
+  min-width: 120px;
+  border-radius: 20px;
   overflow: hidden;
-  background: white;
-  border: 1px solid rgba(219, 219, 235, 0.692);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  background: #F5F5F5;
+  border: none;
+  box-shadow: none;
 }
 
 .search-result-item .search-card-photo img {
@@ -608,235 +588,164 @@
   object-fit: cover;
 }
 
-/* Info principale sur desktop */
-.search-result-item .search-card-info {
-  flex: 1;
-  min-width: 200px;
+/* Contenu principal (Badge, Nom, Tags) */
+.search-card-main-content {
+  flex: 1.5;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.search-result-item .search-card-name {
-  font-size: 16px;
+.search-card-badge-container {
+  margin-bottom: 4px;
+}
+
+.search-card-badge {
+  display: inline-block;
+  background: #EBE5F9;
+  color: #A493D1;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  position: relative;
+  z-index: 10;
+}
+
+.search-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-card-name {
+  font-size: 18px;
   font-weight: 700;
-  color: #212121;
+  color: #333333;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.search-verified-icon {
-  color: #4CAF50;
-  font-size: 18px;
-}
-
-.search-result-item .search-card-specialite {
+.search-card-subtitle {
   font-size: 14px;
-  color: #616161;
+  color: #777777;
   font-weight: 500;
 }
 
-.search-result-item .search-card-location {
+.search-card-tags {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #9E9E9E;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-/* Stats sur desktop */
-.search-result-item .search-card-stats {
-  display: flex;
-  gap: 24px;
-  align-items: center;
+/* Séparateur vertical */
+.search-card-divider {
+  width: 1px;
+  height: 60px;
+  background-color: #EEEEEE;
+  flex-shrink: 0;
 }
 
-.search-result-item .search-card-projects,
-.search-result-item .search-card-rating {
+/* Stats (Projets) */
+.search-card-projects {
+  flex: 0.8;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  min-width: 80px;
 }
 
-.search-result-item .search-projects-number {
-  font-size: 28px;
+.search-projects-number {
+  font-size: 42px;
   font-weight: 700;
-  color: #B8B9FF;
+  color: #A493D1;
   line-height: 1;
-  margin-bottom: 4px;
 }
 
-.search-result-item .search-projects-label {
-  font-size: 10px;
-  color: #9E9E9E;
-  line-height: 1.4;
+.search-projects-label {
+  font-size: 11px;
+  color: #777777;
   font-weight: 500;
+  margin-top: 4px;
 }
 
-.search-result-item .search-stars {
+/* Note et Etoiles */
+.search-card-rating {
+  flex: 1;
   display: flex;
-  gap: 2px;
-  margin-bottom: 4px;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-.search-result-item .search-rating-number {
-  font-size: 20px;
+.search-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.search-rating-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-rating-number {
+  font-size: 32px;
   font-weight: 700;
-  color: #212121;
-  margin-bottom: 4px;
+  color: #333333;
   line-height: 1;
 }
 
-.search-result-item .search-rating-label {
-  font-size: 10px;
-  color: #9E9E9E;
-  line-height: 1.4;
+.search-rating-label {
+  font-size: 11px;
+  color: #777777;
   font-weight: 500;
+  line-height: 1.2;
 }
 
-/* Bouton sur desktop */
-.search-result-item .search-card-btn {
-  padding: 10px 20px;
-  background: transparent;
-  color: #3DC7C9;
-  border: 2px solid #3DC7C9;
+/* Actions (Bouton) */
+.search-card-actions {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search-card-btn {
+  padding: 12px 28px;
+  background: #3DC7C9;
+  color: white;
+  border: none;
   border-radius: 30px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-transform: capitalize;
   white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(61, 199, 201, 0.2);
 }
 
-.search-result-item .search-card-btn:hover {
-  background: #3DC7C9;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(61, 199, 201, 0.3);
+.search-card-btn:hover {
+  background: #35B3B5;
+  transform: scale(1.02);
+  box-shadow: 0 6px 15px rgba(61, 199, 201, 0.3);
 }
 
 /* ========================================
    TAGS EN DESSOUS - Nouvelle ligne
    ======================================== */
 
-.search-item-tags-row {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-left: 104px;  /* Aligné avec les infos (80px photo + 24px gap) */
-  margin-top: -8px;
-}
-
 .search-tag {
-  padding: 6px 14px;
-  background: #e6e2f3;
-  color: #6852a3;
+  padding: 4px 12px;
+  background: white;
+  color: #3DC7C9;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
-  border: 1px solid rgba(163, 153, 192, 0.58);
+  border: 1px solid #3DC7C9;
 }
-/* Stats sur desktop */
-.search-result-item .search-card-stats {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  flex: 1;
-  justify-content: center;
-}
-
-.search-result-item .search-card-projects,
-.search-result-item .search-card-rating {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  min-width: 100px;
-}
-
-.search-result-item .search-projects-number {
-  font-size: 32px;
-  font-weight: 700;
-  color: #B8B9FF;
-  line-height: 1;
-  margin-bottom: 4px;
-}
-
-.search-result-item .search-projects-label {
-  font-size: 11px;
-  color: #9E9E9E;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-.search-result-item .search-stars {
-  display: flex;
-  gap: 2px;
-  margin-bottom: 4px;
-}
-
-.search-result-item .search-rating-number {
-  font-size: 22px;
-  font-weight: 700;
-  color: #212121;
-  margin-bottom: 4px;
-  line-height: 1;
-}
-
-.search-result-item .search-rating-label {
-  font-size: 11px;
-  color: #9E9E9E;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-/* Bouton sur desktop */
-.search-result-item .search-card-btn {
-  width: 140px;  /* ← Largeur fixe */
-  padding: 10px 0;  /* ← Padding vertical seulement */
-  background: transparent;
-  color: #3DC7C9;
-  border: 2px solid #3DC7C9;
-  border-radius: 30px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: capitalize;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.search-result-item .search-card-btn:hover {
-  background: #3DC7C9;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(61, 199, 201, 0.3);
-}
-
-/* ========================================
-   CARTE RÉSULTAT POUR MOBILE
-   ======================================== */
-
-.search-result-item .search-card-badge {
-  position: absolute;
-  top: 20px;
-  left: 130px; /* 160px (largeur photo) + 20px de marge */
-  background: #E8F8F9;
-  color: #3DC7C9;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: capitalize;
-  letter-spacing: 0.3px;
-  z-index: 2;
-}
+/* Nettoyage des anciennes classes redondantes */
 .search-results-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -846,116 +755,69 @@
 
 .search-result-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 24px;
   padding: 0;
   position: relative;
-  transition: all 0.2s;
+  transition: all 0.3s;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+  border: 1px solid #F0F0F0;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-result-card .search-card-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
 }
 
 .search-result-card:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
-}
-
-.search-card-badge {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: #E8F8F9;
-  color: #3DC7C9;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: capitalize;
-  letter-spacing: 0.3px;
-  z-index: 2;
 }
 
 .search-card-header {
   display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 32px 24px 20px;
-  background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  padding-top: 48px;
 }
 
-/* Photo mobile - CARRÉ avec bords arrondis */
 .search-card-photo {
-  margin-top: 35px;
-  width: 80px;
-  height: 80px;
-  min-width: 80px;
-  border-radius: 12px; /* Bords arrondis modérés */
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
+  border-radius: 16px;
   overflow: hidden;
-  background: white;
-  border: 3px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.search-card-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  margin-top: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .search-card-info {
-  margin-top: 30px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  margin-top: 0;
 }
 
-.search-card-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #212121;
-  margin-bottom: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-card-specialite {
-  font-size: 14px;
-  color: #616161;
-  margin-bottom: 0;
-  font-weight: 500;
-}
-
-.search-card-location {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #9E9E9E;
-  margin-bottom: 12px;
-}
-
-.search-card-location svg {
-  font-size: 15px;
-}
-
-/* Tags mobile - EN DESSOUS de la localisation */
 .search-card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 0 24px 20px;
-  background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 100%);
+  padding: 0 24px 16px;
 }
 
-/* Stats mobile */
 .search-card-stats {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  padding: 24px;
-  background: white;
-  gap: 32px;
+  padding: 20px 24px;
+  border-top: 1px solid #F5F5F5;
+  gap: 16px;
 }
 
 .search-card-projects,
@@ -963,68 +825,32 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
   flex: 1;
 }
 
 .search-projects-number {
-  font-size: 48px;
-  font-weight: 700;
-  color: #B8B9FF;
-  line-height: 1;
-  margin-bottom: 8px;
-  letter-spacing: -1px;
-}
-
-.search-projects-label {
-  font-size: 12px;
-  color: #9E9E9E;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-.search-stars {
-  display: flex;
-  gap: 3px;
-  margin-bottom: 8px;
+  font-size: 36px;
+  color: #A493D1;
 }
 
 .search-rating-number {
-  font-size: 28px;
-  font-weight: 700;
-  color: #212121;
-  margin-bottom: 6px;
-  line-height: 1;
+  font-size: 24px;
+  color: #333333;
 }
 
-.search-rating-label {
-  font-size: 12px;
-  color: #9E9E9E;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-/* Bouton */
 .search-card-btn {
   width: calc(100% - 48px);
   margin: 0 24px 24px;
-  padding: 14px;
-  background: transparent;
-  color: #3DC7C9;
-  border: 2px solid #3DC7C9;
+  padding: 12px;
+  background: #3DC7C9;
+  color: white;
+  border: none;
   border-radius: 30px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  text-transform: capitalize;
-}
-
-.search-card-btn:hover {
-  background: #3DC7C9;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(61, 199, 201, 0.3);
+  box-shadow: 0 4px 10px rgba(61, 199, 201, 0.2);
 }
 
 /* ========================================
@@ -1867,6 +1693,109 @@
 
   .search-proximity-card {
     width: min(320px, 100%);
+  }
+}
+
+/* ========================================
+   OPTIMISATION MOBILE FINALE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .search-result-card {
+    border-radius: 20px;
+  }
+
+  .search-card-header {
+    padding: 16px;
+    padding-top: 42px;
+    gap: 12px;
+  }
+
+  .search-card-photo {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 14px;
+  }
+
+  .search-card-name {
+    font-size: 16px;
+  }
+
+  .search-card-subtitle {
+    font-size: 13px;
+  }
+
+  .search-card-tags {
+    padding: 0 16px 12px;
+    gap: 6px;
+  }
+
+  .search-tag {
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+
+  .search-card-stats {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .search-projects-number {
+    font-size: 30px;
+  }
+
+  .search-rating-number {
+    font-size: 22px;
+  }
+
+  .search-projects-label,
+  .search-rating-label {
+    font-size: 10px;
+  }
+
+  .search-card-btn {
+    width: calc(100% - 32px);
+    margin: 0 16px 16px;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .search-card-badge {
+    top: 12px;
+    left: 12px;
+    padding: 3px 12px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-card-header {
+    padding: 12px;
+    padding-top: 38px;
+    gap: 10px;
+  }
+
+  .search-card-photo {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+  }
+
+  .search-card-name {
+    font-size: 15px;
+  }
+
+  .search-card-stats {
+    padding: 12px;
+  }
+
+  .search-projects-number {
+    font-size: 26px;
+  }
+
+  .search-rating-number {
+    font-size: 20px;
   }
 }
 

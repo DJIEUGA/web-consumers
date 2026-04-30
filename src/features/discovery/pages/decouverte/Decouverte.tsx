@@ -473,9 +473,8 @@ export const Decouverte = () => {
       <main className="main-decouverte">
         {/* Titre de la page */}
         <div className="decouverte-header">
-          <h1 className="decouverte-title">
-            <span style={{ color: COLORS.secondary }}>Explorez nos</span>{' '}
-            <span style={{ color: COLORS.primary }}>secteurs d'activité</span>
+          <h1 className="decouverte-title" style={{ color: '#333333' }}>
+            Explorez nos secteurs d'activité
           </h1>
           <p className="decouverte-subtitle">
             Trouvez le professionnel qu'il vous faut parmi plus de 16 domaines de compétences
@@ -498,10 +497,10 @@ export const Decouverte = () => {
                 }}
               >
                 <div className="secteur-icon-wrapper">
-                  <IconComponent 
-                    className="secteur-icon" 
-                    style={{ color: COLORS.primary }}
-                  />
+                  <div className="icon-composite">
+                    <IconComponent className="secteur-icon" />
+                    <div className="icon-accent-line"></div>
+                  </div>
                 </div>
                 <h3 className="secteur-nom">{secteur.nom}</h3>
                 <p className="secteur-description">{secteur.description}</p>

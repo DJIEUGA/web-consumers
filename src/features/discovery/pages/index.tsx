@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiSearch, FiUser } from 'react-icons/fi';
 import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../stores/auth.store';
 import { resolveCurrentLocation } from '../utils/location';
@@ -66,6 +67,21 @@ export const Home = () => {
 
   return (
     <div className="home-container">
+      {/* Header avec Profil */}
+      {isAuthenticated && (
+        <header className="home-header">
+          <div className="profile-shortcut" onClick={goToAuthShortcut}>
+            <div className="avatar-circle">
+              {authUser?.avatar ? (
+                <img src={authUser.avatar} alt="Profil" className="user-avatar-img" />
+              ) : (
+                <FiUser className="user-placeholder-icon" />
+              )}
+            </div>
+          </div>
+        </header>
+      )}
+
       <main className="main-content">
         <div className="search-section">
 
@@ -74,7 +90,7 @@ export const Home = () => {
           </div>
 
           <div className="logo-container">
-            <Logo alt="Jobty" style={{width: '260px'}} />
+            <Logo alt="Jobty" className="home-logo" />
           </div>
 
           <SearchBar
