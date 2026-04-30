@@ -1121,20 +1121,14 @@ function SearchResults() {
               <FiCheckCircle className="search-verified-icon" />
             )}
           </h3>
-          <p className="search-card-specialite">
-            {result.specialite || result.secteur}
+          <p className="search-card-subtitle">
+            {result.specialite || result.secteur} • {result.ville}, {result.pays}
           </p>
-          <div className="search-card-location">
-            <FiMapPin />
-            <span>
-              {result.ville}, {result.pays}
-            </span>
-          </div>
         </div>
       </div>
 
       <div className="search-card-tags">
-        {result.tags.map((tag, index) => (
+        {result.tags.slice(0, 3).map((tag, index) => (
           <span key={index} className="search-tag">
             {tag}
           </span>
@@ -1144,7 +1138,7 @@ function SearchResults() {
       <div className="search-card-stats">
         <div className="search-card-projects">
           <span className="search-projects-number">
-            {result.projetsCollaboration}
+            {result.projetsCollaboration.toString().padStart(2, '0')}
           </span>
           <span className="search-projects-label">
             projets de
@@ -1154,12 +1148,14 @@ function SearchResults() {
         </div>
         <div className="search-card-rating">
           <div className="search-stars">{renderStars(result.note)}</div>
-          <span className="search-rating-number">{result.note}</span>
-          <span className="search-rating-label">
-            étoiles
-            <br />
-            collectées
-          </span>
+          <div className="search-rating-value">
+            <span className="search-rating-number">{result.note}</span>
+            <span className="search-rating-label">
+              étoiles
+              <br />
+              collectées
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1175,15 +1171,15 @@ function SearchResults() {
   // Composant pour un élément de liste (desktop)
   const ResultListItem = ({ result }) => (
     <div className="search-result-item">
-      {/* Badge */}
-      <div className="search-card-badge">
-        {result.type === "freelance" ? "Freelance" : "Entreprise"}
+      <div className="search-card-photo">
+        <img src={result.photo} alt={result.nom} />
       </div>
 
-      {/* Ligne principale : Photo + Infos + Stats + Bouton */}
-      <div className="search-item-main-row">
-        <div className="search-card-photo">
-          <img src={result.photo} alt={result.nom} />
+      <div className="search-card-main-content">
+        <div className="search-card-badge-container">
+          <div className="search-card-badge">
+            {result.type === "freelance" ? "Freelance" : "Entreprise"}
+          </div>
         </div>
 
         <div className="search-card-info">
@@ -1193,54 +1189,54 @@ function SearchResults() {
               <FiCheckCircle className="search-verified-icon" />
             )}
           </h3>
-          <p className="search-card-specialite">
-            {result.specialite || result.secteur}
+          <p className="search-card-subtitle">
+            {result.specialite || result.secteur} • {result.ville}, {result.pays}
           </p>
-          <div className="search-card-location">
-            <FiMapPin />
-            <span>
-              {result.ville}, {result.pays}
-            </span>
-          </div>
         </div>
 
-        <div className="search-card-stats">
-          <div className="search-card-projects">
-            <span className="search-projects-number">
-              {result.projetsCollaboration}
+        <div className="search-card-tags">
+          {result.tags.slice(0, 3).map((tag, index) => (
+            <span key={index} className="search-tag">
+              {tag}
             </span>
-            <span className="search-projects-label">
-              projets de
-              <br />
-              collaboration
-            </span>
-          </div>
-          <div className="search-card-rating">
-            <div className="search-stars">{renderStars(result.note)}</div>
-            <span className="search-rating-number">{result.note}</span>
-            <span className="search-rating-label">
-              étoiles
-              <br />
-              collectées
-            </span>
-          </div>
+          ))}
         </div>
+      </div>
 
+      <div className="search-card-divider"></div>
+
+      <div className="search-card-projects">
+        <span className="search-projects-number">
+          {result.projetsCollaboration.toString().padStart(2, '0')}
+        </span>
+        <span className="search-projects-label">
+          projets de
+          <br />
+          collaboration
+        </span>
+      </div>
+
+      <div className="search-card-divider"></div>
+
+      <div className="search-card-rating">
+        <div className="search-stars">{renderStars(result.note)}</div>
+        <div className="search-rating-value">
+          <span className="search-rating-number">{result.note}</span>
+          <span className="search-rating-label">
+            étoiles
+            <br />
+            collectées
+          </span>
+        </div>
+      </div>
+
+      <div className="search-card-actions">
         <button
           className="search-card-btn"
           onClick={() => navigate(`/profiles/${result.id}`)}
         >
           Visiter profil
         </button>
-      </div>
-
-      {/* Tags EN DESSOUS - sur une nouvelle ligne */}
-      <div className="search-item-tags-row">
-        {result.tags.map((tag, index) => (
-          <span key={index} className="search-tag">
-            {tag}
-          </span>
-        ))}
       </div>
     </div>
   );

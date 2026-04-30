@@ -51,6 +51,8 @@ export type ProEnterpriseCard = {
   actionButtonType?: 'CONTACT' | 'COLLABORATE' |  null;
   available?: boolean;
   disponible?: boolean;
+  coverImage?: string;
+  bannerImage?: string;
 };
 
 export type PageInfo = {

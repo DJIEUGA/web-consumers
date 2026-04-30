@@ -5,11 +5,44 @@
 /* Container principal */
 .home-container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #cce7e7 0%, #FFFFFF 60%);
+  background: radial-gradient(at 0% 0%, #e0f2f1 0%, transparent 50%),
+              radial-gradient(at 100% 0%, #e3f2fd 0%, transparent 50%),
+              radial-gradient(at 100% 100%, #f3e5f5 0%, transparent 50%),
+              radial-gradient(at 0% 100%, #fff9c4 0%, transparent 50%),
+              #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Éléments décoratifs flottants */
+.home-container::before,
+.home-container::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  opacity: 0.5;
+  animation: float 10s infinite alternate ease-in-out;
+}
+
+.home-container::before {
+  background: #3dc7c9;
+  top: -100px;
+  left: -100px;
+}
+
+.home-container::after {
+  background: #bbdefb;
+  bottom: -100px;
+  right: -100px;
+  animation-delay: -5s;
 }
 
 .main-content {
@@ -25,7 +58,59 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 15px;
+  z-index: 1;
+}
+
+/* ========================================
+   HEADER & PROFIL
+   ======================================== */
+
+.home-header {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.profile-shortcut {
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-shortcut:hover {
+  transform: scale(1.05);
+}
+
+.avatar-circle {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(61, 199, 201, 0.2);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.profile-shortcut:hover .avatar-circle {
+  border-color: #3dc7c9;
+  box-shadow: 0 6px 15px rgba(61, 199, 201, 0.2);
+}
+
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-placeholder-icon {
+  font-size: 22px;
+  color: #3dc7c9;
 }
 
 /* ========================================
@@ -34,9 +119,14 @@
 
 .hero-image-container {
   width: 100%;
-  max-width: 500px;
-  margin-bottom: 10px;
-  animation: fadeInUp 0.4s ease-out;
+  max-width: 480px;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.5s ease;
+}
+
+.hero-image-container:hover {
+  transform: translateY(-5px);
 }
 
 .hero-image {
@@ -44,6 +134,7 @@
   height: auto;
   display: block;
   object-fit: contain;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.08));
 }
 
 /* ========================================
@@ -56,8 +147,8 @@
   animation: fadeInUp 0.6s ease-out;
 }
 
-.logo-image {
-  max-width: 230px;
+.home-logo {
+  width: 260px;
   height: auto;
   display: block;
   margin: 0 auto;
@@ -73,24 +164,30 @@
 }
 
 .search-bar {
-  background-color: #e5f0f083;
-  border: 1px solid #9999993d;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 50px;
   display: flex;
   align-items: center;
-  padding: 5px 5px 5px 24px;
-  box-shadow: none;
+  padding: 8px 8px 8px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   gap: 12px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .search-bar:hover {
-  border-color: #2cc1c375;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  border-color: #3dc7c9;
 }
 
 .search-bar:focus-within {
-  border-color: #2cc0c3;
-  box-shadow: 0 0 0 3px rgba(44, 192, 195, 0.15);
+  background: #ffffff;
+  border-color: #3dc7c9;
+  box-shadow: 0 15px 40px rgba(61, 199, 201, 0.15);
+  transform: translateY(-2px);
 }
 
 .search-input-unified {
@@ -117,31 +214,33 @@
 }
 
 .search-button {
-  background: #2cc0c3;
+  background: #3dc7c9;
   border: none;
   border-radius: 50%;
-  width: 42px;
-  height: 42px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(61, 199, 201, 0.3);
 }
 
 .search-button:hover {
-  background: #24a8ab;
-  transform: scale(1.05);
+  background: #34b1b3;
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 6px 15px rgba(61, 199, 201, 0.4);
 }
 
 .search-button:active {
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
 .search-button-icon {
   color: white;
-  font-size: 20px;
+  font-size: 22px;
 }
 
 /* ========================================
@@ -150,43 +249,56 @@
 
 .action-buttons {
   display: flex;
-  gap: 30px;
-  margin-top: 20px;
-  animation: fadeInUp 1s ease-out;
+  gap: 20px;
+  margin-top: 30px;
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .action-btn {
-  padding: 12px 45px;
-  border-radius: 25px;
-  border: 2px solid #2cc0c3;
+  padding: 14px 40px;
+  border-radius: 100px;
+  border: 1px solid #3dc7c9;
   background: transparent;
-  color: #2cc0c3;
+  color: #3dc7c9;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 140px;
+}
+
+.action-btn:first-child {
+  background: #3dc7c9;
+  color: white;
+  box-shadow: 0 4px 15px rgba(61, 199, 201, 0.2);
 }
 
 .action-btn:hover {
-  background: #2cc0c3;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(44, 192, 195, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(61, 199, 201, 0.25);
 }
 
-.action-btn:active {
-  transform: translateY(0);
+.action-btn:first-child:hover {
+  background: #34b1b3;
+}
+
+.action-btn:last-child:hover {
+  background: rgba(61, 199, 201, 0.05);
 }
 
 /* ========================================
    ANIMATION
    ======================================== */
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -194,86 +306,81 @@
   }
 }
 
+@keyframes float {
+  from { transform: translate(0, 0); }
+  to { transform: translate(20px, 20px); }
+}
+
 /* ========================================
    RESPONSIVE
    ======================================== */
 
 @media (max-width: 768px) {
+  .home-container {
+    padding: 20px;
+  }
+
   .hero-image-container {
-    max-width: 350px;
-    margin-bottom: 8px;
+    max-width: 320px;
+    margin-bottom: 10px;
   }
 
-  .logo-image {
-    max-width: 175px;
+  .home-logo {
+    width: 200px;
   }
 
-  .search-bar {
-    padding: 5px 5px 5px 16px;
+  .search-form {
     width: 100%;
   }
 
-  .search-input-unified {
-    font-size: 14px;
-    padding: 8px 0;
+  .search-bar {
+    padding: 6px 6px 6px 20px;
   }
 
-  .search-button {
-    width: 38px;
-    height: 38px;
-  }
-
-  .search-button-icon {
-    font-size: 18px;
+  .action-buttons {
+    gap: 15px;
+    width: 100%;
+    justify-content: center;
   }
 
   .action-btn {
-    padding: 10px 20px;
+    padding: 12px 25px;
+    min-width: 120px;
     font-size: 14px;
-    min-width: 100px;
   }
 }
 
 @media (max-width: 480px) {
-  .home-container {
-    padding: 15px;
+  .home-logo {
+    width: 160px;
   }
 
   .hero-image-container {
-    max-width: 250px;
-    margin-bottom: 6px;
-  }
-
-  .logo-image {
-    max-width: 170px;
+    max-width: 260px;
   }
 
   .search-bar {
-    padding: 4px 4px 4px 12px;
+    padding-left: 16px;
   }
 
   .search-input-unified {
-    font-size: 13px;
-    padding: 7px 0;
+    font-size: 14px;
   }
 
   .search-button {
-    width: 40px;
-    height: 40px;
-  }
-
-  .search-button-icon {
-    font-size: 16px;
-  }
-
-  .action-btn {
-    padding: 9px 16px;
-    font-size: 13px;
-    min-width: 85px;
+    width: 42px;
+    height: 42px;
   }
 
   .action-buttons {
-    gap: 12px;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .action-btn {
+    width: 100%;
+    min-width: none;
   }
 }
 

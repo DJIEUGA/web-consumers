@@ -20,8 +20,6 @@
     "paths": {
       "@/*": ["./*"]
     }
-    ,
-    "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*","vite.config.ts",
     "eslint.config.js", "tailwind.config.ts"],

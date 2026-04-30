@@ -5,6 +5,7 @@ import { useResetPassword } from "@/features/auth/services/auth.service";
 import Logo from "@/components/shared/Logo";
 import { FiEye, FiEyeOff, FiKey, FiLock } from "react-icons/fi";
 import { COLORS } from "@/styles/colors";
+import "../styles/Connexion.css";
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -66,41 +67,38 @@ const ResetPasswordPage = () => {
     <div className="connexion-container">
       <div className="connexion-card">
         <div className="connexion-logo">
-          <Logo alt="Jobty" className="w-auto" />
+          <Logo alt="Jobty" />
         </div>
 
         <h1 className="connexion-title">Nouveau mot de passe</h1>
 
-        <p className="connexion-subtitle mb-6 text-center text-xs text-[#8a8fa3]">
-          Choisissez un nouveau mot de passe sécurisé
+        <p className="connexion-subtitle">
+          Choisissez un nouveau mot de passe sécurisé pour votre compte
         </p>
 
         <form onSubmit={handleSubmit} className="connexion-form">
-          <div className="w-3/4 self-center-safe">
-            <label className="form-input-group relative">
-              <FiKey className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#46c6cb]" />
+          <div className="form-group">
+            <div className="input-wrapper">
+              <FiKey className="input-icon-left" />
               <input
                 type="text"
                 placeholder="Token de réinitialisation"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                style={{ paddingLeft: "40px" }}
-                className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
                 required
               />
-            </label>
+            </div>
           </div>
-          <div className="w-3/4 self-center-safe">
-            <label className="form-input-group relative">
-              <FiLock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#46c6cb]" />
+
+          <div className="form-group">
+            <div className="input-wrapper">
+              <FiLock className="input-icon-left" />
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Entrer nouveau mot de passe"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="password"
-                style={{ paddingLeft: "40px" }}
-                className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
+                autoComplete="new-password"
                 required
               />
               <button
@@ -108,54 +106,57 @@ const ResetPasswordPage = () => {
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <FiEyeOff className="text-[#46c6cb]" /> : <FiEye className="text-[#46c6cb]" />}
+                {showPassword ? <FiEyeOff /> : <FiEye />}
               </button>
-            </label>
+            </div>
           </div>
 
-          <div className="w-3/4 self-center-safe">
-            <label className="form-input-group relative">
-              <FiLock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#46c6cb]" />
-
+          <div className="form-group">
+            <div className="input-wrapper">
+              <FiLock className="input-icon-left" />
               <input
-               type={showPassword ? "text" : "password"}
+                type={showPassword ? "text" : "password"}
                 placeholder="Confirmer nouveau mot de passe"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="password"
-                style={{ paddingLeft: "40px" }}
-                className="h-11 w-full rounded-full bg-[#f2f4f7] px-4 text-xs text-[#667085] outline-none placeholder:text-[#b4b9c5] focus:ring-2 focus:ring-[#d9f6f8]"
+                autoComplete="new-password"
                 required
               />
-            </label>
+            </div>
           </div>
-          <div className="flex flex-col justify-center items-center">
-            <p className="text-center text-[#9aa3b2]">
-              Le mot de passe doit contenir :
-            </p>
-            <ul className="px-4 text-[12px] text-[#9aa3b2] list-disc">
+
+          <div className="password-requirements">
+            <p>Le mot de passe doit contenir :</p>
+            <ul>
               <li>Au moins 8 caractères</li>
-              <li>Au moins une lettre</li>
-              <li>Au moins un chiffre</li>
+              <li>Au moins une lettre et un chiffre</li>
             </ul>
           </div>
+
           {validationError && (
-            <p className="text-center text-xs text-red-500">
+            <p className="error-message-center">
               {validationError}
             </p>
           )}
 
-          <div className="flex justify-center">
-            <button
-              type="submit"
-              disabled={resetPasswordMutation.isPending}
-              style={{ backgroundColor: COLORS.primary, marginTop: "-5px" }}
-              className="submit-btn"
-            >
-              {resetPasswordMutation.isPending ? "Traitement..." : "Connexion"}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={resetPasswordMutation.isPending}
+            className="submit-btn"
+          >
+            {resetPasswordMutation.isPending ? "Traitement..." : "Réinitialiser"}
+          </button>
         </form>
+
+        <div className="auth-redirect-prompt" style={{ marginTop: "24px" }}>
+          <button
+            type="button"
+            onClick={() => navigate("/connexion")}
+            className="back-to-login-link"
+          >
+            Retour à la connexion
+          </button>
+        </div>
       </div>
     </div>
   );

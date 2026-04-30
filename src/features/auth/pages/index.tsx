@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useNotification } from "../../../hooks/useNotification";
 import {
@@ -20,6 +20,9 @@ import {
   FiArrowRight,
   FiCalendar,
   FiFileText,
+  FiChevronDown,
+  FiCamera,
+  FiX,
 } from "react-icons/fi";
 import { COLORS } from "../../../styles/colors";
 import Logo from "@/components/shared/Logo";
@@ -37,7 +40,7 @@ export const Connexion = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState("freelance");
-  const [signupStep, setSignupStep] = useState(1);
+  const [signupStep, setSignupStep] = useState<number>(1);
 
   // Map UI roles to API role enum
   const roleMapping = {
@@ -131,9 +134,53 @@ export const Connexion = () => {
     sector: "",
     specialization: "",
     companyName: "",
+    username: "",
     experienceYears: "",
     bio: "",
+    tags: [] as string[],
+    acceptTerms: false,
   });
+
+  const [currentTag, setCurrentTag] = useState("");
+
+  // États pour les listes déroulantes personnalisées
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  const toggleDropdown = (name: string) => {
+    setActiveDropdown(activeDropdown === name ? null : name);
+  };
+
+  const handleSelectOption = (name: string, value: string) => {
+    setSignupData({ ...signupData, [name]: value });
+    setActiveDropdown(null);
+  };
+
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && currentTag.trim()) {
+      e.preventDefault();
+      if (!signupData.tags.includes(currentTag.trim())) {
+        setSignupData({
+          ...signupData,
+          tags: [...signupData.tags, currentTag.trim()]
+        });
+      }
+      setCurrentTag("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setSignupData({
+      ...signupData,
+      tags: signupData.tags.filter(tag => tag !== tagToRemove)
+    });
+  };
+
+  // Fermer les dropdowns lors d'un clic ailleurs
+  useEffect(() => {
+    const handleClickOutside = () => setActiveDropdown(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   // Listes de pays africains
   const paysAfricains = [
@@ -290,9 +337,10 @@ export const Connexion = () => {
       ...(signupData.city && { city: signupData.city }),
       ...(signupData.phoneNumber && { phoneNumber: signupData.phoneNumber }),
       ...(signupData.sector && { sector: signupData.sector }),
-      ...(signupData.specialization && { skills: [signupData.specialization] }),
+      ...(signupData.tags.length > 0 ? { skills: signupData.tags } : (signupData.specialization ? { skills: [signupData.specialization] } : {})),
       ...(signupData.specialization && { specialization: signupData.specialization}),
       ...(signupData.companyName && { companyName: signupData.companyName }),
+      ...(signupData.username && { username: signupData.username }),
       ...(signupData.experienceYears && { experienceYears: signupData.experienceYears }),
       ...(signupData.bio && { bio: signupData.bio }),
     };
@@ -349,8 +397,11 @@ export const Connexion = () => {
       sector: "",
       specialization: "",
       companyName: "",
+      username: "",
       experienceYears: "",
       bio: "",
+      tags: [],
+      acceptTerms: false,
     });
   };
 
@@ -362,50 +413,26 @@ export const Connexion = () => {
       </button>
 
       {/* Card principale */}
-      <div className="connexion-card">
-        {/* Logo */}
-        <div className="connexion-logo">
-          <Logo alt="Jobty" style={{width: '250px'}} />
-        </div>
-        {/* Titre */}
-        <h1 className="connexion-title">
-          <span className="title-prefix">
-            {isLogin
-              ? "Bon retour sur"
-              : signupStep === 2
-                ? "Complétez votre profil"
-                : "Rejoignez"}
-          </span>
-          {signupStep === 1 && (
-            <span style={{ color: COLORS.primary }}> Jobty</span>
-          )}
-        </h1>
-        <p className="connexion-subtitle">
-          {isLogin
-            ? "Connectez-vous pour accéder à votre compte"
-            : signupStep === 2
-              ? "Quelques informations supplémentaires pour finaliser votre inscription"
-              : "Créez votre compte et commencez votre aventure"}
-        </p>
-
-        {/* Toggle Connexion/Inscription (seulement à l'étape 1) */}
-        {signupStep === 1 && (
-          <div className="form-toggle">
-            <button
-              className={`toggle-btn ${isLogin ? "active" : ""}`}
-              onClick={() => setIsLogin(true)}
-              style={isLogin ? { backgroundColor: COLORS.primary } : {}}
-            >
-              Connexion
-            </button>
-            <button
-              className={`toggle-btn ${!isLogin ? "active" : ""}`}
-              onClick={() => setIsLogin(false)}
-              style={!isLogin ? { backgroundColor: COLORS.primary } : {}}
-            >
-              Inscription
-            </button>
+      <div className={`connexion-card ${signupStep === 2 ? 'step2-active' : ''}`}>
+        {/* Logo - Hidden in Step 2 */}
+        {signupStep !== 2 && (
+          <div className="connexion-logo">
+            <Logo alt="Jobty" />
           </div>
+        )}
+        
+        {/* Titre - Hidden in Step 2 */}
+        {signupStep !== 2 && (
+          <>
+            <h1 className="connexion-title">
+              {isLogin ? "Bon retour sur Jobty" : "Rejoignez Jobty"}
+            </h1>
+            <p className="connexion-subtitle">
+              {isLogin
+                ? "Connectez vous pour accéder à votre compte"
+                : "Créez votre compte et commencez votre aventure"}
+            </p>
+          </>
         )}
 
         {/* Formulaire de CONNEXION */}
@@ -458,30 +485,30 @@ export const Connexion = () => {
             }}
           >
             <div className="form-group">
-              <label htmlFor="login-email">
-                <FiMail /> Email
-              </label>
-              <input
-                type="email"
-                id="login-email"
-                name="email"
-                placeholder="votre@email.com"
-                value={loginData.email}
-                onChange={handleLoginChange}
-                required
-              />
+              <label htmlFor="login-email">Email</label>
+              <div className="input-wrapper">
+                <FiMail className="input-icon-left" />
+                <input
+                  type="email"
+                  id="login-email"
+                  name="email"
+                  placeholder="E-mail"
+                  value={loginData.email}
+                  onChange={handleLoginChange}
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="login-password">
-                <FiLock /> Mot de passe
-              </label>
-              <div className="password-input">
+              <label htmlFor="login-password">Mot de passe</label>
+              <div className="input-wrapper">
+                <FiLock className="input-icon-left" />
                 <input
                   type={showPassword ? "text" : "password"}
                   id="login-password"
                   name="password"
-                  placeholder="••••••••"
+                  placeholder="Mot de passe"
                   value={loginData.password}
                   onChange={handleLoginChange}
                   required
@@ -496,26 +523,32 @@ export const Connexion = () => {
               </div>
             </div>
 
-            <div className="form-footer">
-              <label className="remember-me">
-                <input type="checkbox" />
-                <span>Se souvenir de moi</span>
-              </label>
-              <a href="/forgot-password" className="forgot-password">
-                Mot de passe oublié ?
-              </a>
-            </div>
-
             <button
               type="submit"
               className="submit-btn"
-              style={{ backgroundColor: COLORS.primary }}
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending
-                ? "Connexion en cours..."
-                : "Se connecter"}
+                ? "Connexion..."
+                : "Connexion"}
             </button>
+
+            <div className="forgot-password-container">
+              <button 
+                type="button" 
+                className="forgot-password-link"
+                onClick={() => navigate("/forgot-password")}
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+
+            <div className="signup-prompt">
+              Vous n'avez pas de compte ? 
+              <button type="button" className="signup-link" onClick={toggleForm}>
+                S'inscrire
+              </button>
+            </div>
           </form>
         ) : (
           // Formulaire d'INSCRIPTION
@@ -524,57 +557,36 @@ export const Connexion = () => {
             {signupStep === 1 && (
               <>
                 {/* Sélection du rôle */}
-                <div className="role-selection">
-                  <p className="role-label">Je suis :</p>
-                  <div className="role-buttons">
-                    <button
-                      type="button"
-                      className={`role-btn ${selectedRole === "freelance" ? "active" : ""}`}
-                      onClick={() => setSelectedRole("freelance")}
-                      style={
-                        selectedRole === "freelance"
-                          ? {
-                              backgroundColor: COLORS.primary,
-                              borderColor: COLORS.primary,
-                            }
-                          : {}
-                      }
-                    >
-                      <FiUser />
-                      Freelance
-                    </button>
-                    <button
-                      type="button"
-                      className={`role-btn ${selectedRole === "entreprise" ? "active" : ""}`}
-                      onClick={() => setSelectedRole("entreprise")}
-                      style={
-                        selectedRole === "entreprise"
-                          ? {
-                              backgroundColor: COLORS.primary,
-                              borderColor: COLORS.primary,
-                            }
-                          : {}
-                      }
-                    >
-                      <FiBriefcase />
-                      Entreprise
-                    </button>
-                    <button
-                      type="button"
-                      className={`role-btn ${selectedRole === "client" ? "active" : ""}`}
-                      onClick={() => setSelectedRole("client")}
-                      style={
-                        selectedRole === "client"
-                          ? {
-                              backgroundColor: COLORS.primary,
-                              borderColor: COLORS.primary,
-                            }
-                          : {}
-                      }
-                    >
-                      <FiUser />
-                      Client
-                    </button>
+                {/* Sélection du rôle (Style Minimal Mockup) */}
+                <div className="role-selection-minimal">
+                  <div 
+                    className={`role-item ${selectedRole === "freelance" ? "active" : ""}`}
+                    onClick={() => setSelectedRole("freelance")}
+                  >
+                    <div className="role-checkbox">
+                      <div className="role-checkbox-inner" />
+                    </div>
+                    <span>Freelance</span>
+                  </div>
+                  
+                  <div 
+                    className={`role-item ${selectedRole === "entreprise" ? "active" : ""}`}
+                    onClick={() => setSelectedRole("entreprise")}
+                  >
+                    <div className="role-checkbox">
+                      <div className="role-checkbox-inner" />
+                    </div>
+                    <span>Entreprise</span>
+                  </div>
+
+                  <div 
+                    className={`role-item ${selectedRole === "client" ? "active" : ""}`}
+                    onClick={() => setSelectedRole("client")}
+                  >
+                    <div className="role-checkbox">
+                      <div className="role-checkbox-inner" />
+                    </div>
+                    <span>Porteur de projet</span>
                   </div>
                 </div>
 
@@ -582,126 +594,129 @@ export const Connexion = () => {
                   className="connexion-form"
                   onSubmit={handleSignupStep1Submit}
                 >
-                  {/* Nom et Prénom */}
+                  {/* Nom et Prénom en une ligne */}
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="nom">
-                        <FiUser /> Nom
-                      </label>
-                      <input
-                        type="text"
-                        id="nom"
-                        name="lastName"
-                        placeholder="Votre nom"
-                        value={signupData.lastName}
-                        onChange={handleSignupChange}
-                        required
-                      />
+                      <div className="input-wrapper">
+                        <FiUser className="input-icon-left" />
+                        <input
+                          type="text"
+                          id="nom"
+                          name="lastName"
+                          placeholder="Nom"
+                          value={signupData.lastName}
+                          onChange={handleSignupChange}
+                          required
+                        />
+                      </div>
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="prenom">
-                        <FiUser /> Prénom
-                      </label>
+                      <div className="input-wrapper">
+                        <FiUser className="input-icon-left" />
+                        <input
+                          type="text"
+                          id="prenom"
+                          name="firstName"
+                          placeholder="Prénom"
+                          value={signupData.firstName}
+                          onChange={handleSignupChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Genre Custom Dropdown */}
+                  <div className="form-group">
+                    <div className="input-wrapper" onClick={(e) => { e.stopPropagation(); toggleDropdown('gender'); }}>
+                      <FiUser className="input-icon-left" />
+                      <div className={`custom-select-trigger ${signupData.gender ? 'has-value' : ''}`}>
+                        {signupData.gender === 'MALE' ? 'Homme' : signupData.gender === 'FEMALE' ? 'Femme' : 'Genre'}
+                      </div>
+                      <FiChevronDown className="select-arrow-icon" />
+                      
+                      {activeDropdown === 'gender' && (
+                        <div className="custom-dropdown-list">
+                          <div className="dropdown-option" onClick={() => handleSelectOption('gender', 'MALE')}>Homme</div>
+                          <div className="dropdown-option" onClick={() => handleSelectOption('gender', 'FEMALE')}>Femme</div>
+                        </div>
+                      )}
+                    </div>
+                    {/* Hidden input for form validity if needed, but here we use state */}
+                  </div>
+
+                  {/* Email */}
+                  <div className="form-group">
+                    <div className="input-wrapper">
+                      <FiMail className="input-icon-left" />
                       <input
-                        type="text"
-                        id="prenom"
-                        name="firstName"
-                        placeholder="Votre prénom"
-                        value={signupData.firstName}
+                        type="email"
+                        id="signup-email"
+                        name="email"
+                        placeholder="E-mail"
+                        value={signupData.email}
                         onChange={handleSignupChange}
                         required
                       />
                     </div>
-                  </div>
-
-                  {/* Email */}
-                  <div className="form-group">
-                    <label htmlFor="signup-gender">
-                      <FiUser /> Genre
-                    </label>
-                    <select
-                      id="signup-gender"
-                      name="gender"
-                      value={signupData.gender}
-                      onChange={handleSignupChange}
-                      required
-                    >
-                      <option value="">Sélectionnez votre genre</option>
-                      <option value="MALE">Homme</option>
-                      <option value="FEMALE">Femme</option>
-                    </select>
-                  </div>
-
-                  {/* Email */}
-                  <div className="form-group">
-                    <label htmlFor="signup-email">
-                      <FiMail /> Email
-                    </label>
-                    <input
-                      type="email"
-                      id="signup-email"
-                      name="email"
-                      placeholder="votre@email.com"
-                      value={signupData.email}
-                      onChange={handleSignupChange}
-                      required
-                    />
                   </div>
 
                   {/* Pays et Ville pour PORTEUR DE PROJET uniquement */}
                   {selectedRole === "client" && (
                     <>
-                      {/* Pays avec select */}
+                      {/* Pays Custom Dropdown */}
                       <div className="form-group">
-                        <label htmlFor="pays-client">
-                          <FiMapPin /> Pays
-                        </label>
-                        <select
-                          id="pays-client"
-                          name="country"
-                          value={signupData.country}
-                          onChange={handleSignupChange}
-                          required
-                        >
-                          <option value="">Sélectionnez votre pays</option>
-                          {paysAfricains.map((country, index) => (
-                            <option key={index} value={country}>
-                              {country}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="input-wrapper" onClick={(e) => { e.stopPropagation(); toggleDropdown('country'); }}>
+                          <FiMapPin className="input-icon-left" />
+                          <div className={`custom-select-trigger ${signupData.country ? 'has-value' : ''}`}>
+                            {signupData.country || 'Sélectionnez votre pays'}
+                          </div>
+                          <FiChevronDown className="select-arrow-icon" />
+
+                          {activeDropdown === 'country' && (
+                            <div className="custom-dropdown-list">
+                              {paysAfricains.map((country, index) => (
+                                <div 
+                                  key={index} 
+                                  className="dropdown-option" 
+                                  onClick={() => handleSelectOption('country', country)}
+                                >
+                                  {country}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Ville */}
                       <div className="form-group">
-                        <label htmlFor="ville-client">
-                          <FiMapPin /> Ville
-                        </label>
-                        <input
-                          type="text"
-                          id="ville-client"
-                          name="city"
-                          placeholder="Dakar"
-                          value={signupData.city}
-                          onChange={handleSignupChange}
-                          required
-                        />
+                        <div className="input-wrapper">
+                          <FiMapPin className="input-icon-left" />
+                          <input
+                            type="text"
+                            id="ville-client"
+                            name="city"
+                            placeholder="Ville"
+                            value={signupData.city}
+                            onChange={handleSignupChange}
+                            required
+                          />
+                        </div>
                       </div>
                     </>
                   )}
 
                   {/* Mot de passe */}
                   <div className="form-group">
-                    <label htmlFor="signup-password">
-                      <FiLock /> Mot de passe
-                    </label>
-                    <div className="password-input">
+                    <div className="input-wrapper">
+                      <FiLock className="input-icon-left" />
                       <input
                         type={showPassword ? "text" : "password"}
                         id="signup-password"
                         name="password"
-                        placeholder="••••••••"
+                        placeholder="Mot de passe"
                         value={signupData.password}
                         onChange={handleSignupChange}
                         required
@@ -715,271 +730,289 @@ export const Connexion = () => {
                         {showPassword ? <FiEyeOff /> : <FiEye />}
                       </button>
                     </div>
-                    <small className="input-hint">Minimum 8 caractères</small>
                   </div>
 
                   {/* Confirmation mot de passe */}
                   <div className="form-group">
-                    <label htmlFor="confirm-password">
-                      <FiLock /> Confirmer le mot de passe
-                    </label>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      id="confirm-password"
-                      name="confirmPassword"
-                      placeholder="••••••••"
-                      value={signupData.confirmPassword}
-                      onChange={handleSignupChange}
-                      required
-                    />
+                    <div className="input-wrapper">
+                      <FiLock className="input-icon-left" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="confirm-password"
+                        name="confirmPassword"
+                        placeholder="Confirmer Mot de passe"
+                        value={signupData.confirmPassword}
+                        onChange={handleSignupChange}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <FiEyeOff /> : <FiEye />}
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Conditions d'utilisation */}
-                  <div className="form-group">
-                    <label className="checkbox-label">
-                      <input type="checkbox" required />
-                      <span>
-                        J'accepte les{" "}
-                        <a href="/conditions" style={{ color: COLORS.primary }}>
-                          conditions d'utilisation
-                        </a>{" "}
-                        et la{" "}
-                        <a
-                          href="/confidentialite"
-                          style={{ color: COLORS.primary }}
-                        >
-                          politique de confidentialité
-                        </a>
-                      </span>
-                    </label>
+                  {/* Conditions d'utilisation (Mockup style) */}
+                  <div 
+                    className="terms-container"
+                    onClick={() => {
+                      const checkbox = document.getElementById('terms-checkbox-real') as HTMLInputElement;
+                      if (checkbox) checkbox.click();
+                    }}
+                  >
+                    <div className={`terms-checkbox ${signupData.acceptTerms ? 'active' : ''}`}>
+                      <div className="terms-checkbox-inner" />
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      id="terms-checkbox-real"
+                      style={{ display: 'none' }}
+                      checked={signupData.acceptTerms}
+                      onChange={(e) => setSignupData({ ...signupData, acceptTerms: e.target.checked })}
+                      required 
+                    />
+                    <span className="terms-text">
+                      J'accepte les <a href="/conditions">conditions d'utilisation</a> et la <a href="/confidentialite">politique de confidentialité</a>
+                    </span>
                   </div>
 
                   <button
                     type="submit"
                     className="submit-btn"
-                    style={{ backgroundColor: COLORS.primary }}
                     disabled={registerMutation.isPending}
                   >
                     {registerMutation.isPending
-                      ? "Inscription en cours..."
-                      : selectedRole === "client"
-                        ? "Créer mon compte"
-                        : "Continuer"}
-                    {!registerMutation.isPending &&
-                      (selectedRole === "freelance" ||
-                        selectedRole === "entreprise") && (
-                        <FiArrowRight style={{ marginLeft: "8px" }} />
-                      )}
+                      ? "Inscription..."
+                      : "Créer compte"}
                   </button>
+
+                  <div className="auth-redirect-prompt">
+                    Vous avez déjà un compte ? 
+                    <button type="button" className="auth-redirect-link" onClick={() => setIsLogin(true)}>
+                      Se connecter
+                    </button>
+                  </div>
                 </form>
               </>
             )}
 
             {/* ÉTAPE 2 : Compléter le profil (Freelance/Entreprise uniquement) */}
             {signupStep === 2 && (
-              <>
+              <div className="step2-container">
+                <div className="step2-header-text">
+                  <h2 className="connexion-title">Complétez vos informations</h2>
+                  <p className="connexion-subtitle">pour finaliser la création de votre compte</p>
+                </div>
+
+                <form className="step2-form" onSubmit={handleSignupStep2Submit}>
+                  <div className="step2-main-content">
+                    {/* Colonne Gauche : Avatar */}
+                    <div className="avatar-section">
+                      <button type="button" className="generate-avatar-btn">Générez votre avatar</button>
+                      <div className="avatar-placeholder">
+                        <FiCamera />
+                      </div>
+                    </div>
+
+                    {/* Colonne Milieu : Infos déjà saisies (Lecture seule / Résumé) */}
+                    <div className="info-display-grid">
+                      <div className="info-block">
+                        <span className="info-label">Nom & prenom</span>
+                        <span className="info-value">{signupData.firstName} {signupData.lastName}</span>
+                      </div>
+
+                      <div className="info-block">
+                        <span className="info-label">Adresse courriel</span>
+                        <span className="info-value email">{signupData.email}</span>
+                      </div>
+
+                      <div className="info-block">
+                        <span className="info-label">Secteur d'activité <FiChevronDown className="info-label-icon" /></span>
+                        <div className="input-wrapper" onClick={(e) => { e.stopPropagation(); toggleDropdown('sector'); }}>
+                          <div className={`custom-select-trigger ${signupData.sector ? 'has-value' : ''}`}>
+                            {signupData.sector || 'Secteur d\'activité'}
+                          </div>
+                          {activeDropdown === 'sector' && (
+                            <div className="custom-dropdown-list">
+                              {secteursActivite.map((sector, index) => (
+                                <div key={index} className="dropdown-option" onClick={() => handleSelectOption('sector', sector)}>
+                                  {sector}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="info-block">
+                        <span className="info-label">
+                          {selectedRole === "freelance" ? "Année d'expérience" : "Année d'exercice"}
+                        </span>
+                        <div className="input-wrapper">
+                          <input 
+                            type="number" 
+                            name="experienceYears"
+                            placeholder="5 ans" 
+                            value={signupData.experienceYears}
+                            onChange={handleSignupChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="info-block">
+                        <span className="info-label">Téléphone</span>
+                        <div className="input-wrapper">
+                          <input 
+                            type="tel" 
+                            name="phoneNumber"
+                            placeholder="+237 680 45 89 65" 
+                            value={signupData.phoneNumber}
+                            onChange={handleSignupChange}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Colonne Droite : Nouvelles infos */}
+                    <div className="info-display-grid">
+                      <div className="info-block">
+                        <span className="info-label">
+                          {selectedRole === "freelance" ? "Nom d'utilisateur" : "Nom de l'entreprise"}
+                        </span>
+                        <div className="input-wrapper">
+                          <input 
+                            type="text" 
+                            name={selectedRole === "freelance" ? "username" : "companyName"}
+                            placeholder={selectedRole === "freelance" ? "@Olstudio" : "Nom de l'entreprise"} 
+                            value={selectedRole === "freelance" ? signupData.username : signupData.companyName}
+                            onChange={handleSignupChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-row" style={{ gap: '15px' }}>
+                        <div className="info-block" style={{ flex: 1 }}>
+                          <span className="info-label">Pays <FiChevronDown className="info-label-icon" /></span>
+                          <div className="input-wrapper" onClick={(e) => { e.stopPropagation(); toggleDropdown('country_step2'); }}>
+                            <div className={`custom-select-trigger ${signupData.country ? 'has-value' : ''}`}>
+                              {signupData.country || 'Cameroun'}
+                            </div>
+                            {activeDropdown === 'country_step2' && (
+                              <div className="custom-dropdown-list">
+                                {paysAfricains.map((country, index) => (
+                                  <div key={index} className="dropdown-option" onClick={() => handleSelectOption('country', country)}>
+                                    {country}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="info-block" style={{ flex: 1 }}>
+                          <span className="info-label">Ville <FiChevronDown className="info-label-icon" /></span>
+                          <div className="input-wrapper">
+                            <input 
+                              type="text" 
+                              name="city"
+                              placeholder="Yaoundé" 
+                              value={signupData.city}
+                              onChange={handleSignupChange}
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="info-block">
+                        <span className="info-label">Spécialisation</span>
+                        <div className="input-wrapper">
+                          <input 
+                            type="text" 
+                            name="specialization"
+                            placeholder="Brand design" 
+                            value={signupData.specialization}
+                            onChange={handleSignupChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="info-block">
+                        <span className="info-label">Tag métier</span>
+                        <div className="input-wrapper">
+                          <input 
+                            type="text" 
+                            placeholder="Tapez un tag et appuyez sur Entrée" 
+                            value={currentTag}
+                            onChange={(e) => setCurrentTag(e.target.value)}
+                            onKeyDown={handleAddTag}
+                          />
+                        </div>
+                        <div className="tags-container">
+                          {signupData.tags.map((tag, index) => (
+                            <span 
+                              key={index} 
+                              className="tag-chip"
+                              onClick={() => handleRemoveTag(tag)}
+                            >
+                              {tag}
+                              <FiX className="tag-remove-icon" />
+                            </span>
+                          ))}
+                          {signupData.tags.length === 0 && !currentTag && (
+                            <span className="tag-chip" style={{ background: '#f3f4f6', color: '#9ca3af' }}>Ex: Logo design</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="info-block">
+                        <span className="info-label">Description</span>
+                        <div className="step2-description-box">
+                          <textarea 
+                            name="bio"
+                            placeholder="Présentez-vous brièvement..."
+                            value={signupData.bio}
+                            onChange={handleSignupChange}
+                            required
+                            minLength={50}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="step2-bottom">
+                    <div className="step2-submit-container">
+                      <button 
+                        type="submit" 
+                        className="step2-submit-btn"
+                        disabled={registerMutation.isPending}
+                      >
+                        {registerMutation.isPending ? "Enregistrement..." : selectedRole === "entreprise" ? "Enregistrer" : "Créer mon compte"}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+
                 <button
                   className="back-step-button"
                   onClick={goBackToStep1}
                   type="button"
+                  style={{ alignSelf: 'flex-start', marginTop: '10px' }}
                 >
-                  <FiArrowLeft /> Retour
+                  <FiArrowLeft /> Retour à l'étape précédente
                 </button>
-
-                <form
-                  className="connexion-form"
-                  onSubmit={handleSignupStep2Submit}
-                >
-                  {/* Téléphone */}
-                  <div className="form-group">
-                    <label htmlFor="telephone">
-                      <FiPhone /> Téléphone
-                    </label>
-                    <input
-                      type="tel"
-                      id="telephone"
-                      name="phoneNumber"
-                      placeholder="+221 XX XXX XX XX"
-                      value={signupData.phoneNumber}
-                      onChange={handleSignupChange}
-                      required
-                    />
-                  </div>
-
-                  {/* Pays avec select */}
-                  <div className="form-group">
-                    <label htmlFor="pays">
-                      <FiMapPin /> Pays
-                    </label>
-                    <select
-                      id="country"
-                      name="country"
-                      value={signupData.country}
-                      onChange={handleSignupChange}
-                      required
-                    >
-                      <option value="">Sélectionnez votre pays</option>
-                      {paysAfricains.map((country, index) => (
-                        <option key={index} value={country}>
-                          {country}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Ville */}
-                  <div className="form-group">
-                    <label htmlFor="city">
-                      <FiMapPin /> Ville
-                    </label>
-                    <input
-                      type="text"
-                      id="city"
-                      name="city"
-                      placeholder="Dakar"
-                      value={signupData.city}
-                      onChange={handleSignupChange}
-                      required
-                    />
-                  </div>
-
-                  {/* Nom de l'entreprise (uniquement pour entreprise) */}
-                  {selectedRole === "entreprise" && (
-                    <div className="form-group">
-                      <label htmlFor="nomEntreprise">
-                        <FiBriefcase /> Nom de l'entreprise
-                      </label>
-                      <input
-                        type="text"
-                        id="nomEntreprise"
-                        name="companyName"
-                        placeholder="Nom de votre entreprise"
-                        value={signupData.companyName}
-                        onChange={handleSignupChange}
-                        required
-                      />
-                    </div>
-                  )}
-
-                  {/* Secteur d'activité avec select */}
-                  <div className="form-group">
-                    <label htmlFor="secteur">
-                      <FiBriefcase /> Secteur d'activité
-                    </label>
-                    <select
-                      id="secteur"
-                      name="sector"
-                      value={signupData.sector}
-                      onChange={handleSignupChange}
-                      required
-                    >
-                      <option value="">Sélectionnez votre secteur</option>
-                      {secteursActivite.map((sector, index) => (
-                        <option key={index} value={sector}>
-                          {sector}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Spécialité */}
-                  <div className="form-group">
-                    <label htmlFor="specialite">
-                      <FiBriefcase /> Spécialité
-                    </label>
-                    <input
-                      type="text"
-                      id="specialite"
-                      name="specialization"
-                      placeholder={
-                        selectedRole === "freelance"
-                          ? "Ex: Développeur Full-Stack"
-                          : "Ex: Construction de bâtiments"
-                      }
-                      value={signupData.specialization}
-                      onChange={handleSignupChange}
-                      required
-                    />
-                    <small className="input-hint">
-                      Précisez votre spécialité dans le secteur{" "}
-                      {signupData.sector || "sélectionné"}
-                    </small>
-                  </div>
-
-                  {/* Années d'expérience/exercice */}
-                  <div className="form-group">
-                    <label htmlFor="anneesExperience">
-                      <FiCalendar />{" "}
-                      {selectedRole === "freelance"
-                        ? "Années d'expérience"
-                        : "Années d'exercice"}
-                    </label>
-                    <input
-                      type="number"
-                      id="anneesExperience"
-                      name="experienceYears"
-                      placeholder="Ex: 5"
-                      min="0"
-                      max="50"
-                      value={signupData.experienceYears}
-                      onChange={handleSignupChange}
-                      required
-                    />
-                  </div>
-
-                  {/* Description/Bio */}
-                  <div className="form-group">
-                    <label htmlFor="description">
-                      <FiFileText />{" "}
-                      {selectedRole === "freelance"
-                        ? "Bio / Présentation"
-                        : "Description de l'entreprise"}
-                    </label>
-                    <textarea
-                      id="description"
-                      name="bio"
-                      placeholder={
-                        selectedRole === "freelance"
-                          ? "Présentez-vous brièvement, vos compétences, votre parcours..."
-                          : "Décrivez votre entreprise, vos services, votre mission..."
-                      }
-                      rows={4}
-                      value={signupData.bio}
-                      onChange={handleSignupChange}
-                      required
-                      minLength={50}
-                    />
-                    <small className="input-hint">
-                      Minimum 50 caractères ({signupData.bio.length}/50)
-                    </small>
-                  </div>
-                  <button
-                    type="submit"
-                    className="submit-btn"
-                    style={{ backgroundColor: COLORS.primary }}
-                    disabled={registerMutation.isPending}
-                  >
-                    {registerMutation.isPending
-                      ? "Inscription en cours..."
-                      : "Créer mon compte"}
-                  </button>
-                </form>
-              </>
+              </div>
             )}
           </>
         )}
 
-        {/* Lien pour basculer (seulement à l'étape 1) */}
-        {signupStep === 1 && (
-          <p className="toggle-link">
-            {isLogin
-              ? "Vous n'avez pas de compte ?"
-              : "Vous avez déjà un compte ?"}
-            <button onClick={toggleForm} style={{ color: COLORS.primary }}>
-              {isLogin ? "S'inscrire" : "Se connecter"}
-            </button>
-          </p>
-        )}
       </div>
     </div>
   );

@@ -181,7 +181,8 @@ function ProfilPublicFreelance() {
     toStringValue(liveProfilePayload.userId) ||
       toStringValue(liveProfilePayload.id) ||
       toStringValue(liveProfilePayload.firstName) ||
-      toStringValue(liveProfilePayload.lastName),
+      toStringValue(liveProfilePayload.lastName) ||
+      toStringValue(liveProfilePayload.companyName),
   );
 
   const isResolvingUsername =
@@ -220,24 +221,32 @@ function ProfilPublicFreelance() {
       `${toStringValue(liveProfilePayload.city)}, ${toStringValue(liveProfilePayload.country)}`,
   );
 
+  const isEnterprise = Boolean(liveProfilePayload.companyName) || liveProfilePayload.type === 'ENTERPRISE';
+
   const freelance = {
     id:
       toStringValue(liveProfilePayload.userId) ||
       toStringValue(liveProfilePayload.id) ||
       '',
-    nom: toStringValue(liveProfilePayload.lastName),
-    prenom: toStringValue(liveProfilePayload.firstName),
+    nom: isEnterprise 
+      ? toStringValue(liveProfilePayload.companyName) 
+      : toStringValue(liveProfilePayload.lastName),
+    prenom: isEnterprise ? '' : toStringValue(liveProfilePayload.firstName),
     photo:
       toStringValue(liveProfilePayload.avatarUrl) ||
       `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(
-        toStringValue(liveProfilePayload.firstName) && toStringValue(liveProfilePayload.lastName)
+        isEnterprise 
+          ? toStringValue(liveProfilePayload.companyName) || 'entreprise'
+          : toStringValue(liveProfilePayload.firstName) && toStringValue(liveProfilePayload.lastName)
           ? `${toStringValue(liveProfilePayload.firstName)}-${toStringValue(liveProfilePayload.lastName)}`
           : 'jobty-user',
       )}`,
     couverture:
-      toStringValue(liveProfilePayload.coverImageUrl),
+      toStringValue(liveProfilePayload.coverImageUrl) || 
+      toStringValue(liveProfilePayload.bannerImage),
     specialite:
-      toStringValue(liveProfilePayload.specialty) || 'Freelance',
+      toStringValue(liveProfilePayload.specialty) || 
+      (isEnterprise ? 'Entreprise' : 'Freelance'),
     secteur: toStringValue(liveProfilePayload.sector),
     ville: locationParts.ville || toStringValue(liveProfilePayload.city),
     pays: locationParts.pays || toStringValue(liveProfilePayload.country),
@@ -269,6 +278,7 @@ function ProfilPublicFreelance() {
         'Types de projets non renseignés.',
     },
     actionButtonType,
+    isEnterprise,
   };
 
   const displayLocation =
@@ -374,7 +384,7 @@ function ProfilPublicFreelance() {
         />
       );
     }
-    return stars;
+    return <div className="stars-row">{stars}</div>;
   };
 
   const handleContactClick = () => {
@@ -634,9 +644,11 @@ function ProfilPublicFreelance() {
             <div className="profil-info-section">
               <div className="profil-info-main">
                 <div className="profil-name-row">
-                  <h1 className="profil-name">{freelance.prenom} {freelance.nom}</h1>
+                  <h1 className="profil-name">
+                    {freelance.isEnterprise ? freelance.nom : `${freelance.prenom} ${freelance.nom}`.trim()}
+                  </h1>
                   <span className="profil-badge-freelance">
-                    <FiBriefcase /> Freelance
+                    <FiBriefcase /> {freelance.isEnterprise ? 'Entreprise' : 'Freelance'}
                   </span>
                 </div>
                 <p className="profil-specialite">{freelance.specialite}</p>
