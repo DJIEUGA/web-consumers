@@ -28,6 +28,7 @@
   transition: all 0.2s ease;
   font-weight: 500;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  z-index: 10;
 }
 
 .back-button:hover {
@@ -853,26 +854,109 @@
   color: #ef4444;
 }
 
+@media (max-width: 1024px) {
+  .connexion-card.step2-active {
+    max-width: 90%;
+  }
+}
+
 @media (max-width: 768px) {
+  .connexion-card {
+    padding: 40px 30px;
+    max-height: none;
+    overflow-y: visible;
+    margin: auto;
+  }
+  
+  .connexion-container {
+    display: flex;
+    flex-direction: column;
+    padding: 60px 20px 20px 20px;
+  }
+  
   .step2-main-content {
     grid-template-columns: 1fr;
+    gap: 30px;
   }
   
   .avatar-section {
     order: -1;
   }
+
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .role-selection-minimal {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .back-button {
+    top: 20px;
+    left: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
 }
 
-/* Responsive */
+/* Responsive Mobile */
 @media (max-width: 480px) {
+  .connexion-container {
+    padding: 60px 15px 20px 15px;
+  }
+
   .connexion-card {
-    padding: 32px 24px;
-    border-radius: 0;
-    min-height: 100vh;
-    max-width: none;
+    padding: 30px 20px;
+    border-radius: 20px;
+    width: 100%;
+    margin: auto;
   }
   
-  .connexion-container {
-    padding: 0;
+  .back-button {
+    top: 15px;
+    left: 15px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .connexion-title {
+    font-size: 22px;
+  }
+
+  .connexion-subtitle {
+    font-size: 13px;
+    margin-bottom: 24px;
+    max-width: 100%;
+  }
+
+  .connexion-form input,
+  .connexion-form select,
+  .custom-select-trigger {
+    padding: 12px 16px 12px 42px;
+    font-size: 14px;
+  }
+
+  .input-icon-left {
+    left: 14px;
+    font-size: 16px;
+  }
+
+  .select-arrow-icon {
+    right: 14px;
+  }
+
+  .submit-btn {
+    max-width: 100%;
+  }
+
+  .role-item span {
+    font-size: 13px;
+  }
+  
+  .terms-text {
+    font-size: 12px;
   }
 }
