@@ -1124,21 +1124,21 @@ function SearchResults() {
           <p className="search-card-subtitle">
             {result.specialite || result.secteur} • {result.ville}, {result.pays}
           </p>
-        </div>
-      </div>
 
-      <div className="search-card-tags">
-        {result.tags.slice(0, 3).map((tag, index) => (
-          <span key={index} className="search-tag">
-            {tag}
-          </span>
-        ))}
+          <div className="search-card-tags">
+            {result.tags.slice(0, 3).map((tag, index) => (
+              <span key={index} className="search-tag">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="search-card-stats">
         <div className="search-card-projects">
           <span className="search-projects-number">
-            {result.projetsCollaboration.toString().padStart(2, '0')}
+            {result.projetsCollaboration}
           </span>
           <span className="search-projects-label">
             projets de
@@ -1207,7 +1207,7 @@ function SearchResults() {
 
       <div className="search-card-projects">
         <span className="search-projects-number">
-          {result.projetsCollaboration.toString().padStart(2, '0')}
+          {result.projetsCollaboration}
         </span>
         <span className="search-projects-label">
           projets de
@@ -1247,7 +1247,7 @@ function SearchResults() {
       <header className="search-header">
         <div className="search-header-content">
           <div className="search-logo" onClick={() => navigate("/")}>
-            <Logo alt="Jobty" style={{ width: "140px" }} />
+            <Logo alt="Jobty" />
           </div>
 
           <nav className="search-nav desktop-only">
