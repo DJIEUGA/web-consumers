@@ -1,7 +1,8 @@
 /* ========== CONTAINER PRINCIPAL ========== */
 .connexion-container {
   min-height: 100vh;
-  background-color: #f1f8f9; /* Light cyan background from mockup */
+  background-color: #f1f8f9;
+  /* Light cyan background from mockup */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +28,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  z-index: 10;
 }
 
 .back-button:hover {
@@ -57,8 +59,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Logo */
@@ -79,7 +88,8 @@
   text-align: center;
   font-size: 24px;
   font-weight: 700;
-  color: #5d4899; /* Dark purple/indigo from image */
+  color: #5d4899;
+  /* Dark purple/indigo from image */
   margin-bottom: 8px;
 }
 
@@ -137,7 +147,8 @@
 }
 
 .form-group label {
-  display: none; /* Hide labels as per design */
+  display: none;
+  /* Hide labels as per design */
 }
 
 /* Input Wrapper to hold icons */
@@ -173,7 +184,8 @@
   transition: all 0.2s ease;
   background: #f3f4f6;
   font-family: inherit;
-  appearance: none; /* For custom select arrow */
+  appearance: none;
+  /* For custom select arrow */
 }
 
 .connexion-form input:focus,
@@ -185,7 +197,8 @@
 }
 
 .connexion-form input::placeholder {
-  color: #b4b9c5; /* Lighter gray for placeholder */
+  color: #b4b9c5;
+  /* Lighter gray for placeholder */
 }
 
 /* Custom Select Styles (Custom Dropdown) */
@@ -299,7 +312,8 @@
 
 /* Bouton submit */
 .submit-btn {
-  width: 100%; /* Full width for the button or fit-content centered */
+  width: 100%;
+  /* Full width for the button or fit-content centered */
   max-width: 220px;
   align-self: center;
   padding: 14px 20px;
@@ -627,7 +641,8 @@
   font-weight: 500;
 }
 
-.verification-helper, .verification-footer {
+.verification-helper,
+.verification-footer {
   font-size: 13px;
   color: #9ca3af;
   line-height: 1.5;
@@ -651,7 +666,7 @@
   color: #374151;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .generate-avatar-btn:hover {
@@ -747,7 +762,8 @@
 }
 
 .step2-input-group .input-wrapper .input-icon-left {
-  display: none; /* Mockup doesn't show icons inside inputs for step 2 */
+  display: none;
+  /* Mockup doesn't show icons inside inputs for step 2 */
 }
 
 /* Tags / Chips */
@@ -853,26 +869,145 @@
   color: #ef4444;
 }
 
-@media (max-width: 768px) {
-  .step2-main-content {
-    grid-template-columns: 1fr;
-  }
-  
-  .avatar-section {
-    order: -1;
+@media (max-width: 1024px) {
+  .connexion-card.step2-active {
+    max-width: 100%;
   }
 }
 
-/* Responsive */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .connexion-card {
-    padding: 32px 24px;
-    border-radius: 0;
-    min-height: 100vh;
-    max-width: none;
+    padding: 40px 30px;
+    max-height: none;
+    overflow-y: visible;
+    margin: auto;
   }
-  
+
   .connexion-container {
-    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Center horizontally in the viewport */
+    align-items: center;
+    padding: 40px 20px;
+    min-height: 100vh;
   }
-}
+
+  .step2-main-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 0 10px;
+  }
+
+  .step2-submit-container {
+    justify-content: center;
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .step2-submit-btn {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .info-block .input-wrapper input,
+  .info-block .custom-select-trigger {
+    padding-left: 42px;
+    /* Matching Step 1 text alignment exactly */
+  }
+
+  /* To match Step 1 exactly (text alignment), we'd need more padding, but Step 1 has icons. 
+     Let's use a compromise that looks balanced. */
+
+  .avatar-section {
+    order: -1;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .role-selection-minimal {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .back-button {
+    top: 20px;
+    left: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Responsive Mobile */
+@media (max-width: 480px) {
+  .connexion-container {
+    padding: 40px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .connexion-card {
+    padding: 30px 20px;
+    border-radius: 20px;
+    width: 100%;
+    margin: auto;
+  }
+
+  .back-button {
+    top: 15px;
+    left: 15px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .connexion-title {
+    font-size: 22px;
+  }
+
+  .connexion-subtitle {
+    font-size: 13px;
+    margin-bottom: 24px;
+    max-width: 100%;
+  }
+
+  .connexion-form input,
+  .connexion-form select,
+  .custom-select-trigger {
+    padding: 12px 16px 12px 42px;
+    font-size: 14px;
+  }
+
+  .input-icon-left {
+    left: 14px;
+    font-size: 16px;
+  }
+
+  .select-arrow-icon {
+    right: 14px;
+  }
+
+  .submit-btn {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .info-block .input-wrapper input,
+  .info-block .custom-select-trigger {
+    padding-left: 42px;
+  }
+
+  .role-item span {
+    font-size: 13px;
+  }
+
+  .terms-text {
+    font-size: 12px;
+  }
+}
