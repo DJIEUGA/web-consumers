@@ -1,7 +1,8 @@
 /* ========== CONTAINER PRINCIPAL ========== */
 .connexion-container {
   min-height: 100vh;
-  background-color: #f1f8f9; /* Light cyan background from mockup */
+  background-color: #f1f8f9;
+  /* Light cyan background from mockup */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +28,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 10;
 }
 
@@ -58,8 +59,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Logo */
@@ -80,7 +88,8 @@
   text-align: center;
   font-size: 24px;
   font-weight: 700;
-  color: #5d4899; /* Dark purple/indigo from image */
+  color: #5d4899;
+  /* Dark purple/indigo from image */
   margin-bottom: 8px;
 }
 
@@ -138,7 +147,8 @@
 }
 
 .form-group label {
-  display: none; /* Hide labels as per design */
+  display: none;
+  /* Hide labels as per design */
 }
 
 /* Input Wrapper to hold icons */
@@ -174,7 +184,8 @@
   transition: all 0.2s ease;
   background: #f3f4f6;
   font-family: inherit;
-  appearance: none; /* For custom select arrow */
+  appearance: none;
+  /* For custom select arrow */
 }
 
 .connexion-form input:focus,
@@ -186,7 +197,8 @@
 }
 
 .connexion-form input::placeholder {
-  color: #b4b9c5; /* Lighter gray for placeholder */
+  color: #b4b9c5;
+  /* Lighter gray for placeholder */
 }
 
 /* Custom Select Styles (Custom Dropdown) */
@@ -300,7 +312,8 @@
 
 /* Bouton submit */
 .submit-btn {
-  width: 100%; /* Full width for the button or fit-content centered */
+  width: 100%;
+  /* Full width for the button or fit-content centered */
   max-width: 220px;
   align-self: center;
   padding: 14px 20px;
@@ -628,7 +641,8 @@
   font-weight: 500;
 }
 
-.verification-helper, .verification-footer {
+.verification-helper,
+.verification-footer {
   font-size: 13px;
   color: #9ca3af;
   line-height: 1.5;
@@ -652,7 +666,7 @@
   color: #374151;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .generate-avatar-btn:hover {
@@ -748,7 +762,8 @@
 }
 
 .step2-input-group .input-wrapper .input-icon-left {
-  display: none; /* Mockup doesn't show icons inside inputs for step 2 */
+  display: none;
+  /* Mockup doesn't show icons inside inputs for step 2 */
 }
 
 /* Tags / Chips */
@@ -856,7 +871,7 @@
 
 @media (max-width: 1024px) {
   .connexion-card.step2-active {
-    max-width: 90%;
+    max-width: 100%;
   }
 }
 
@@ -867,16 +882,17 @@
     overflow-y: visible;
     margin: auto;
   }
-  
+
   .connexion-container {
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Center horizontally in the viewport */
+    justify-content: center;
+    /* Center horizontally in the viewport */
     align-items: center;
     padding: 40px 20px;
     min-height: 100vh;
   }
-  
+
   .step2-main-content {
     grid-template-columns: 1fr;
     gap: 30px;
@@ -896,7 +912,8 @@
 
   .info-block .input-wrapper input,
   .info-block .custom-select-trigger {
-    padding-left: 42px; /* Matching Step 1 text alignment exactly */
+    padding-left: 42px;
+    /* Matching Step 1 text alignment exactly */
   }
 
   /* To match Step 1 exactly (text alignment), we'd need more padding, but Step 1 has icons. 
@@ -942,7 +959,7 @@
     width: 100%;
     margin: auto;
   }
-  
+
   .back-button {
     top: 15px;
     left: 15px;
@@ -989,8 +1006,8 @@
   .role-item span {
     font-size: 13px;
   }
-  
+
   .terms-text {
     font-size: 12px;
   }
-}
+}
