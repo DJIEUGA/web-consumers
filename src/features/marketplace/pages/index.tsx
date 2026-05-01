@@ -1607,22 +1607,42 @@ export const Marketplace = () =>{
 
       {/* Auth Modal Modal */}
       {authModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div style={{padding: '15px'}} className="bg-white w-full max-w-md rounded-[24px] shadow-2xl flex flex-col items-center text-center">
-            <div className="w-16 h-16 flex-none rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 mt-5 text-3xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ padding: '0 16px' }}>
+          <div
+            className="bg-white w-full max-w-md rounded-[24px] shadow-2xl flex flex-col items-center text-center"
+            style={{ padding: '28px 24px 24px' }}
+          >
+            <div
+              className="flex-none rounded-full flex items-center justify-center"
+              style={{
+                width: '64px',
+                height: '64px',
+                backgroundColor: '#6044a314',
+                color: '#6044a3',
+                fontSize: '28px',
+                marginBottom: '20px',
+              }}
+            >
               <FiUser />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">
+            <h3
+              className="font-bold text-slate-900"
+              style={{ fontSize: '20px', marginBottom: '10px' }}
+            >
               Accès restreint
             </h3>
-            <p className="text-base text-slate-600 mb-8 leading-relaxed">
+            <p
+              className="text-slate-600 leading-relaxed"
+              style={{ fontSize: '14px', marginBottom: '24px', padding: '0 4px' }}
+            >
               Connectez-vous ou créez un compte gratuit pour découvrir le profil détaillé de ce professionnel.
             </p>
-            <div style={{marginTop: '10px'}} className="flex flex-col sm:flex-row gap-3 w-full">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button
                 variant="outline"
                 onClick={() => setAuthModal({ isOpen: false, targetUrl: '', targetState: null })}
-                className="flex-1 py-6 rounded-xl font-semibold border-zinc-200 text-slate-700 cursor-pointer"
+                className="flex-1 rounded-xl font-semibold border-zinc-200 text-slate-700 cursor-pointer"
+                style={{ minHeight: '48px', height: 'auto', padding: '12px 16px' }}
               >
                 Annuler
               </Button>
@@ -1630,8 +1650,8 @@ export const Marketplace = () =>{
                 onClick={() => {
                   navigate('/connexion', { state: { from: authModal.targetUrl } });
                 }}
-                className="flex-1 py-6 rounded-xl font-semibold cursor-pointer"
-                style={{ backgroundColor: COLORS.primary, color: COLORS.white }}
+                className="flex-1 rounded-xl font-semibold cursor-pointer"
+                style={{ backgroundColor: COLORS.primary, color: COLORS.white, minHeight: '48px', height: 'auto', padding: '12px 16px' }}
               >
                 Se connecter
               </Button>
