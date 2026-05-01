@@ -97,23 +97,23 @@ function AuthProfileBootstrap() {
 }
 
 function App() {
-  const [showSplash, setShowSplash] = React.useState(false);
+  // Initialize splash state synchronously to avoid flash
+  const [showSplash, setShowSplash] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           (window.navigator as any).standalone || 
+           document.referrer.includes('android-app://');
+  });
 
-  // Splash screen timer - only for PWA (standalone mode)
+  // Splash screen timer - hide after animation
   useEffect(() => {
-    const isStandalone = 
-      window.matchMedia('(display-mode: standalone)').matches || 
-      (window.navigator as any).standalone || 
-      document.referrer.includes('android-app://');
-
-    if (isStandalone) {
-      setShowSplash(true);
+    if (showSplash) {
       const timer = setTimeout(() => {
         setShowSplash(false);
       }, 3500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [showSplash]);
 
   // Initialize auth from localStorage on app mount
   useEffect(() => {
