@@ -10,6 +10,7 @@
               #ffffff;
   position: relative;
   overflow-x: hidden;
+  padding-top: 80px; /* Add padding for fixed header */
 }
 
 .decouverte-container::before,
@@ -59,8 +60,10 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
 }
 
