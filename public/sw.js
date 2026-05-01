@@ -5,7 +5,8 @@ const ASSETS_TO_CACHE = [
   '/vite.svg',
   '/favicon1.png',
   '/favicon2.png',
-  '/illustration.png'
+  '/illustration.png',
+  '/logo-animation.gif'
 ];
 
 self.addEventListener('install', (event) => {

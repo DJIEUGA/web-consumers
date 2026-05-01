@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect } from "react";
+import SplashScreen from "./components/shared/SplashScreen";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -96,6 +97,24 @@ function AuthProfileBootstrap() {
 }
 
 function App() {
+  // Initialize splash state synchronously to avoid flash
+  const [showSplash, setShowSplash] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           (window.navigator as any).standalone || 
+           document.referrer.includes('android-app://');
+  });
+
+  // Splash screen timer - hide after animation
+  useEffect(() => {
+    if (showSplash) {
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [showSplash]);
+
   // Initialize auth from localStorage on app mount
   useEffect(() => {
     console.log("[APP] App mounted, initializing auth");
@@ -134,6 +153,7 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        {showSplash && <SplashScreen />}
         <Router>
           <AuthProfileBootstrap />
           <InstallAppPrompt />
