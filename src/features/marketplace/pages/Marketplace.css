@@ -758,14 +758,20 @@
 }
 
 .marketplace-container .freelance-card .card-body {
-  height: 70%; /* Increased body to 70% */
-  padding: 75px 15px 15px; /* Increased top padding */
+  height: 70%;
+  padding: 80px 15px 15px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 15px;
+  justify-content: flex-start;
+}
+
+.marketplace-container .card-identity {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
-  justify-content: space-between;
 }
 
 .marketplace-container .card-rating {
@@ -773,30 +779,34 @@
   flex-direction: row;
   justify-content: center;
   gap: 4px;
-  margin-top: -5px; /* Pulling up slightly */
-  margin-bottom: 5px;
 }
 
 .marketplace-container .card-name {
   font-size: 16px;
   font-weight: 700;
   color: #333;
-  margin-bottom: 2px;
-  text-transform: capitalize; /* Ensure first letters are uppercase, rest lowercase */
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  max-width: 220px; /* Sécurité pour la largeur de la carte */
+}
+
+.marketplace-container .card-name .name-mobile {
+  display: none;
 }
 
 .marketplace-container .card-profession {
   font-size: 13px;
   font-weight: 600;
   color: #3DC7C9;
-  margin-bottom: 10px;
 }
 
 .marketplace-container .card-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -835,16 +845,15 @@
 
 .marketplace-container .contact-btn {
   width: 90%;
-  padding: 8px 12px; /* Reduced vertical padding */
+  padding: 8px 12px;
   background: transparent;
   border: 1.5px solid #3DC7C9;
   border-radius: 100px;
   color: #3DC7C9;
-  font-size: 14px; /* Slightly reduced font size too */
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 5px;
 }
 
 .marketplace-container .contact-btn:hover {
@@ -1431,10 +1440,17 @@
 
   .marketplace-container .hero-title {
     font-size: 28px;
+    padding: 0 16px;
+  }
+
+  .marketplace-container .filters-section {
+    padding: 0 16px 24px;
   }
 
   .marketplace-container .filters-bar {
     flex-direction: column;
+    gap: 12px;
+    padding: 16px;
   }
 
   .marketplace-container .filter-item {
@@ -1444,6 +1460,14 @@
 
   .marketplace-container .marketplace-advanced-filters {
     grid-template-columns: 1fr;
+  }
+
+  .marketplace-container .card-name .name-desktop {
+    display: none;
+  }
+
+  .marketplace-container .card-name .name-mobile {
+    display: inline;
   }
 
   .marketplace-container .freelance-grid {

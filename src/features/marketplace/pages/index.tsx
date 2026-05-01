@@ -77,6 +77,7 @@ type MarketplaceCard = {
   id: string;
   username: string;
   nom: string;
+  nomAbrege: string;
   profession: string;
   photo: string;
   coverImage?: string;
@@ -135,21 +136,31 @@ const resolveAvailability = (
 const mapSearchCard = (profile: ProEnterpriseCard): MarketplaceCard => {
   const legacyVerified = (profile as ProEnterpriseCard & { verified?: boolean }).verified;
   const legacyPremium = (profile as ProEnterpriseCard & { premium?: boolean }).premium;
-  const formatName = (str: string) => {
-    if (!str) return '';
-    return str.split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+  const fullNameRaw = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim() || profile.companyName || 'Profil';
+  const words = fullNameRaw.split(' ').filter(Boolean);
+  
+  const formatName = (inputWords: string[], abbreviate: boolean) => {
+    if (inputWords.length === 0) return '';
+    const full = inputWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    
+    if (abbreviate && inputWords.join(' ').length > 20 && inputWords.length >= 2) {
+      const mainPart = full.slice(0, full.length - 1).join(' ');
+      const lastInitial = full[full.length - 1].charAt(0).toUpperCase() + '.';
+      return `${mainPart} ${lastInitial}`;
+    }
+    return full.join(' ');
   };
-  const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim();
-  const name = formatName(profile.companyName || fullName || 'Profil');
+
+  const nameDesktop = formatName(words, false);
+  const nameMobile = formatName(words, true);
   const normalizedType = String(profile.type || '').toUpperCase();
   const availability = resolveAvailability(profile);
 
   return {
     id: profile.userId,
     username: profile.userId,
-    nom: name,
+    nom: nameDesktop, 
+    nomAbrege: nameMobile, 
     profession: profile.specialization || profile.sector || 'Professionnel',
     photo: profile.avatarUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.userId}`,
     coverImage: profile.coverImage || (profile as any).bannerImage || null,
@@ -1270,10 +1281,15 @@ export const Marketplace = () =>{
                 </div>
 
                 <div className="card-body">
-                  <h3 className="card-name">{freelance.nom}</h3>
-                  <p className="card-profession">
-                    {freelance.profession}
-                  </p>
+                  <div className="card-identity">
+                    <h3 className="card-name">
+                      <span className="name-desktop">{freelance.nom}</span>
+                      <span className="name-mobile">{freelance.nomAbrege}</span>
+                    </h3>
+                    <p className="card-profession">
+                      {freelance.profession}
+                    </p>
+                  </div>
 
                   <div className="card-info">
                     <div className="info-item">
@@ -1591,22 +1607,42 @@ export const Marketplace = () =>{
 
       {/* Auth Modal Modal */}
       {authModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div style={{padding: '15px'}} className="bg-white w-full max-w-md rounded-[24px] shadow-2xl flex flex-col items-center text-center">
-            <div className="w-16 h-16 flex-none rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 mt-5 text-3xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ padding: '0 16px' }}>
+          <div
+            className="bg-white w-full max-w-md rounded-[24px] shadow-2xl flex flex-col items-center text-center"
+            style={{ padding: '28px 24px 24px' }}
+          >
+            <div
+              className="flex-none rounded-full flex items-center justify-center"
+              style={{
+                width: '64px',
+                height: '64px',
+                backgroundColor: '#6044a314',
+                color: '#6044a3',
+                fontSize: '28px',
+                marginBottom: '20px',
+              }}
+            >
               <FiUser />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">
+            <h3
+              className="font-bold text-slate-900"
+              style={{ fontSize: '20px', marginBottom: '10px' }}
+            >
               Accès restreint
             </h3>
-            <p className="text-base text-slate-600 mb-8 leading-relaxed">
+            <p
+              className="text-slate-600 leading-relaxed"
+              style={{ fontSize: '14px', marginBottom: '24px', padding: '0 4px' }}
+            >
               Connectez-vous ou créez un compte gratuit pour découvrir le profil détaillé de ce professionnel.
             </p>
-            <div style={{marginTop: '10px'}} className="flex flex-col sm:flex-row gap-3 w-full">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
               <Button
                 variant="outline"
                 onClick={() => setAuthModal({ isOpen: false, targetUrl: '', targetState: null })}
-                className="flex-1 py-6 rounded-xl font-semibold border-zinc-200 text-slate-700 cursor-pointer"
+                className="flex-1 rounded-xl font-semibold border-zinc-200 text-slate-700 cursor-pointer"
+                style={{ minHeight: '48px', height: 'auto', padding: '12px 16px' }}
               >
                 Annuler
               </Button>
@@ -1614,8 +1650,8 @@ export const Marketplace = () =>{
                 onClick={() => {
                   navigate('/connexion', { state: { from: authModal.targetUrl } });
                 }}
-                className="flex-1 py-6 rounded-xl font-semibold cursor-pointer"
-                style={{ backgroundColor: COLORS.primary, color: COLORS.white }}
+                className="flex-1 rounded-xl font-semibold cursor-pointer"
+                style={{ backgroundColor: COLORS.primary, color: COLORS.white, minHeight: '48px', height: 'auto', padding: '12px 16px' }}
               >
                 Se connecter
               </Button>
