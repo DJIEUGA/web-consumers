@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FiHome, 
-  FiZap, 
-  FiMonitor, 
-  FiPenTool, 
+import {
+  FiHome,
+  FiZap,
+  FiMonitor,
+  FiPenTool,
   FiHeart,
   FiBookOpen,
   FiShoppingCart,
@@ -46,6 +46,7 @@ import { COLORS } from '../../../../styles/colors';
 import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../../stores/auth.store';
 import { resolveAvatarUrl } from '@/utils/avatar';
+import { useMarketplaceSearch } from '@/features/marketplace/hooks/useMarketplaceSearch';
 import '../../styles/decouverte/style.css';
 
 export const Decouverte = () => {
@@ -59,11 +60,45 @@ export const Decouverte = () => {
   const authShortcutRoute = isAuthenticated ? getDashboardRoute() : '/connexion';
   const authAvatarUrl = resolveAvatarUrl(authUser);
 
+  const { data: marketplaceData } = useMarketplaceSearch({ page: 0, size: 10 });
+  const realProfiles = marketplaceData?.pros?.content || [];
+
   const goToAuthShortcut = () => {
     navigate(authShortcutRoute, {
       state: !isAuthenticated ? { from: '/decouverte' } : undefined,
     });
   };
+
+  const formatTitleCaseName = (name: string) => {
+    if (!name) return '';
+    return name
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Profils du vivier (mock fallback)
+  const vivierProfiles = [
+    { id: 'mock-1', name: formatTitleCaseName('Léonard Z.'), role: 'Technico-commercial', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Leonard' },
+    { id: 'mock-2', name: formatTitleCaseName('octave K.'), role: 'Community Manager', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Octave' },
+    { id: 'mock-3', name: formatTitleCaseName('Ramses M.'), role: 'Ingenieur', country: "Côte d'Ivoire", available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ramses' },
+    { id: 'mock-4', name: formatTitleCaseName('Tatiana D.'), role: 'Medecin de Sante...', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tatiana' },
+    { id: 'mock-5', name: formatTitleCaseName('Marie Josephine N.'), role: 'Coach, formateur...', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marie' },
+    { id: 'mock-6', name: formatTitleCaseName('Yorick T.'), role: 'Infirmier libéral...', country: 'France', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Yorick' },
+    { id: 'mock-7', name: formatTitleCaseName('TCHOUO F.'), role: 'Ingénierie logicielle', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tchouo' },
+  ];
+
+  const displayProfiles = realProfiles.length > 0
+    ? realProfiles.map(p => ({
+      id: p.userId,
+      name: formatTitleCaseName(`${p.firstName || ''} ${p.lastName || ''}`.trim() || p.companyName || 'Freelance'),
+      role: p.specialization || p.sector || 'Expert',
+      country: p.country || 'Non spécifié',
+      available: p.isAvailable ?? p.available ?? p.disponible ?? true,
+      image: p.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.userId}`
+    }))
+    : vivierProfiles;
 
   // Liste des secteurs d'activité
   const secteurs = [
@@ -165,47 +200,47 @@ export const Decouverte = () => {
     },
 
     {
-  id: 'beaute',
-  nom: 'Beauté & Bien-être',
-  icon: HiOutlineSparkles,
-  description: 'Coiffeurs, esthéticiennes, masseurs...'
-},
+      id: 'beaute',
+      nom: 'Beauté & Bien-être',
+      icon: HiOutlineSparkles,
+      description: 'Coiffeurs, esthéticiennes, masseurs...'
+    },
 
-{
-  id: 'sport',
-  nom: 'Sport & Fitness',
-  icon: FiActivity,
-  description: 'Coachs sportifs, préparateurs physiques...'
-},
+    {
+      id: 'sport',
+      nom: 'Sport & Fitness',
+      icon: FiActivity,
+      description: 'Coachs sportifs, préparateurs physiques...'
+    },
 
-{
-  id: 'plomberie',
-  nom: 'Plomberie & Chauffage',
-  icon: FiDroplet,
-  description: 'Plombiers, chauffagistes, climatisation...'
-},
+    {
+      id: 'plomberie',
+      nom: 'Plomberie & Chauffage',
+      icon: FiDroplet,
+      description: 'Plombiers, chauffagistes, climatisation...'
+    },
 
-{
-  id: 'intelligence-artificielle',
-  nom: 'Intelligence Artificielle',
-  icon: FiCpu,
-  description: 'IA, Machine Learning, Data Science...'
-},
+    {
+      id: 'intelligence-artificielle',
+      nom: 'Intelligence Artificielle',
+      icon: FiCpu,
+      description: 'IA, Machine Learning, Data Science...'
+    },
 
-{
-  id: 'sons-musique',
-  nom: 'Sons & Musique',
-  icon: FiMusic,
-  description: 'Musiciens, beatmakers, ingénieurs son...'
-},
+    {
+      id: 'sons-musique',
+      nom: 'Sons & Musique',
+      icon: FiMusic,
+      description: 'Musiciens, beatmakers, ingénieurs son...'
+    },
 
-{
-  id: 'video',
-  nom: 'Vidéo & Audiovisuel',
-  icon: FiVideo,
-  description: 'Vidéastes, monteurs, réalisateurs...'
-}
-    
+    {
+      id: 'video',
+      nom: 'Vidéo & Audiovisuel',
+      icon: FiVideo,
+      description: 'Vidéastes, monteurs, réalisateurs...'
+    }
+
   ];
 
 
@@ -254,51 +289,51 @@ export const Decouverte = () => {
       {/* Header / Navigation */}
       <header className="navbar-decouverte">
         <div className="header-content">
-          <div 
+          <div
             onClick={() => navigate('/')}
           >
-            <Logo alt="Jobty" style={{width: '140px'}} />
+            <Logo alt="Jobty" style={{ width: '140px' }} />
           </div>
 
           {/* Navigation Desktop */}
           <nav className="header-nav desktop-nav">
-            <a 
-              href="/decouverte" 
+            <a
+              href="/decouverte"
               className="nav-item active"
               onClick={(e) => { e.preventDefault(); navigate('/decouverte'); }}
             >
               Découverte
             </a>
-            <a 
-              href="/marketplace" 
+            <a
+              href="/marketplace"
               className="nav-item"
               onClick={(e) => { e.preventDefault(); navigate('/marketplace'); }}
             >
               Marketplace
             </a>
-            <a 
-              href="/portfolio" 
+            <a
+              href="/portfolio"
               className="nav-item"
               onClick={(e) => { e.preventDefault(); navigate('/portfolio'); }}
             >
               Portfolio
             </a>
-            <a 
-              href="/localisation" 
+            <a
+              href="/localisation"
               className="nav-item"
               onClick={(e) => { e.preventDefault(); navigate('/localisation'); }}
             >
               Localisation
             </a>
-            <a 
-              href="/job-alerte" 
+            <a
+              href="/job-alerte"
               className="nav-item"
               onClick={(e) => { e.preventDefault(); navigate('/job-alerte'); }}
             >
               Job Alert
             </a>
-            <a 
-              href="/job-experience" 
+            <a
+              href="/job-experience"
               className="nav-item"
               onClick={(e) => { e.preventDefault(); navigate('/job-experience'); }}
             >
@@ -307,7 +342,7 @@ export const Decouverte = () => {
           </nav>
 
           <div className="header-actions">
-            <div 
+            <div
               className="profile-icon"
               onClick={goToAuthShortcut}
             >
@@ -324,7 +359,7 @@ export const Decouverte = () => {
             </div>
 
             {/* Bouton burger mobile */}
-            <button 
+            <button
               className="burger-btn"
               onClick={toggleMenu}
               aria-label="Menu"
@@ -339,7 +374,7 @@ export const Decouverte = () => {
       <div className={`sidebar-menu ${menuOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <Logo alt="Jobty" className="sidebar-logo" />
-          <button 
+          <button
             className="close-btn"
             onClick={closeMenu}
             aria-label="Fermer"
@@ -347,46 +382,46 @@ export const Decouverte = () => {
             <FiX />
           </button>
         </div>
-        
+
         <nav className="sidebar-nav">
-          <a 
-            href="/decouverte" 
-            className="active" 
+          <a
+            href="/decouverte"
+            className="active"
             onClick={(e) => { e.preventDefault(); navigate('/decouverte'); closeMenu(); }}
           >
             Découverte
           </a>
-          <a 
-            href="/marketplace" 
+          <a
+            href="/marketplace"
             onClick={(e) => { e.preventDefault(); navigate('/marketplace'); closeMenu(); }}
           >
             Marketplace
           </a>
-          <a 
-            href="/portfolio" 
+          <a
+            href="/portfolio"
             onClick={(e) => { e.preventDefault(); navigate('/portfolio'); closeMenu(); }}
           >
             Portfolio
           </a>
-          <a 
-            href="/localisation" 
+          <a
+            href="/localisation"
             onClick={(e) => { e.preventDefault(); navigate('/localisation'); closeMenu(); }}
           >
             Localisation
           </a>
-          <a 
-            href="/job-alerte" 
+          <a
+            href="/job-alerte"
             onClick={(e) => { e.preventDefault(); navigate('/job-alerte'); closeMenu(); }}
           >
             Job Alert
           </a>
-          <a 
-            href="/job-experience" 
+          <a
+            href="/job-experience"
             onClick={(e) => { e.preventDefault(); navigate('/job-experience'); closeMenu(); }}
           >
             Job Expérience
           </a>
-          <button 
+          <button
             className="sidebar-connexion-btn"
             onClick={() => { goToAuthShortcut(); closeMenu(); }}
           >
@@ -407,16 +442,16 @@ export const Decouverte = () => {
               Trouvez les <span className="highlight">meilleurs talents</span> d'Afrique pour donner vie à vos projets
             </h1>
             <p className="hero-subtitle">
-              Freelances, artisans et entreprises qualifiés à portée de clic.
+              Freelances, et entreprises qualifiés à portée de clic.
             </p>
             <div className="hero-actions">
-              <button 
+              <button
                 className="btn-primary"
                 onClick={() => navigate('/marketplace')}
               >
                 Rechercher un professionnel
               </button>
-              <button 
+              <button
                 className="btn-secondary"
                 onClick={goToAuthShortcut}
               >
@@ -473,7 +508,7 @@ export const Decouverte = () => {
             <h2>Secteurs les plus populaires</h2>
             <p>Explorez nos domaines d'expertise</p>
           </div>
-          
+
           <div className="secteurs-grid">
             {secteurs.slice(0, 10).map((secteur) => {
               const IconComponent = secteur.icon;
@@ -504,12 +539,48 @@ export const Decouverte = () => {
           {/* Call to action secteurs */}
           <div className="decouverte-cta">
             <p className="cta-text">Vous ne trouvez pas votre secteur ?</p>
-            <button 
-              className="cta-button"
-              style={{ backgroundColor: COLORS.primary }}
+            <button
+              className="cta-button cta-outline"
               onClick={() => navigate('/marketplace')}
             >
               Voir tous les secteurs
+            </button>
+          </div>
+        </section>
+
+        {/* SECTION VIVIER DE PROFILS */}
+        <section className="vivier-section reveal">
+          <div className="section-header">
+            <h2>Quelques profils de notre catalogue</h2>
+            <p>Découvrez notre sélection de talents d'exception, prêts à faire décoller vos projets</p>
+          </div>
+
+          <div className="vivier-carousel-wrapper">
+            <div className="vivier-track">
+              {/* Double array for infinite scroll effect */}
+              {[...displayProfiles, ...displayProfiles].map((profile, index) => (
+                <div key={`${profile.id}-${index}`} className="vivier-card">
+                  <img src={profile.image} alt={profile.name} className="vivier-avatar" />
+                  <h3 className="vivier-name">{profile.name}</h3>
+                  <p className="vivier-role">{profile.role}</p>
+                  <p className="vivier-country">{profile.country}</p>
+                  <button
+                    className="vivier-action-btn"
+                    onClick={() => navigate(`/profil-freelance/${profile.id}`)}
+                  >
+                    Voir le profil
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="decouverte-cta" style={{ paddingTop: '50px', paddingBottom: '20px' }}>
+            <button
+              className="cta-button cta-outline"
+              onClick={() => navigate('/marketplace')}
+            >
+              Voir tous les profils
             </button>
           </div>
         </section>
@@ -523,8 +594,8 @@ export const Decouverte = () => {
           <div className="benefits-grid">
             <div className="benefit-card">
               <div className="benefit-icon"><FiUsers /></div>
-              <h3>Expertise Locale</h3>
-              <p>Accédez à des professionnels qui comprennent vos besoins et les spécificités de votre région.</p>
+              <h3>Expertise Garantie</h3>
+              <p>Accédez à des professionnels qui comprennent vos besoins et les spécificités de votre projet.</p>
             </div>
             <div className="benefit-card">
               <div className="benefit-icon"><FiShield /></div>
@@ -562,7 +633,7 @@ export const Decouverte = () => {
             <h2>Ils nous font confiance</h2>
             <p>Découvrez les retours de nos utilisateurs</p>
           </div>
-          
+
           <div className="testimonials-grid">
             <div className="testimonial-card">
               <div className="stars-rating">
@@ -607,9 +678,8 @@ export const Decouverte = () => {
 
           {/* Bouton CTA */}
           <div className="temoignages-cta">
-            <button 
-              className="jobeur-button"
-              style={{ backgroundColor: COLORS.primary }}
+            <button
+              className="jobeur-button cta-outline"
               onClick={goToAuthShortcut}
             >
               Rejoindre la communauté
@@ -625,7 +695,7 @@ export const Decouverte = () => {
             <h2>Foire aux questions</h2>
             <p>Tout ce que vous devez savoir sur Jobty</p>
           </div>
-          
+
           <div className="faq-list">
             {[
               {
@@ -693,7 +763,7 @@ export const Decouverte = () => {
                   Job alerte
                 </a>
               </li>
-               <li>
+              <li>
                 <a href="/job-experience" onClick={(e) => { e.preventDefault(); navigate('/job-experience'); }}>
                   Job expérience
                 </a>

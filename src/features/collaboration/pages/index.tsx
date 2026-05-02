@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   FiX,
@@ -62,6 +62,7 @@ import collaborationApi, {
   type MessageDTO,
   type PublicReviewItem,
 } from "@/features/collaboration/services/collaborationApi";
+import { usePublicProfileById } from "@/features/marketplace/hooks/usePublicProfiles";
 import "../styles/collaboration/style.css";
 
 const COLLAB_STORAGE_PREFIX = "jobty:collaboration:room:";
@@ -108,6 +109,14 @@ type CollaborationLifecycleEvent = {
   roomId: string;
   createdAt: string;
   payload?: Record<string, unknown>;
+};
+
+type MessageUi = {
+  id: string | number;
+  sender: string;
+  text: string;
+  time: string;
+  date: string;
 };
 
 const STEP_TO_STAGE: Record<number, CollaborationStage> = {
@@ -231,7 +240,7 @@ export const CollaborationSpace = () => {
   const [isCheckingExistingReview, setIsCheckingExistingReview] = useState(false);
 
   // États des données
-  const [messages, setMessages] = useState(defaultMessages);
+  const [messages, setMessages] = useState<MessageUi[]>(defaultMessages);
   const [newMessage, setNewMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
 
@@ -367,22 +376,53 @@ export const CollaborationSpace = () => {
     recommande: null,
   });
 
-  // Données du freelance
-  const freelance = {
-    id: 1,
-    nom: "Aminata Koné",
-    poste: "Développeuse Full Stack",
-    photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Aminata",
-    ville: "Abidjan",
-    pays: "Côte d'Ivoire",
-    note: 4.8,
-    avis: 47,
-    projetsRealises: 89,
-    tauxReponse: "98%",
-    delaiReponse: "< 2h",
-    competences: ["React", "Node.js", "MongoDB", "UI/UX"],
-    verified: true,
-  };
+  // Identification des acteurs
+  const roomPair = useMemo(() => parseRoomPair(collaborationRoomId), [collaborationRoomId]);
+  const targetProId = roomPair?.proId || (isUuidLike(incomingId) ? incomingId : "");
+  
+  // Récupération du profil public du freelance
+  const { data: proProfile } = usePublicProfileById(targetProId);
+
+  // Données du freelance (hydratées depuis l'API)
+  const freelance = useMemo(() => {
+    if (proProfile && proProfile.userId) {
+      const stats = proProfile.stats || {};
+      const fullName = `${proProfile.firstName || ""} ${proProfile.lastName || ""}`.trim();
+      
+      return {
+        id: proProfile.userId,
+        nom: fullName || proProfile.username || "Professionnel",
+        poste: proProfile.specialization || proProfile.sector || "Freelance",
+        photo: proProfile.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${proProfile.username || "pro"}`,
+        ville: proProfile.city || "",
+        pays: proProfile.country || "",
+        note: proProfile.averageRating || 0,
+        avis: proProfile.reviewCount || 0,
+        projetsRealises: stats.completedProjects || 0,
+        tauxReponse: "98%",
+        delaiReponse: "< 2h",
+        competences: Array.isArray(proProfile.skills) ? proProfile.skills : [],
+        verified: !!(proProfile.verified || proProfile.isVerified),
+      };
+    }
+    
+    // Fallback aux données par défaut si le profil n'est pas encore chargé
+    return {
+      id: "loading",
+      nom: "Chargement...",
+      poste: "Professionnel",
+      photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=loading",
+      ville: "",
+      pays: "",
+      note: 0,
+      avis: 0,
+      projetsRealises: 0,
+      tauxReponse: "--",
+      delaiReponse: "--",
+      competences: [],
+      verified: false,
+    };
+  }, [proProfile]);
 
   // Données du porteur de projet
   const porteur = {

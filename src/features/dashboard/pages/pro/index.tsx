@@ -148,13 +148,18 @@ function ProDashboard() {
 
   // Fetch dashboard data from hooks (safe defaults)
   const { profile, isLoading: isProfileLoading } = useDashboardProfile();
-  const { data: statsData } = useStatsOverview();
   const { data: transactions = [] } = useTransactions();
   const { data: services = [] } = useServices();
   const { data: posts = [] } = usePosts();
-  const { data: collaborations = [] } = useCollaborations();
   const { data: campagnesPub = [] } = useAdCampaigns();
   const { data: analyticsDataFromHook } = useAnalytics();
+  const { data: statsData, isLoading: isStatsLoading } = useStatsOverview();
+  const { data: collaborations = [], isLoading: isCollabLoading } = useCollaborations();
+
+  useEffect(() => {
+    if (statsData) console.log("Dashboard Stats Data:", statsData);
+    if (collaborations.length > 0) console.log("Dashboard Collaborations:", collaborations);
+  }, [statsData, collaborations]);
 
   const stats = {
     messagesNonLus: 0,
