@@ -168,6 +168,7 @@ function ProDashboard() {
     gainsTotal: 0,
     projetsEnCours: 0,
     projetsRealises: 0,
+    noteMoyenne: 0,
     vuesProfile: 0,
     ongoingProjects: [],
     ...statsData,
@@ -544,6 +545,19 @@ function ProDashboard() {
     setCarteForm({ ...carteForm, [field]: value });
   };
 
+  const handleTagAdd = (tag) => {
+    if (!carteForm.tags.includes(tag) && tag.trim()) {
+      setCarteForm({ ...carteForm, tags: [...carteForm.tags, tag.trim()] });
+    }
+  };
+
+  const handleTagRemove = (tagToRemove) => {
+    setCarteForm({
+      ...carteForm,
+      tags: carteForm.tags.filter((t) => t !== tagToRemove),
+    });
+  };
+
   const handleSaveCarte = () => {
     setCardSaveStatusMessage("");
     updateProProfileMutation.mutate(
@@ -724,6 +738,19 @@ function ProDashboard() {
                       {stats.projetsRealises}
                     </span>
                     <span className="dash-stat-info">missions complétées</span>
+                  </div>
+                </div>
+
+                <div className="dash-stat-card warning">
+                  <div className="dash-stat-icon">
+                    <FiStar />
+                  </div>
+                  <div className="dash-stat-content">
+                    <span className="dash-stat-label">Note obtenue</span>
+                    <span className="dash-stat-value">
+                      {stats.noteMoyenne.toFixed(1)}/5
+                    </span>
+                    <span className="dash-stat-info">avis clients</span>
                   </div>
                 </div>
               </div>

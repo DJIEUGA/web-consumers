@@ -457,6 +457,17 @@ const performanceServices = [
                     <span className="dash-stat-info">missions complétées</span>
                   </div>
                 </div>
+
+                <div className="dash-stat-card warning">
+                  <div className="dash-stat-icon">
+                    <FiStar />
+                  </div>
+                  <div className="dash-stat-content">
+                    <span className="dash-stat-label">Note obtenue</span>
+                    <span className="dash-stat-value">{(statsData?.noteMoyenne || mockStats.noteMoyenne || 0).toFixed(1)}/5</span>
+                    <span className="dash-stat-info">avis clients</span>
+                  </div>
+                </div>
               </div>
 
               <div className="dash-activity-section">
