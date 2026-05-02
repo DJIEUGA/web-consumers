@@ -98,7 +98,8 @@ export function useStatsMonth() {
  * Fetch user stats overview (Pro/Enterprise)
  */
 export function useStatsOverview() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, role } = useAuthStore();
+  const isProOrEnterprise = role === 'ROLE_PRO' || role === 'ROLE_ENTERPRISE';
 
   return useQuery({
     queryKey: DASHBOARD_QUERY_KEYS.statsOverview,
@@ -109,7 +110,7 @@ export function useStatsOverview() {
       }
       return response.data;
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isProOrEnterprise,
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 }

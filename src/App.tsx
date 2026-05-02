@@ -171,7 +171,7 @@ function App() {
               <Route path="/job-alerte" element={<JobAlerte />} />
               <Route path="/job-experience" element={<JobExperience />} />
               <Route
-                path="/collaboration/:freelanceId"
+                path="/collaboration/:spaceId"
                 element={<CollaborationSpace />}
               />
               <Route
