@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   FiX,
@@ -20,18 +20,14 @@ import {
   FiMapPin,
   FiBriefcase,
 } from "react-icons/fi";
-import { FaHandshake } from "react-icons/fa";
 import Logo from "@/components/shared/Logo";
 import { useAuthStore } from "@/stores/auth.store";
 import {
-  collaborationApi,
   type CollaborationSpaceResponse,
-  type PublicReviewItem,
 } from "@/features/collaboration/services/collaborationApi";
 import {
   useCollaborationActions,
   useMySpaces,
-  usePublicProfileReviews,
   useSubmitReview,
 } from "@/features/collaboration/hooks/useCollaboration";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -46,7 +42,6 @@ import {
   canActorPerformAction,
 } from "@/features/collaboration/constants/workflow";
 import {
-  BACKEND_STATUS_TO_STEP,
   buildRoomId,
   clampStep,
   createUiMessage,
@@ -133,8 +128,8 @@ export const CollaborationSpace = () => {
       : "other";
   const isCustomer = actor === "customer";
   const isPro = actor === "pro";
+
   const {
-    createSpace,
     sendMessage: sendMessageMutation,
     acceptRequest,
     rejectRequest,
@@ -145,6 +140,7 @@ export const CollaborationSpace = () => {
     releasePayment: releasePaymentMutation,
     closeSpace: closeSpaceMutation,
   } = useCollaborationActions();
+
   const mySpacesQuery = useMySpaces();
   const currentUserId = String(
     currentUserFromProfile?.userId ||
@@ -160,12 +156,10 @@ export const CollaborationSpace = () => {
     if (incomingId.startsWith("room:")) return incomingId;
     if (isUuidLike(incomingId)) return incomingId;
 
-    // Customer opens a pro room: /collaboration/:proId -> room:<customerId>::<proId>
     if (roleValue === "ROLE_CUSTOMER" && currentUserId) {
       return buildRoomId(currentUserId, incomingId);
     }
 
-    // Pro opens a customer room: /collaboration/:customerId -> room:<customerId>::<proId>
     if (roleValue === "ROLE_PRO" && currentUserId) {
       return buildRoomId(incomingId, currentUserId);
     }
@@ -175,14 +169,11 @@ export const CollaborationSpace = () => {
 
   const resolvedSpaceId = useMemo(() => {
     if (backendSpace?.id) return backendSpace.id;
-
     const spaces = mySpacesQuery.data || [];
-
     if (incomingId && isUuidLike(incomingId)) {
       const exactSpace = spaces.find((space) => space.id === incomingId);
       if (exactSpace?.id) return exactSpace.id;
     }
-
     const pair = parseRoomPair(collaborationRoomId);
     if (pair) {
       const matchedByPair = spaces.find(
@@ -191,12 +182,10 @@ export const CollaborationSpace = () => {
       );
       if (matchedByPair?.id) return matchedByPair.id;
     }
-
     return "";
   }, [backendSpace?.id, collaborationRoomId, incomingId, mySpacesQuery.data]);
 
   const {
-    ownerProfileLookupId,
     freelance,
     porteur,
     isFreelanceIdentityLoading,
@@ -204,8 +193,6 @@ export const CollaborationSpace = () => {
     sidebarIdentityLoading,
     sidebarProfile,
     profileError,
-    proProfileLoadError,
-    cannotIdentifyPro,
     sidebarError,
     sidebarErrorMessage,
   } = useCollaborationProfiles({
@@ -220,15 +207,11 @@ export const CollaborationSpace = () => {
     currentUserProfile,
   });
 
-
   // États de la collaboration
-  const [currentStep, setCurrentStep] = useState(0); // 0 à 9
+  const [currentStep, setCurrentStep] = useState(0); 
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
-  const [decisionState, setDecisionState] =
-    useState<CollaborationDecisionState>("pending");
-  const [lifecycleEvents, setLifecycleEvents] = useState<
-    CollaborationLifecycleEvent[]
-  >([]);
+  const [decisionState, setDecisionState] = useState<CollaborationDecisionState>("pending");
+  const [lifecycleEvents, setLifecycleEvents] = useState<CollaborationLifecycleEvent[]>([]);
   const [reviewSubmitSuccess, setReviewSubmitSuccess] = useState(false);
   const [hasExistingReview, setHasExistingReview] = useState(false);
 
@@ -238,10 +221,6 @@ export const CollaborationSpace = () => {
   const [isRecording, setIsRecording] = useState(false);
 
   const currentStage = STEP_TO_STAGE[currentStep] ?? "CONTACT";
-
-  const canPerformAction = (action: CollaborationAction) => {
-    return canActorPerformAction(action, actor, currentStage);
-  };
 
   const appendLifecycleEvent = (
     type: CollaborationEventType,
@@ -257,7 +236,6 @@ export const CollaborationSpace = () => {
       createdAt: new Date().toISOString(),
       payload,
     };
-
     setLifecycleEvents((prev) => [...prev, event]);
   };
 
@@ -284,7 +262,6 @@ export const CollaborationSpace = () => {
       }, delayMs);
       return;
     }
-
     transitionToStep(step, "STEP_CHANGED", { reason });
   };
 
@@ -298,15 +275,12 @@ export const CollaborationSpace = () => {
     }): UiMessage => {
       const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
       const otherSender: UiMessage["sender"] = selfSender === "porteur" ? "freelance" : "porteur";
-
-      return {
-        ...createUiMessage({
-          id: String(msg.id),
-          sender: msg.senderId === currentUserId ? selfSender : otherSender,
-          text: msg.content,
-          dateInput: msg.sentAt || msg.createdAt,
-        }),
-      };
+      return createUiMessage({
+        id: String(msg.id),
+        sender: msg.senderId === currentUserId ? selfSender : otherSender,
+        text: msg.content,
+        dateInput: msg.sentAt || msg.createdAt,
+      });
     },
     [currentUserId, isCustomer],
   );
@@ -335,7 +309,7 @@ export const CollaborationSpace = () => {
     onAdvanceStep: queueStepTransition,
   });
 
-  const { spaceMessagesQuery, spaceDetailQuery } = useCollaborationWorkspaceSync({
+  const { spaceMessagesQuery } = useCollaborationWorkspaceSync({
     incomingId,
     collaborationRoomId,
     resolvedSpaceId,
@@ -358,39 +332,20 @@ export const CollaborationSpace = () => {
     messagesEndRef,
   });
 
-  // Fonctions utilitaires
-  const toggleMenu = () => setMenuOpen((prev) => !prev);
-
   const sendBackendMessage = async (content: string, optimisticId: string) => {
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) return false;
-
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (!sId) return false;
     try {
       const sentEnvelope = await sendMessageMutation.mutateAsync({
-        spaceId,
+        spaceId: sId,
         params: { content },
       });
       const sent = sentEnvelope.data;
       const sentUi = mapBackendMessageToUi(sent);
-
       setMessages((prev: UiMessage[]) => {
         const withoutOptimistic = prev.filter((msg) => msg.id !== optimisticId);
-
-        const alreadyExistsById = withoutOptimistic.some((msg) => msg.id === sentUi.id);
-        if (alreadyExistsById) return withoutOptimistic;
-
-        const alreadyExistsByContent = withoutOptimistic.some(
-          (msg) =>
-            msg.sender === sentUi.sender &&
-            msg.text.trim() === sentUi.text.trim(),
-        );
-        if (alreadyExistsByContent) return withoutOptimistic;
-
+        if (withoutOptimistic.some((msg) => msg.id === sentUi.id)) return withoutOptimistic;
         return [...withoutOptimistic, sentUi];
-      });
-      appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-        sender: actor,
-        mode: "backend",
       });
       return true;
     } catch (error: any) {
@@ -399,7 +354,7 @@ export const CollaborationSpace = () => {
           msg.id === optimisticId ? { ...msg, deliveryStatus: "failed" } : msg,
         ),
       );
-      toast.error(String(error?.message || "Échec d'envoi du message. Réessayez."));
+      toast.error(error?.message || "Échec d'envoi");
       return false;
     }
   };
@@ -407,68 +362,17 @@ export const CollaborationSpace = () => {
   const sendMessage = async () => {
     const content = newMessage.trim();
     if (!content) return;
-
-    const activeSpaceId = backendSpace?.id || resolvedSpaceId;
-
-    if (activeSpaceId) {
-      if (backendSpace?.status && isMessageBlockedByStatus(backendSpace.status)) {
-        toast.error("La messagerie est indisponible pour ce statut de collaboration.");
-        return;
-      }
-
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
       const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
-      const optimisticId = `optimistic:${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-      setMessages((prev: UiMessage[]) => [
-        ...prev,
-        {
-          ...createUiMessage({
-          id: optimisticId,
-          sender: selfSender,
-          text: content,
-          }),
-          deliveryStatus: "sending",
-        },
-      ]);
+      const optimisticId = `optimistic:${Date.now()}`;
+      setMessages((prev: UiMessage[]) => [...prev, { ...createUiMessage({ id: optimisticId, sender: selfSender, text: content }), deliveryStatus: "sending" }]);
       setNewMessage("");
-
       await sendBackendMessage(content, optimisticId);
     } else {
-      // Offline / Local-only mode fallback
       const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
-      const msg: UiMessage = createUiMessage({
-        id: Date.now(),
-        sender: selfSender,
-        text: content,
-      });
-
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => [...prev, createUiMessage({ id: String(Date.now()), sender: selfSender, text: content })]);
       setNewMessage("");
-      appendLifecycleEvent("CONTACT_MESSAGE_SENT", { sender: actor, mode: "local" });
-
-      if (currentStep === 0 && isCustomer) {
-        setTimeout(() => {
-          transitionToStep(1, "COLLABORATION_PROPOSED");
-        }, 1000);
-      }
-    }
-  };
-
-  const handleVoiceMessage = () => {
-    if (!isRecording) {
-      setIsRecording(true);
-      toast.info("Enregistrement en cours...");
-    } else {
-      setIsRecording(false);
-      toast.success("Message vocal envoyé !");
-    }
-  };
-
-  // Actions métier
-  const handleProposeCollaboration = () => {
-    if (currentStep === 0 && isCustomer) {
-      transitionToStep(1, "COLLABORATION_PROPOSED");
-      toast.success("Demande de collaboration envoyée !");
     }
   };
 
@@ -477,14 +381,10 @@ export const CollaborationSpace = () => {
     if (sId) {
       try {
         await acceptRequest.mutateAsync(sId);
-        toast.success("Collaboration acceptée !");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors de l'acceptation");
-      }
+      } catch (err: any) { toast.error(err?.message); }
     } else {
       setDecisionState("accepted");
       setShowMatchAnimation(true);
-      appendLifecycleEvent("PRO_ACCEPTED_COLLABORATION");
       queueStepTransition(2, "Match confirmed", 3000);
     }
   };
@@ -494,26 +394,9 @@ export const CollaborationSpace = () => {
     if (sId) {
       try {
         await rejectRequest.mutateAsync(sId);
-        toast.success("Collaboration refusée");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors du refus");
-      }
+      } catch (err: any) { toast.error(err?.message); }
     } else {
       setDecisionState("declined");
-      appendLifecycleEvent("PRO_DECLINED_COLLABORATION");
-      toast.error("Vous avez décliné la collaboration.");
-    }
-  };
-
-  const handleRequestMoreInfo = () => {
-    setDecisionState("more_info");
-    appendLifecycleEvent("PRO_REQUESTED_MORE_INFO");
-    toast.info("Demande d'informations complémentaires envoyée.");
-  };
-
-  const handleOpenBrief = () => {
-    if (currentStep === 2 && isCustomer) {
-      transitionToStep(3, "BRIEF_OPENED");
     }
   };
 
@@ -522,182 +405,142 @@ export const CollaborationSpace = () => {
     if (sId) {
       try {
         await submitBriefMutation.mutateAsync({
-          spaceId: sId,
-          params: {
-            objective: brief.objectif,
-            deliverables: brief.livrables,
-            deadline: brief.delai,
-            budget: Number(brief.budget),
-          },
+          id: sId,
+          payload: { objective: brief.objectif, deliverables: brief.livrables, deadline: brief.delai, budget: brief.budget },
         });
-        toast.success("Brief validé et envoyé !");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors de la validation du brief");
-      }
+      } catch (err: any) { toast.error(err?.message); }
     } else {
-      initEtapesFromBrief();
+      initEtapesFromBrief(brief.livrables, brief.budget);
       transitionToStep(4, "STEP_CHANGED", { reason: "Brief validated" });
-      toast.success("Brief validé ! Le contrat a été généré.");
     }
   };
 
   const handleSignContract = async () => {
     const sId = backendSpace?.id || resolvedSpaceId;
     if (sId) {
-      try {
-        await signContractMutation.mutateAsync(sId);
-        toast.success("Contrat signé !");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors de la signature");
-      }
+      try { await signContractMutation.mutateAsync(sId); } catch (err: any) { toast.error(err?.message); }
     } else {
-      accepterContrat();
-      toast.success("Contrat signé par les deux parties !");
+      accepterContrat(isPro ? "freelance" : "porteur");
     }
   };
 
-  const handleConfirmPayment = async (method: string) => {
+  const handleConfirmPayment = async () => {
     const sId = backendSpace?.id || resolvedSpaceId;
     if (sId) {
-      try {
-        await confirmPaymentMutation.mutateAsync(sId);
-        toast.success("Paiement sécurisé avec succès !");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors du paiement");
-      }
+      try { await confirmPaymentMutation.mutateAsync(sId); } catch (err: any) { toast.error(err?.message); }
     } else {
-      deposerPaiement(method);
-      toast.success(`Paiement de ${brief.budget}€ sécurisé via ${method}`);
+      deposerPaiement();
     }
   };
 
-  const handleSubmitDeliverable = async (etapeId: number) => {
+  const handleSubmitDeliverable = async () => {
     const sId = backendSpace?.id || resolvedSpaceId;
     if (sId) {
       try {
         await submitDeliverableMutation.mutateAsync({
-          spaceId: sId,
-          params: { milestoneIndex: etapeId },
+          id: sId,
+          params: {},
         });
-        toast.success("Livrable envoyé pour validation !");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors de l'envoi");
-      }
+      } catch (err: any) { toast.error(err?.message); }
     } else {
-      livrerEtape(etapeId);
-      toast.success("Livrable envoyé !");
+      livrerEtape(1);
     }
   };
 
-  const handleValidateDeliverable = async (etapeId: number) => {
-    const sId = backendSpace?.id || resolvedSpaceId;
-    if (sId) {
-      try {
-        // En backend, la validation d'un livrable peut entraîner le déblocage des fonds
-        // ou simplement marquer l'étape comme complétée.
-        // Ici on simule la validation locale si le hook ne l'expose pas encore.
-        validerEtape(etapeId);
-        toast.success("Livrable validé !");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors de la validation");
-      }
-    } else {
-      validerEtape(etapeId);
-      toast.success("Livrable validé !");
-    }
-  };
+  const { mutateAsync: submitReviewMutation, isPending: submitReviewPending } = useSubmitReview();
 
-  const handleReleasePayment = async () => {
-    const sId = backendSpace?.id || resolvedSpaceId;
-    if (sId) {
-      try {
-        await releasePaymentMutation.mutateAsync(sId);
-        toast.success("Fonds débloqués ! Le freelance va recevoir son paiement.");
-      } catch (err: any) {
-        toast.error(err?.message || "Erreur lors du déblocage");
-      }
-    } else {
-      transitionToStep(9, "STEP_CHANGED", { reason: "Payment released" });
-      toast.success("Paiement débloqué !");
-    }
-  };
-
-  const handleSubmitReview = async (review: { rating: number; comment: string }) => {
-    const sId = backendSpace?.id || resolvedSpaceId;
-    if (sId) {
-      try {
-        // Logique de soumission d'avis via API
-        setReviewSubmitSuccess(true);
-        toast.success("Merci pour votre avis !");
-      } catch (err: any) {
-        toast.error("Erreur lors de l'envoi de l'avis");
-      }
-    } else {
-      setAvis(review);
+  const handleFinalSubmitReview = async () => {
+    if (!resolvedSpaceId || !freelance.id) return;
+    try {
+      await submitReviewMutation({
+        targetProId: String(freelance.id),
+        payload: { rating: avis.note, comment: avis.commentaire },
+      });
       setReviewSubmitSuccess(true);
-      toast.success("Merci pour votre avis !");
-    }
+    } catch (err) {}
   };
 
-  const handleCloseProject = async () => {
-    const sId = backendSpace?.id || resolvedSpaceId;
-    if (sId) {
-      try {
-        await closeSpaceMutation.mutateAsync(sId);
-        toast.success("Projet clôturé avec succès !");
-        navigate("/dashboard");
-      } catch (err: any) {
-        toast.error("Erreur lors de la clôture");
-      }
-    } else {
-      toast.success("Projet terminé. Redirection...");
-      setTimeout(() => navigate("/dashboard"), 2000);
-    }
-  };
-
-  // Construction du ViewModel pour les étapes
   const stageViewModel = useCollaborationStageViewModel({
-    currentStep,
+    messages,
+    porteur,
+    freelance,
+    newMessage,
+    setNewMessage,
+    handleKeyPress: (e) => e.key === "Enter" && sendMessage(),
+    sendMessage,
+    onRetryMessage: async (id) => { await sendBackendMessage(messages.find(m => m.id === id)?.text || "", id); },
+    isMessagingLocked: isMessageBlockedByStatus(backendSpace?.status || "PENDING"),
+    messagingStatusNotice: "Messagerie verrouillée",
+    messagesEndRef,
+    isRecording,
+    setIsRecording,
+    canPropose: currentStep === 0 && isCustomer,
+    proposerCollaboration: async () => transitionToStep(1, "COLLABORATION_PROPOSED"),
+    isPro,
+    requestContextMessage: "Demande de collaboration",
     actor,
     decisionState,
-    showMatchAnimation,
-    setShowMatchAnimation,
+    accepterCollaboration: handleAcceptRequest,
+    demanderPlusInfos: () => setDecisionState("more_info"),
+    refuserCollaboration: handleDeclineRequest,
+    transitionToStep,
+    isOwnerIdentityLoading,
+    isFreelanceIdentityLoading,
+    canOpenBrief: currentStep === 2 && isCustomer,
     brief,
     setBrief,
     briefProgress,
-    etapes,
-    contratAccepte,
-    paiementDepose,
-    modePaiement,
-    reviewSubmitSuccess,
-    hasExistingReview,
-    handleProposeCollaboration,
-    handleAcceptRequest,
-    handleDeclineRequest,
-    handleRequestMoreInfo,
-    handleOpenBrief,
-    handleValidateBrief,
-    handleSignContract,
-    handleConfirmPayment,
-    handleSubmitDeliverable,
-    handleValidateDeliverable,
-    handleReleasePayment,
-    handleSubmitReview,
-    handleCloseProject,
+    livrablesSuggestions: LIVRABLES_SUGGESTIONS,
+    isCustomer,
+    validerBrief: handleValidateBrief,
+    confirmerReceptionBrief: () => transitionToStep(4, "STEP_CHANGED"),
     toggleLivrable,
+    contratAccepte,
+    setContratAccepte,
+    accepterContrat: async (p) => accepterContrat(p),
+    modePaiement,
+    setModePaiement,
+    etapes,
+    paiementDepose,
+    deposerPaiement: handleConfirmPayment,
+    getStatutBadge: (s) => <span>{s}</span>,
+    livrerEtape,
+    validerEtape,
     demanderModification,
+    setEtapes,
+    soumettrelivrable: handleSubmitDeliverable,
+    libererPaiement: async () => {
+      const sId = backendSpace?.id || resolvedSpaceId;
+      if (sId) await releasePaymentMutation.mutateAsync(sId);
+      else transitionToStep(9, "STEP_CHANGED");
+    },
+    cloturerEspace: async () => {
+      const sId = backendSpace?.id || resolvedSpaceId;
+      if (sId) await closeSpaceMutation.mutateAsync(sId);
+      navigate("/dashboard");
+    },
+    isCheckingExistingReview: false,
+    hasExistingReview,
+    avis,
+    setAvis: (val) => {
+      if (typeof val === 'function') setAvis(prev => ({ ...val(prev), recommande: prev.recommande }));
+      else setAvis({ ...val, recommande: null });
+    },
+    renderStars: (n) => <span>{n}⭐</span>,
+    onBackMarketplace: () => navigate("/marketplace"),
+    submitReview: handleFinalSubmitReview,
+    submitReviewPending,
+    reviewSubmitSuccess,
   });
 
-  // Gestion des erreurs fatales (profil introuvable)
   if (profileError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <ErrorState
+          icon={<FiAlertCircle size={48} />}
           title="Collaboration introuvable"
-          message={sidebarErrorMessage || "Nous n'avons pas pu charger les détails de cette collaboration."}
-          onRetry={() => window.location.reload()}
-          actionLabel="Retour au tableau de bord"
-          onAction={() => navigate("/dashboard")}
+          description={sidebarErrorMessage || "Erreur de chargement"}
+          action={{ label: "Retour", onClick: () => navigate("/dashboard") }}
         />
       </div>
     );
@@ -705,82 +548,49 @@ export const CollaborationSpace = () => {
 
   return (
     <div className="collab-container">
-      {/* Header */}
       <header className="collab-header">
         <div className="header-left">
-          <button onClick={() => navigate(-1)} className="back-button">
-            <FiArrowLeft />
-          </button>
+          <button onClick={() => navigate(-1)} className="back-button"><FiArrowLeft /></button>
           <div className="header-info">
-            <h1 className="header-title">
-              Collaboration avec {isCustomer ? freelance.nom : porteur.nom}
-            </h1>
+            <h1 className="header-title">Collaboration avec {isCustomer ? freelance.nom : porteur.nom}</h1>
             <div className="header-status">
               <span className={`status-dot step-${currentStep}`}></span>
               <span className="status-text">{PROCESS_STEPS[currentStep].label}</span>
             </div>
           </div>
         </div>
-
         <div className="header-actions">
-          <button className="icon-button mobile-only" onClick={toggleMenu}>
-            <FiMenu />
-          </button>
-          <div className="desktop-actions">
-            <button className="help-button">
-              <FiShield /> Aide & Sécurité
-            </button>
-          </div>
+          <button className="icon-button mobile-only" onClick={() => setMenuOpen(!menuOpen)}><FiMenu /></button>
+          <div className="desktop-actions"><button className="help-button"><FiShield /> Aide</button></div>
         </div>
       </header>
 
       <main className="collab-main">
-        {/* Sidebar - Détails du profil & Progression */}
         <aside className={`collab-sidebar ${menuOpen ? "open" : ""}`}>
           <div className="sidebar-section profile-card-mini">
-            {sidebarIdentityLoading ? (
-              <div className="loading-placeholder">Chargement du profil...</div>
-            ) : sidebarError ? (
-              <div className="error-placeholder">{sidebarErrorMessage}</div>
-            ) : (
+            {sidebarIdentityLoading ? <div>Chargement...</div> : sidebarError ? <div>{sidebarErrorMessage}</div> : (
               <>
                 <div className="profile-header-mini">
                   <img src={sidebarProfile.photo} alt={sidebarProfile.nom} className="avatar-md" />
                   <div className="profile-meta-mini">
                     <h3>{sidebarProfile.nom}</h3>
                     <p>{sidebarProfile.poste}</p>
-                    {sidebarProfile.verified && (
-                      <span className="verified-badge">
-                        <FiCheckCircle /> Vérifié
-                      </span>
-                    )}
+                    {sidebarProfile.verified && <span className="verified-badge"><FiCheckCircle /> Vérifié</span>}
                   </div>
                 </div>
                 <div className="profile-stats-mini">
-                  <div className="stat-item">
-                    <FiStar className="stat-icon star" />
-                    <span>{sidebarProfile.note} ({sidebarProfile.avis} avis)</span>
-                  </div>
-                  <div className="stat-item">
-                    <FiMapPin className="stat-icon" />
-                    <span>{sidebarProfile.location}</span>
-                  </div>
+                  <div className="stat-item"><FiStar className="stat-icon star" /><span>{sidebarProfile.note} ({sidebarProfile.avis})</span></div>
+                  <div className="stat-item"><FiMapPin className="stat-icon" /><span>{sidebarProfile.location}</span></div>
                 </div>
               </>
             )}
           </div>
-
           <div className="sidebar-section workflow-progress">
-            <h4>Progression du projet</h4>
+            <h4>Progression</h4>
             <div className="steps-vertical">
               {PROCESS_STEPS.map((step, idx) => (
-                <div
-                  key={idx}
-                  className={`step-item ${idx <= currentStep ? "active" : ""} ${idx === currentStep ? "current" : ""}`}
-                >
-                  <div className="step-number">
-                    {idx < currentStep ? <FiCheck /> : idx + 1}
-                  </div>
+                <div key={idx} className={`step-item ${idx <= currentStep ? "active" : ""} ${idx === currentStep ? "current" : ""}`}>
+                  <div className="step-number">{idx < currentStep ? <FiCheck /> : idx + 1}</div>
                   <div className="step-label">{step.label}</div>
                 </div>
               ))}
@@ -788,72 +598,40 @@ export const CollaborationSpace = () => {
           </div>
         </aside>
 
-        {/* Espace de Travail Central */}
         <section className="collab-workspace">
           <div className="workspace-content">
-            {stageViewModel.renderStage()}
+            {currentStep === 0 && <StepContact {...stageViewModel.contact} />}
+            {currentStep === 1 && <StepDecision {...stageViewModel.decision} />}
+            {currentStep === 2 && <StepMatch {...stageViewModel.match} />}
+            {currentStep === 3 && <StepBrief {...stageViewModel.briefStep} />}
+            {currentStep === 4 && <StepContract {...stageViewModel.contract} />}
+            {currentStep === 5 && <StepPayment {...stageViewModel.payment} />}
+            {currentStep === 6 && <StepExecution {...stageViewModel.execution} />}
+            {currentStep === 7 && <StepDelivery {...stageViewModel.delivery} />}
+            {currentStep === 8 && <StepRelease {...stageViewModel.release} />}
+            {currentStep === 9 && <StepClosure {...stageViewModel.closure} />}
           </div>
         </section>
 
-        {/* Messagerie */}
         <aside className="collab-messages">
-          <div className="messages-header">
-            <h3>Messagerie</h3>
-            <span className="online-indicator">En ligne</span>
-          </div>
-
+          <div className="messages-header"><h3>Messagerie</h3></div>
           <div className="messages-list">
-            {messages.length === 0 ? (
-              <div className="empty-messages">
-                <FiMessageCircle />
-                <p>Démarrez la discussion</p>
-              </div>
-            ) : (
+            {messages.length === 0 ? <div className="empty-messages"><FiMessageCircle /><p>Aucun message</p></div> : 
               messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`message-bubble ${msg.sender === (isCustomer ? "porteur" : "freelance") ? "own" : ""}`}
-                >
-                  <div className="message-content">
-                    <p>{msg.text}</p>
-                    <span className="message-time">
-                      {msg.time}
-                      {msg.deliveryStatus === "sending" && " ..."}
-                      {msg.deliveryStatus === "failed" && " ⚠️"}
-                    </span>
-                  </div>
+                <div key={msg.id} className={`message-bubble ${msg.sender === (isCustomer ? "porteur" : "freelance") ? "own" : ""}`}>
+                  <div className="message-content"><p>{msg.text}</p><span className="message-time">{msg.time}</span></div>
                 </div>
               ))
-            )}
+            }
             <div ref={messagesEndRef} />
           </div>
-
           <div className="message-input-area">
-            <div className="input-wrapper">
-              <input
-                type="text"
-                placeholder="Écrivez votre message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                disabled={isRecording}
-              />
-              <button
-                className={`voice-button ${isRecording ? "recording" : ""}`}
-                onClick={handleVoiceMessage}
-              >
-                <FiPlay />
-              </button>
-            </div>
-            <button className="send-button" onClick={sendMessage} disabled={!newMessage.trim()}>
-              Envoyer
-            </button>
+            <input type="text" placeholder="Message..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyPress={(e) => e.key === "Enter" && sendMessage()} />
+            <button className="send-button" onClick={sendMessage}>Envoyer</button>
           </div>
         </aside>
       </main>
-
-      {/* Overlay Mobile */}
-      {menuOpen && <div className="sidebar-overlay" onClick={toggleMenu}></div>}
+      {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)}></div>}
     </div>
   );
 };
