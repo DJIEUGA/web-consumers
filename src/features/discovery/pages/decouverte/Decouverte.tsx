@@ -78,27 +78,14 @@ export const Decouverte = () => {
       .join(' ');
   };
 
-  // Profils du vivier (mock fallback)
-  const vivierProfiles = [
-    { id: 'mock-1', name: formatTitleCaseName('Léonard Z.'), role: 'Technico-commercial', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Leonard' },
-    { id: 'mock-2', name: formatTitleCaseName('octave K.'), role: 'Community Manager', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Octave' },
-    { id: 'mock-3', name: formatTitleCaseName('Ramses M.'), role: 'Ingenieur', country: "Côte d'Ivoire", available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ramses' },
-    { id: 'mock-4', name: formatTitleCaseName('Tatiana D.'), role: 'Medecin de Sante...', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tatiana' },
-    { id: 'mock-5', name: formatTitleCaseName('Marie Josephine N.'), role: 'Coach, formateur...', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marie' },
-    { id: 'mock-6', name: formatTitleCaseName('Yorick T.'), role: 'Infirmier libéral...', country: 'France', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Yorick' },
-    { id: 'mock-7', name: formatTitleCaseName('TCHOUO F.'), role: 'Ingénierie logicielle', country: 'Cameroun', available: true, image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tchouo' },
-  ];
-
-  const displayProfiles = realProfiles.length > 0
-    ? realProfiles.map(p => ({
-      id: p.userId,
-      name: formatTitleCaseName(`${p.firstName || ''} ${p.lastName || ''}`.trim() || p.companyName || 'Freelance'),
-      role: p.specialization || p.sector || 'Expert',
-      country: p.country || 'Non spécifié',
-      available: p.isAvailable ?? p.available ?? p.disponible ?? true,
-      image: p.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.userId}`
-    }))
-    : vivierProfiles;
+  const displayProfiles = realProfiles.map(p => ({
+    id: p.userId,
+    name: formatTitleCaseName(`${p.firstName || ''} ${p.lastName || ''}`.trim() || p.companyName || 'Freelance'),
+    role: p.specialization || p.sector || 'Expert',
+    country: p.country || 'Non spécifié',
+    available: p.isAvailable ?? p.available ?? p.disponible ?? true,
+    image: p.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.userId}`
+  }));
 
   // Liste des secteurs d'activité
   const secteurs = [
@@ -557,21 +544,36 @@ export const Decouverte = () => {
 
           <div className="vivier-carousel-wrapper">
             <div className="vivier-track">
-              {/* Double array for infinite scroll effect */}
-              {[...displayProfiles, ...displayProfiles].map((profile, index) => (
-                <div key={`${profile.id}-${index}`} className="vivier-card">
-                  <img src={profile.image} alt={profile.name} className="vivier-avatar" />
-                  <h3 className="vivier-name">{profile.name}</h3>
-                  <p className="vivier-role">{profile.role}</p>
-                  <p className="vivier-country">{profile.country}</p>
-                  <button
-                    className="vivier-action-btn"
-                    onClick={() => navigate(`/profil-freelance/${profile.id}`)}
-                  >
-                    Voir le profil
-                  </button>
-                </div>
-              ))}
+              {realProfiles.length > 0 ? (
+                /* Affichage des profils réels */
+                [...displayProfiles, ...displayProfiles].map((profile, index) => (
+                  <div key={`${profile.id}-${index}`} className="vivier-card">
+                    <img src={profile.image} alt={profile.name} className="vivier-avatar" />
+                    <h3 className="vivier-name">{profile.name}</h3>
+                    <p className="vivier-role">{profile.role}</p>
+                    <p className="vivier-country">{profile.country}</p>
+                    <button
+                      className="vivier-action-btn"
+                      onClick={() => navigate(`/profil-freelance/${profile.id}`)}
+                    >
+                      Voir le profil
+                    </button>
+                  </div>
+                ))
+              ) : (
+                /* Affichage des wireframes (skeletons) */
+                [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={`skeleton-${i}`} className="vivier-card skeleton">
+                    <div className="vivier-avatar skeleton">
+                       <FiUser />
+                    </div>
+                    <div className="vivier-name skeleton skeleton-box"></div>
+                    <div className="vivier-role skeleton skeleton-box"></div>
+                    <div className="vivier-country skeleton skeleton-box"></div>
+                    <div className="vivier-action-btn skeleton"></div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
