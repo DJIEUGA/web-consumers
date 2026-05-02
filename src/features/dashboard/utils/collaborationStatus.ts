@@ -7,6 +7,7 @@ type CanonicalBackendStatus =
   | "COMPLETED"
   | "CANCELLED"
   | "REJECTED"
+  | "MATCH_CONFIRMED"
   | "UNKNOWN";
 
 type StatusMeta = {
@@ -18,6 +19,7 @@ const STATUS_META: Record<CanonicalBackendStatus, StatusMeta> = {
   PENDING: { label: "En attente", color: "#ffc107" },
   ACCEPTED: { label: "Acceptee", color: "#3DC7C9" },
   ACTIVE: { label: "En cours", color: "#3DC7C9" },
+  MATCH_CONFIRMED: { label: "En cours - Match confirme", color: "#3DC7C9" },
   COMPLETED: { label: "Terminee", color: "#28a745" },
   CANCELLED: { label: "Annulee", color: "#6b7280" },
   REJECTED: { label: "Refusee", color: "#ef4444" },

@@ -17,7 +17,7 @@ const CollaborationsTab: React.FC = () => {
     return (
       <span
         className="dash-statut-badge"
-        style={{ backgroundColor: `${s.color}20`, color: s.color }}
+        style={{ backgroundColor: `${s.color}20`, color: s.color, textTransform: "capitalize" }}
       >
         {s.label}
       </span>
