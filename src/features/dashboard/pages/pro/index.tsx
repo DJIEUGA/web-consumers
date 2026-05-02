@@ -150,13 +150,18 @@ function ProDashboard() {
 
   // Fetch dashboard data from hooks (safe defaults)
   const { profile, isLoading: isProfileLoading } = useDashboardProfile();
-  const { data: statsData } = useStatsOverview();
   const { data: transactions = [] } = useTransactions();
   const { data: services = [] } = useServices();
   const { data: posts = [] } = usePosts();
-  const { data: collaborations = [] } = useCollaborations();
   const { data: campagnesPub = [] } = useAdCampaigns();
   const { data: analyticsDataFromHook } = useAnalytics();
+  const { data: statsData, isLoading: isStatsLoading } = useStatsOverview();
+  const { data: collaborations = [], isLoading: isCollabLoading } = useCollaborations();
+
+  useEffect(() => {
+    if (statsData) console.log("Dashboard Stats Data:", statsData);
+    if (collaborations.length > 0) console.log("Dashboard Collaborations:", collaborations);
+  }, [statsData, collaborations]);
 
   const stats = {
     messagesNonLus: 0,
@@ -165,6 +170,7 @@ function ProDashboard() {
     gainsTotal: 0,
     projetsEnCours: 0,
     projetsRealises: 0,
+    noteMoyenne: 0,
     vuesProfile: 0,
     ongoingProjects: [],
     ...statsData,
@@ -546,6 +552,19 @@ function ProDashboard() {
     setCarteForm({ ...carteForm, [field]: value });
   };
 
+  const handleTagAdd = (tag) => {
+    if (!carteForm.tags.includes(tag) && tag.trim()) {
+      setCarteForm({ ...carteForm, tags: [...carteForm.tags, tag.trim()] });
+    }
+  };
+
+  const handleTagRemove = (tagToRemove) => {
+    setCarteForm({
+      ...carteForm,
+      tags: carteForm.tags.filter((t) => t !== tagToRemove),
+    });
+  };
+
   const handleSaveCarte = () => {
     setCardSaveStatusMessage("");
     updateProProfileMutation.mutate(
@@ -717,6 +736,19 @@ function ProDashboard() {
                       {stats.projetsRealises}
                     </span>
                     <span className="dash-stat-info">missions complétées</span>
+                  </div>
+                </div>
+
+                <div className="dash-stat-card warning">
+                  <div className="dash-stat-icon">
+                    <FiStar />
+                  </div>
+                  <div className="dash-stat-content">
+                    <span className="dash-stat-label">Note obtenue</span>
+                    <span className="dash-stat-value">
+                      {stats.noteMoyenne.toFixed(1)}/5
+                    </span>
+                    <span className="dash-stat-info">avis clients</span>
                   </div>
                 </div>
               </div>

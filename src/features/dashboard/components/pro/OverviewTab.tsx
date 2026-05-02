@@ -8,6 +8,7 @@ import {
   FiEye,
   FiMessageCircle,
   FiHeart,
+  FiStar,
 } from "react-icons/fi";
 import { useStatsOverview, useCollaborations } from "../../hooks/useDashboardData";
 
@@ -23,6 +24,7 @@ const OverviewTab: React.FC = () => {
     gainsTotal: 0,
     projetsEnCours: 0,
     projetsRealises: 0,
+    noteMoyenne: 0,
     vuesProfile: 0,
     ongoingProjects: [],
     ...statsData,
@@ -78,6 +80,17 @@ const OverviewTab: React.FC = () => {
             <span className="dash-stat-label">Projets réalisés</span>
             <span className="dash-stat-value">{stats.projetsRealises}</span>
             <span className="dash-stat-info">missions complétées</span>
+          </div>
+        </div>
+
+        <div className="dash-stat-card warning">
+          <div className="dash-stat-icon">
+            <FiStar />
+          </div>
+          <div className="dash-stat-content">
+            <span className="dash-stat-label">Note obtenue</span>
+            <span className="dash-stat-value">{stats.noteMoyenne.toFixed(1)}/5</span>
+            <span className="dash-stat-info">avis clients</span>
           </div>
         </div>
       </div>

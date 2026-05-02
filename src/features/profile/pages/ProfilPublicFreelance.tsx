@@ -16,6 +16,7 @@ import {
 } from '../../marketplace/hooks/usePublicProfiles';
 import { useUploadAvatarMutation, useUploadCoverImageMutation } from '../hooks/useProfileMutations';
 import collaborationApi from '@/features/collaboration/services/collaborationApi';
+import MessagingDrawer from '@/features/collaboration/components/MessagingDrawer';
 import { useAuthStore } from '../../../stores/auth.store';
 import './ProfilPublicFreelance.css';
 
@@ -207,7 +208,16 @@ function ProfilPublicFreelance() {
   const [activeSection, setActiveSection] = useState('apropos');
   const [selectedRealisationIndex, setSelectedRealisationIndex] = useState(null);
   const [isNavSticky, setIsNavSticky] = useState(false);
+  const [isMessagingOpen, setIsMessagingOpen] = useState(false);
   const [isStartingCollaboration, setIsStartingCollaboration] = useState(false);
+
+  const handleMessagingClick = () => {
+    if (!isAuthenticated) {
+      navigate('/connexion', { state: { from: location.pathname } });
+      return;
+    }
+    setIsMessagingOpen(true);
+  };
 
   
   const actionButtonType = normalizeActionButtonType(
@@ -257,11 +267,11 @@ function ProfilPublicFreelance() {
       ? liveProfilePayload.reviews.length
       : toNumberValue(liveProfilePayload.reviewCount, 0),
     verified: toBooleanValue(liveProfilePayload.verified, false),
-    anciennete: toStringValue(stats.durationOnPlatform) || 'N/A',
-    projetsRealises: toNumberValue(stats.completedProjects, 0),
-    collaborationsEnCours: toNumberValue(stats.ongoingProjects, 0),
-    vuesProfile: toNumberValue(stats.visitCount, 0),
-    favoris: toNumberValue(stats.favoriteCount, 0),
+    projetsRealises: toNumberValue(
+      stats.completedProjects ?? stats.completedProjectsCount,
+      0
+    ),
+    vuesProfile: toNumberValue(stats.visitCount ?? stats.profileViews, 0),
     tags:
       Array.isArray(liveProfilePayload.skills) && liveProfilePayload.skills.length > 0
         ? liveProfilePayload.skills
@@ -702,7 +712,7 @@ function ProfilPublicFreelance() {
                     <FaHandshake /> {isStartingCollaboration ? 'Connexion...' : 'Collaborer'}
                   </button>
                 )}
-                <button className="profil-btn-secondary" onClick={handleContactClick}>
+                <button className="profil-btn-secondary" onClick={handleMessagingClick}>
                   <FiMessageCircle /> Message
                 </button>
                 <button className="profil-btn-icon">
@@ -741,38 +751,21 @@ function ProfilPublicFreelance() {
               <h3 className="profil-sidebar-title">Statistiques</h3>
               <div className="profil-stats-list">
                 <div className="profil-stat-item">
-                  <FiCheckCircle className="stat-icon" />
+                  <div className="stat-icon">
+                    <FiCheckCircle strokeWidth={2} />
+                  </div>
                   <div className="stat-info">
                     <span className="stat-value">{freelance.projetsRealises}</span>
                     <span className="stat-label">Projets réalisés</span>
                   </div>
                 </div>
                 <div className="profil-stat-item">
-                  <FiBriefcase className="stat-icon" />
-                  <div className="stat-info">
-                    <span className="stat-value">{freelance.collaborationsEnCours}</span>
-                    <span className="stat-label">En cours</span>
+                  <div className="stat-icon">
+                    <FiEye strokeWidth={2} />
                   </div>
-                </div>
-                <div className="profil-stat-item">
-                  <FiCalendar className="stat-icon" />
-                  <div className="stat-info">
-                    <span className="stat-value">{freelance.anciennete}</span>
-                    <span className="stat-label">Sur Jobty</span>
-                  </div>
-                </div>
-                <div className="profil-stat-item">
-                  <FiEye className="stat-icon" />
                   <div className="stat-info">
                     <span className="stat-value">{freelance.vuesProfile.toLocaleString()}</span>
                     <span className="stat-label">Vues du profil</span>
-                  </div>
-                </div>
-                <div className="profil-stat-item">
-                  <FiHeart className="stat-icon" />
-                  <div className="stat-info">
-                    <span className="stat-value">{freelance.favoris}</span>
-                    <span className="stat-label">Favoris</span>
                   </div>
                 </div>
               </div>
@@ -809,7 +802,6 @@ function ProfilPublicFreelance() {
               </h2>
               <div className="profil-apropos-content">
                 <div className="profil-apropos-item">
-                  <h3>Présentation</h3>
                   <p>{freelance.apropos.description}</p>
                 </div>
               </div>
@@ -1027,7 +1019,7 @@ function ProfilPublicFreelance() {
           <h2>Prêt à démarrer votre projet ?</h2>
           <p>Contactez <b>{freelance.prenom}</b> pour discuter de vos besoins et obtenir un devis personnalisé</p>
           <div className="profil-cta-actions">
-            <button className="profil-btn-secondary" onClick={handleContactClick}>
+            <button className="profil-btn-secondary" onClick={handleMessagingClick}>
               <FiMessageCircle /> Envoyer un message
             </button>
             <button className="profil-btn-primary" onClick={handleCollabClick}>
@@ -1060,6 +1052,13 @@ function ProfilPublicFreelance() {
           <p>© 2024 Jobty - Tous droits réservés</p>
         </div>
       </footer>
+      
+      {/* Fenêtre de messagerie */}
+      <MessagingDrawer 
+        isOpen={isMessagingOpen} 
+        onClose={() => setIsMessagingOpen(false)} 
+        freelance={freelance} 
+      />
     </div>
   );
 }

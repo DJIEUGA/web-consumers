@@ -1,37 +1,22 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  FiX,
-  FiMenu,
   FiCheck,
-  FiClock,
-  FiDollarSign,
-  FiMessageCircle,
-  FiCheckCircle,
-  FiAlertCircle,
   FiStar,
-  FiUpload,
-  FiEdit3,
-  FiTarget,
-  FiArrowLeft,
-  FiPlay,
-  FiRefreshCw,
-  FiShield,
+  FiAlertCircle,
   FiMapPin,
-  FiBriefcase,
+  FiArrowLeft,
+  FiShield,
+  FiMenu,
+  FiMessageCircle,
 } from "react-icons/fi";
-import { FaHandshake } from "react-icons/fa";
-import Logo from "@/components/shared/Logo";
 import { useAuthStore } from "@/stores/auth.store";
 import {
-  collaborationApi,
   type CollaborationSpaceResponse,
-  type PublicReviewItem,
 } from "@/features/collaboration/services/collaborationApi";
 import {
   useCollaborationActions,
   useMySpaces,
-  usePublicProfileReviews,
   useSubmitReview,
 } from "@/features/collaboration/hooks/useCollaboration";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -43,10 +28,8 @@ import {
   LIVRABLES_SUGGESTIONS,
   PROCESS_STEPS,
   STEP_TO_STAGE,
-  canActorPerformAction,
 } from "@/features/collaboration/constants/workflow";
 import {
-  BACKEND_STATUS_TO_STEP,
   buildRoomId,
   clampStep,
   createUiMessage,
@@ -133,8 +116,8 @@ export const CollaborationSpace = () => {
       : "other";
   const isCustomer = actor === "customer";
   const isPro = actor === "pro";
+
   const {
-    createSpace,
     sendMessage: sendMessageMutation,
     acceptRequest,
     rejectRequest,
@@ -145,6 +128,7 @@ export const CollaborationSpace = () => {
     releasePayment: releasePaymentMutation,
     closeSpace: closeSpaceMutation,
   } = useCollaborationActions();
+
   const mySpacesQuery = useMySpaces();
   const currentUserId = String(
     currentUserFromProfile?.userId ||
@@ -158,31 +142,22 @@ export const CollaborationSpace = () => {
   const collaborationRoomId = (() => {
     if (!incomingId) return "room:anonymous";
     if (incomingId.startsWith("room:")) return incomingId;
-    if (isUuidLike(incomingId)) return incomingId;
-
-    // Customer opens a pro room: /collaboration/:proId -> room:<customerId>::<proId>
-    if (roleValue === "ROLE_CUSTOMER" && currentUserId) {
+    if (roleValue === "ROLE_CUSTOMER" && currentUserId && incomingId !== currentUserId) {
       return buildRoomId(currentUserId, incomingId);
     }
-
-    // Pro opens a customer room: /collaboration/:customerId -> room:<customerId>::<proId>
-    if (roleValue === "ROLE_PRO" && currentUserId) {
+    if (roleValue === "ROLE_PRO" && currentUserId && incomingId !== currentUserId) {
       return buildRoomId(incomingId, currentUserId);
     }
-
     return incomingId;
   })();
 
   const resolvedSpaceId = useMemo(() => {
     if (backendSpace?.id) return backendSpace.id;
-
     const spaces = mySpacesQuery.data || [];
-
     if (incomingId && isUuidLike(incomingId)) {
       const exactSpace = spaces.find((space) => space.id === incomingId);
       if (exactSpace?.id) return exactSpace.id;
     }
-
     const pair = parseRoomPair(collaborationRoomId);
     if (pair) {
       const matchedByPair = spaces.find(
@@ -191,12 +166,10 @@ export const CollaborationSpace = () => {
       );
       if (matchedByPair?.id) return matchedByPair.id;
     }
-
     return "";
   }, [backendSpace?.id, collaborationRoomId, incomingId, mySpacesQuery.data]);
 
   const {
-    ownerProfileLookupId,
     freelance,
     porteur,
     isFreelanceIdentityLoading,
@@ -204,8 +177,6 @@ export const CollaborationSpace = () => {
     sidebarIdentityLoading,
     sidebarProfile,
     profileError,
-    proProfileLoadError,
-    cannotIdentifyPro,
     sidebarError,
     sidebarErrorMessage,
   } = useCollaborationProfiles({
@@ -218,30 +189,20 @@ export const CollaborationSpace = () => {
     backendSpace,
     authUser,
     currentUserProfile,
-  }); // isOwnerIdentityLoading is removed from here
+  });
 
-
-  // États de la collaboration
-  const [currentStep, setCurrentStep] = useState(0); // 0 à 9
+  const [currentStep, setCurrentStep] = useState(0); 
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
-  const [decisionState, setDecisionState] =
-    useState<CollaborationDecisionState>("pending");
-  const [lifecycleEvents, setLifecycleEvents] = useState<
-    CollaborationLifecycleEvent[]
-  >([]);
+  const [decisionState, setDecisionState] = useState<CollaborationDecisionState>("pending");
+  const [lifecycleEvents, setLifecycleEvents] = useState<CollaborationLifecycleEvent[]>([]);
   const [reviewSubmitSuccess, setReviewSubmitSuccess] = useState(false);
   const [hasExistingReview, setHasExistingReview] = useState(false);
 
-  // États des données
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
 
   const currentStage = STEP_TO_STAGE[currentStep] ?? "CONTACT";
-
-  const canPerformAction = (action: CollaborationAction) => {
-    return canActorPerformAction(action, actor, currentStage);
-  };
 
   const appendLifecycleEvent = (
     type: CollaborationEventType,
@@ -257,7 +218,6 @@ export const CollaborationSpace = () => {
       createdAt: new Date().toISOString(),
       payload,
     };
-
     setLifecycleEvents((prev) => [...prev, event]);
   };
 
@@ -284,7 +244,6 @@ export const CollaborationSpace = () => {
       }, delayMs);
       return;
     }
-
     transitionToStep(step, "STEP_CHANGED", { reason });
   };
 
@@ -298,15 +257,12 @@ export const CollaborationSpace = () => {
     }): UiMessage => {
       const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
       const otherSender: UiMessage["sender"] = selfSender === "porteur" ? "freelance" : "porteur";
-
-      return {
-        ...createUiMessage({
-          id: String(msg.id),
-          sender: msg.senderId === currentUserId ? selfSender : otherSender,
-          text: msg.content,
-          dateInput: msg.sentAt || msg.createdAt,
-        }),
-      };
+      return createUiMessage({
+        id: String(msg.id),
+        sender: msg.senderId === currentUserId ? selfSender : otherSender,
+        text: msg.content,
+        dateInput: msg.sentAt || msg.createdAt,
+      });
     },
     [currentUserId, isCustomer],
   );
@@ -335,7 +291,7 @@ export const CollaborationSpace = () => {
     onAdvanceStep: queueStepTransition,
   });
 
-  const { spaceMessagesQuery, spaceDetailQuery } = useCollaborationWorkspaceSync({
+  const { spaceMessagesQuery } = useCollaborationWorkspaceSync({
     incomingId,
     collaborationRoomId,
     resolvedSpaceId,
@@ -358,39 +314,20 @@ export const CollaborationSpace = () => {
     messagesEndRef,
   });
 
-  // Fonctions utilitaires
-  const toggleMenu = () => setMenuOpen((prev) => !prev);
-
   const sendBackendMessage = async (content: string, optimisticId: string) => {
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) return false;
-
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (!sId) return false;
     try {
       const sentEnvelope = await sendMessageMutation.mutateAsync({
-        spaceId,
+        spaceId: sId,
         params: { content },
       });
       const sent = sentEnvelope.data;
       const sentUi = mapBackendMessageToUi(sent);
-
       setMessages((prev: UiMessage[]) => {
         const withoutOptimistic = prev.filter((msg) => msg.id !== optimisticId);
-
-        const alreadyExistsById = withoutOptimistic.some((msg) => msg.id === sentUi.id);
-        if (alreadyExistsById) return withoutOptimistic;
-
-        const alreadyExistsByContent = withoutOptimistic.some(
-          (msg) =>
-            msg.sender === sentUi.sender &&
-            msg.text.trim() === sentUi.text.trim(),
-        );
-        if (alreadyExistsByContent) return withoutOptimistic;
-
+        if (withoutOptimistic.some((msg) => msg.id === sentUi.id)) return withoutOptimistic;
         return [...withoutOptimistic, sentUi];
-      });
-      appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-        sender: actor,
-        mode: "backend",
       });
       return true;
     } catch (error: any) {
@@ -399,7 +336,7 @@ export const CollaborationSpace = () => {
           msg.id === optimisticId ? { ...msg, deliveryStatus: "failed" } : msg,
         ),
       );
-      toast.error(String(error?.message || "Échec d'envoi du message. Réessayez."));
+      toast.error(error?.message || "Échec d'envoi");
       return false;
     }
   };
@@ -407,1025 +344,331 @@ export const CollaborationSpace = () => {
   const sendMessage = async () => {
     const content = newMessage.trim();
     if (!content) return;
-
-    const activeSpaceId = backendSpace?.id || resolvedSpaceId;
-
-    if (activeSpaceId) {
-      if (backendSpace?.status && isMessageBlockedByStatus(backendSpace.status)) {
-        toast.error("La messagerie est indisponible pour ce statut de collaboration.");
-        return;
-      }
-
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
       const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
-      const optimisticId = `optimistic:${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-      setMessages((prev: UiMessage[]) => [
-        ...prev,
-        {
-          ...createUiMessage({
-          id: optimisticId,
-          sender: selfSender,
-          text: content,
-          }),
-          deliveryStatus: "sending",
-        },
-      ]);
+      const optimisticId = `optimistic:${Date.now()}`;
+      setMessages((prev: UiMessage[]) => [...prev, { ...createUiMessage({ id: optimisticId, sender: selfSender, text: content }), deliveryStatus: "sending" }]);
       setNewMessage("");
-
-      // Si le contenu a été envoyé avec succès au backend
-      const sent = await sendBackendMessage(content, optimisticId);
-      if (!sent) {
-        // En cas d'échec on remet le texte pour que l'user puisse réessayer
-        setNewMessage(content);
-      }
-      return;
-    }
-
-    // Le code ci-dessous est le fallback purement local qui simule le chat
-    // si aucun workspace ID n'existe encore.
-    // Cela ne doit arriver QUE SI l'user tape un 1er message AVANT de "Proposer une collaboration".
-    // Or le flux a été modifié : le 1er message backend devrait créer le workspace.
-    // Nous allons simuler la création de collaboration ici si elle n'existe pas.
-
-    const optimisticId = `optimistic:${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-    const optimisticMsg: UiMessage = {
-      ...createUiMessage({
-        id: optimisticId,
-        sender: isCustomer ? "porteur" : "freelance",
-        text: content,
-      }),
-      deliveryStatus: "sending"
-    };
-
-    setMessages((prev: UiMessage[]) => [
-      ...prev,
-      optimisticMsg,
-    ]);
-    setNewMessage("");
-
-    try {
-        if (!backendSpace && isCustomer) {
-            const proId = resolveProIdForRequest();
-            if (proId) {
-                if (proProfileLoadError) {
-                  toast.error("Le profil du professionnel est introuvable. Impossible de démarrer la collaboration.");
-                  setMessages((prev: UiMessage[]) => prev.map(msg => msg.id === optimisticId ? {...msg, deliveryStatus: "failed"} : msg));
-                  setNewMessage(content);
-                  return;
-                }
-
-                const createdEnvelope = await createSpace.mutateAsync({
-                  proId,
-                  title: brief.objectif || "Demande de collaboration",
-                  brief: brief.objectif || "Nouvelle demande de collaboration initiée depuis l'espace contact.",
-                });
-                
-                const space = createdEnvelope.data;
-                setBackendSpace(space);
-                setCurrentStep(BACKEND_STATUS_TO_STEP[space.status] ?? 1);
-                
-                const sentEnvelope = await sendMessageMutation.mutateAsync({
-                  spaceId: space.id,
-                  params: { content },
-                });
-                const sent = sentEnvelope.data;
-                const sentUi = mapBackendMessageToUi(sent);
-          
-                setMessages((prev: UiMessage[]) => {
-                  const withoutOptimistic = prev.filter((msg) => msg.id !== optimisticId);
-                  return [...withoutOptimistic, sentUi];
-                });
-                appendLifecycleEvent("CONTACT_MESSAGE_SENT", {
-                  sender: actor,
-                  mode: "backend",
-                });
-                return;
-            }
-        }
-        
-    } catch(err) {
-        console.error("Failed to auto-create and send msg", err);
-    }
-  
-    setMessages((prev: UiMessage[]) => prev.map(msg => msg.id === optimisticId ? {...msg, deliveryStatus: "failed"} : msg));
-    setNewMessage(content);
-    toast.error("Veuillez d'abord proposer la collaboration ou réessayer l'envoi.");
-    
-  };
-
-  const retryMessage = async (messageId: string) => {
-    const activeSpaceId = backendSpace?.id || resolvedSpaceId;
-    if (!activeSpaceId) return;
-
-    const failedMessage = messages.find((msg) => msg.id === messageId);
-    if (!failedMessage || failedMessage.deliveryStatus !== "failed") return;
-
-    if (backendSpace?.status && isMessageBlockedByStatus(backendSpace.status)) {
-      toast.error("La messagerie est indisponible pour ce statut de collaboration.");
-      return;
-    }
-
-    setMessages((prev: UiMessage[]) =>
-      prev.map((msg) =>
-        msg.id === messageId ? { ...msg, deliveryStatus: "sending" } : msg,
-      ),
-    );
-
-    await sendBackendMessage(failedMessage.text, messageId);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void sendMessage();
+      await sendBackendMessage(content, optimisticId);
+    } else {
+      const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
+      setMessages((prev) => [...prev, createUiMessage({ id: String(Date.now()), sender: selfSender, text: content })]);
+      setNewMessage("");
     }
   };
 
-  const resolveProIdForRequest = useCallback(() => {
-    if (backendSpace?.proId) return backendSpace.proId;
-
-    const pair = parseRoomPair(collaborationRoomId);
-    if (pair?.proId) return pair.proId;
-
-    if (isUuidLike(incomingId) && incomingId !== currentUserId) {
-        // If we know this incomingId is definitely a Space ID (from spaceDetailQuery resolving it), it's NOT a pro ID.
-        // By checking if the backendSpace exists and is NOT this ID, we avoid treating Space IDs as Pro IDs.
-        // Actually, if backendSpace is missing, it MIGHT be a Pro ID.
-        // But what if spaceDetailQuery is still loading? We shouldn't use it yet.
-        return incomingId;
-    }
-
-    return "";
-  }, [backendSpace?.proId, collaborationRoomId, currentUserId, incomingId]);
-
-  const resolvedReviewProId = resolveProIdForRequest();
-  const reviewsQuery = usePublicProfileReviews(
-    resolvedReviewProId,
-    currentStep === 9 && Boolean(resolvedReviewProId && isUuidLike(resolvedReviewProId)),
-  );
-  const submitReviewMutation = useSubmitReview();
-  const isSyncing =
-    myProfileQuery.isLoading ||
-    mySpacesQuery.isLoading ||
-    spaceMessagesQuery.isLoading ||
-    spaceDetailQuery.isLoading;
-  const isCheckingExistingReview = reviewsQuery.isFetching;
-  const isMessagingLocked = isMessageBlockedByStatus(backendSpace?.status);
-  const requestContextMessage = useMemo(() => {
-    const backendMessage = String(
-      backendSpace?.brief || backendSpace?.title || "",
-    ).trim();
-    if (backendMessage) return backendMessage;
-
-    const latestCustomerMessage = [...messages]
-      .reverse()
-      .find((msg) => msg.sender === "porteur" && String(msg.text || "").trim());
-
-    return String(latestCustomerMessage?.text || "").trim();
-  }, [backendSpace?.brief, backendSpace?.title, messages]);
-  const messagingStatusNotice = isMessagingLocked
-    ? "Messagerie indisponible pour le statut actuel de collaboration."
-    : "";
-  const syncErrorMessage =
-    (mySpacesQuery.isError
-      ? "Impossible de synchroniser les collaborations pour le moment."
-      : "") ||
-    (spaceMessagesQuery.isError
-      ? "Impossible de synchroniser les messages pour le moment."
-      : "");
-
-  const isReviewOwnedByCurrentUser = useCallback(
-    (review: PublicReviewItem) => {
-      const authorId = String(review?.author?.id || "").trim();
-      const reviewerId = String(review?.reviewerId || review?.userId || "").trim();
-      if (authorId && currentUserId) {
-        return authorId === currentUserId;
-      }
-      if (reviewerId && currentUserId) {
-        return reviewerId === currentUserId;
-      }
-
-      const reviewerDisplay = String(review?.userFrom || "")
-        .trim()
-        .toLowerCase();
-      const possibleNames = [
-        String(authUser?.email || "").trim().toLowerCase(),
-        `${String(authUser?.firstName || "").trim()} ${String(authUser?.lastName || "").trim()}`
-          .trim()
-          .toLowerCase(),
-      ].filter(Boolean);
-
-      return Boolean(
-        reviewerDisplay && possibleNames.some((candidate) => candidate === reviewerDisplay),
-      );
-    },
-    [authUser?.email, authUser?.firstName, authUser?.lastName, currentUserId],
-  );
-
-  const isReviewForCurrentProject = useCallback(
-    (review: PublicReviewItem) => {
-      const currentProjectId = String(backendSpace?.id || "").trim();
-      if (!currentProjectId) return false;
-
-      const reviewProjectId = String(
-        review?.projectId ||
-          (review as any)?.project?.id ||
-          (review as any)?.project?.projectId ||
-          "",
-      ).trim();
-
-      return Boolean(reviewProjectId && reviewProjectId === currentProjectId);
-    },
-    [backendSpace?.id],
-  );
-
-  const proposerCollaboration = async () => {
-    if (!canPerformAction("propose") || backendSpace?.status === "REJECTED") return;
-
-    setDecisionState("pending");
-    transitionToStep(1, "COLLABORATION_PROPOSED");
-
-    if (actor !== "customer") return;
-
-    const proId = resolveProIdForRequest();
-    if (!proId) {
-      toast.error("Impossible d'identifier le professionnel à contacter.");
-      return;
-    }
-
-    if (proProfileLoadError) {
-      toast.error("Le profil du professionnel est introuvable. Vérifiez le lien ou réessayez plus tard.");
-      return;
-    }
-
-    try {
-      const createdEnvelope = await createSpace.mutateAsync({
-        proId,
-        title: brief.objectif || "Demande de collaboration",
-        brief:
-          brief.objectif ||
-          "Nouvelle demande de collaboration initiée depuis l'espace contact.",
-      });
-      const created = createdEnvelope.data;
-
-      setBackendSpace(created);
-      setCurrentStep(BACKEND_STATUS_TO_STEP[created.status] ?? 1);
-    } catch (error: any) {
-      const status = Number(error?.status || 0);
-
-      if (status === 409) {
-        try {
-          const refreshed = await mySpacesQuery.refetch();
-          const spaces = refreshed.data || [];
-          const existing = spaces.find((space) => space.proId === proId);
-          if (existing) {
-            setBackendSpace(existing);
-            setCurrentStep(BACKEND_STATUS_TO_STEP[existing.status] ?? 1);
-            navigate(`/collaboration/${encodeURIComponent(existing.id)}`, {
-              replace: true,
-            });
-            return;
-          }
-        } catch {
-          // Keep below generic error.
-        }
-      }
-
-      toast.error(
-        String(
-          error?.message ||
-            "Impossible de créer la collaboration pour le moment.",
-        ),
-      );
-    }
-  };
-
-  useEffect(() => {
-    if (currentStep !== 9) return;
-
-    const proId = resolveProIdForRequest();
-    if (!proId || !isUuidLike(proId)) {
-      setHasExistingReview(false);
-      return;
-    }
-
-    if (reviewsQuery.isError) {
-      setHasExistingReview(false);
-      return;
-    }
-
-    const reviews = reviewsQuery.data || [];
-    const alreadyReviewed = reviews.some(
-      (review) =>
-        isReviewOwnedByCurrentUser(review) &&
-        isReviewForCurrentProject(review),
-    );
-    setHasExistingReview(alreadyReviewed);
-
-    if (alreadyReviewed) {
-      setReviewSubmitSuccess(true);
-    }
-  }, [
-    backendSpace?.id,
-    currentStep,
-    isReviewForCurrentProject,
-    isReviewOwnedByCurrentUser,
-    reviewsQuery.data,
-    reviewsQuery.isError,
-    resolveProIdForRequest,
-  ]);
-
-  const submitReview = async () => {
-    const isAllowedReviewer =
-      roleValue === "ROLE_CUSTOMER" || roleValue === "ROLE_ENTERPRISE";
-
-    if (!isAllowedReviewer) {
-      toast.error("Seuls les comptes client/entreprise peuvent publier un avis.");
-      return;
-    }
-
-    if (reviewSubmitSuccess) {
-      return;
-    }
-
-    if (hasExistingReview) {
-      toast.error("Vous avez deja publie un avis pour ce projet.");
-      return;
-    }
-
-    const rating = Number(avis.note);
-    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      toast.error("Veuillez attribuer une note entre 1 et 5 étoiles.");
-      return;
-    }
-
-    const targetProId = backendSpace?.proId || resolveProIdForRequest();
-    if (!targetProId || !isUuidLike(targetProId)) {
-      toast.error("Impossible d'identifier le professionnel à noter.");
-      return;
-    }
-
-    try {
-      await submitReviewMutation.mutateAsync({
-        targetProId,
-        payload: {
-          rating,
-          comment: avis.commentaire?.trim() || undefined,
-          projectId: backendSpace?.id,
-        },
-      });
-
-      setReviewSubmitSuccess(true);
-      appendLifecycleEvent("STEP_CHANGED", {
-        reason: "review_submitted",
-        rating,
-      });
-    } catch (error: any) {
-      toast.error(String(error?.message || "Impossible de publier votre avis."));
-    }
-  };
-
-    const confirmerReceptionBrief = () => {
-    if (!isPro) return;
-    transitionToStep(4, "STEP_CHANGED", { reason: "brief_received" });
-  };
-
-  const signerContrat = async (partie: "porteur" | "freelance") => {
-    setContratAccepte((prev) => ({ ...prev, [partie]: true }));
-
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) return;
-
-    try {
-      const envelope = await signContractMutation.mutateAsync(spaceId);
-      const updated = envelope.data;
-      setBackendSpace(updated);
-
-      const next = {
-        porteur: partie === "porteur" ? true : contratAccepte.porteur,
-        freelance: partie === "freelance" ? true : contratAccepte.freelance,
-      };
-      if (next.porteur && next.freelance) {
-        setTimeout(() => transitionToStep(5, "STEP_CHANGED", { reason: "contract_signed" }), 1000);
-      }
-    } catch {
-      // toast already shown by mutation onError
-    }
-  };
-
-  const deposerPaiementBackend = async () => {
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) {
-      toast.error("Espace de collaboration introuvable.");
-      return;
-    }
-
-    try {
-      const envelope = await confirmPaymentMutation.mutateAsync(spaceId);
-      const updated = envelope.data;
-      setBackendSpace(updated);
-      deposerPaiement();
-    } catch {
-      // toast already shown by mutation onError
-    }
-  };
-
-  const soumettrelivrable = async () => {
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) {
-      toast.error("Espace de collaboration introuvable.");
-      return;
-    }
-
-    try {
-      const envelope = await submitDeliverableMutation.mutateAsync({ id: spaceId, params: {} });
-      const updated = envelope.data;
-      setBackendSpace(updated);
-      transitionToStep(7, "STEP_CHANGED", { reason: "deliverable_submitted" });
-    } catch {
-      // toast already shown by mutation onError
-    }
-  };
-
-  const libererPaiement = async () => {
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) {
-      toast.error("Espace de collaboration introuvable.");
-      return;
-    }
-
-    try {
-      const envelope = await releasePaymentMutation.mutateAsync(spaceId);
-      const updated = envelope.data;
-      setBackendSpace(updated);
-      transitionToStep(9, "STEP_CHANGED", { reason: "payment_released" });
-    } catch {
-      // toast already shown by mutation onError
-    }
-  };
-
-  const cloturerEspace = async () => {
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) return;
-
-    try {
-      const envelope = await closeSpaceMutation.mutateAsync(spaceId);
-      const updated = envelope.data;
-      setBackendSpace(updated);
-    } catch {
-      // toast already shown by mutation onError
-    }
-  };
-
-   const accepterCollaboration = async () => {
-    if (!canPerformAction("accept")) return;
-
-    if (!backendSpace?.id) {
-      toast.error("Aucun projet backend trouvé. Demandez au client de créer la collaboration.");
-      return;
-    }
-
-    try {
-      const updatedEnvelope = await acceptRequest.mutateAsync(backendSpace.id);
-      const updated = updatedEnvelope.data;
-      setBackendSpace(updated);
+  const handleAcceptRequest = async () => {
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
+      try {
+        await acceptRequest.mutateAsync(sId);
+      } catch (err: any) { toast.error(err?.message); }
+    } else {
       setDecisionState("accepted");
-      appendLifecycleEvent("PRO_ACCEPTED_COLLABORATION");
       setShowMatchAnimation(true);
-      setTimeout(() => {
-        setShowMatchAnimation(false);
-        transitionToStep(2, "STEP_CHANGED", {
-          reason: "decision_accepted",
-          status: updated.status,
+      queueStepTransition(2, "Match confirmed", 3000);
+    }
+  };
+
+  const handleDeclineRequest = async () => {
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
+      try {
+        await rejectRequest.mutateAsync(sId);
+      } catch (err: any) { toast.error(err?.message); }
+    } else {
+      setDecisionState("declined");
+    }
+  };
+
+  const handleValidateBrief = async () => {
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
+      try {
+        await submitBriefMutation.mutateAsync({
+          id: sId,
+          payload: { objective: brief.objectif, deliverables: brief.livrables, deadline: brief.delai, budget: brief.budget },
         });
-      }, 3000);
-    } catch (error: any) {
-      toast.error(String(error?.message || "Impossible d'accepter la collaboration."));
-    }
-  };
-
-   const renderStars = (note, interactive = false) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <FiStar
-          key={i}
-          className={`collab-star ${i <= note ? "filled" : ""} ${interactive ? "interactive" : ""}`}
-          onClick={() => interactive && setAvis({ ...avis, note: i })}
-          style={{
-            fill: i <= note ? "#FFD700" : "none",
-            color: i <= note ? "#FFD700" : "#ddd",
-            cursor: interactive ? "pointer" : "default",
-          }}
-        />,
-      );
-    }
-    return stars;
-  };
-
-  const demanderPlusInfos = () => {
-    if (!canPerformAction("request_info")) return;
-
-    setDecisionState("more_info");
-    appendLifecycleEvent("PRO_REQUESTED_MORE_INFO");
-    const now = new Date().toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: String(prev.length + 1),
-        sender: "freelance",
-        text: "Merci pour votre demande. J'ai besoin de précisions supplémentaires avant d'accepter : objectif détaillé, livrables prioritaires et contraintes techniques.",
-        time: now,
-        date: "Aujourd'hui",
-      },
-    ]);
-
-    // Move back to contact step so pro can chat with customer
-    transitionToStep(0, "STEP_CHANGED", { reason: "pro_requested_info" });
-  };
-
-  const refuserCollaboration = async () => {
-    if (!canPerformAction("decline")) return;
-
-    if (!backendSpace?.id) {
-      toast.error("Aucun projet backend trouvé. Demandez au client de créer la collaboration.");
-      return;
-    }
-
-    try {
-      const updatedEnvelope = await rejectRequest.mutateAsync(backendSpace.id);
-      const updated = updatedEnvelope.data;
-      setBackendSpace(updated);
-    } catch (error: any) {
-      toast.error(String(error?.message || "Impossible de refuser la collaboration."));
-      return;
-    }
-
-    setDecisionState("declined");
-    appendLifecycleEvent("PRO_DECLINED_COLLABORATION");
-    const now = new Date().toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: String(prev.length + 1),
-        sender: "freelance",
-        text: "Je ne peux pas accepter cette collaboration pour le moment. Vous pouvez ajuster votre besoin et relancer une nouvelle demande.",
-        time: now,
-        date: "Aujourd'hui",
-      },
-    ]);
-  };
-
-  const validerBrief = async () => {
-    if (!isCustomer) return;
-    if (briefProgress < 100) return;
-
-    const spaceId = backendSpace?.id || resolvedSpaceId;
-    if (!spaceId) {
-      toast.error("Espace de collaboration introuvable.");
-      return;
-    }
-
-    try {
-      const envelope = await submitBriefMutation.mutateAsync({
-        id: spaceId,
-        payload: {
-          objectif: brief.objectif,
-          livrables: brief.livrables,
-          delai: brief.delai,
-          budget: brief.budget,
-          commentairePro: brief.commentairePro,
-        },
-      });
-      const updated = envelope.data;
-      setBackendSpace(updated);
+      } catch (err: any) { toast.error(err?.message); }
+    } else {
       initEtapesFromBrief(brief.livrables, brief.budget);
-      transitionToStep(4, "STEP_CHANGED", { reason: "brief_validated" });
-    } catch {
-      // toast already shown by mutation onError
+      transitionToStep(4, "STEP_CHANGED", { reason: "Brief validated" });
     }
   };
 
-  const getStatutBadge = (statut) => {
-    const statuts = {
-      a_venir: { label: "À venir", color: "#6c757d", icon: FiClock },
-      en_cours: { label: "En cours", color: "#fd7e14", icon: FiPlay },
-      livree: { label: "Livrée", color: "#17a2b8", icon: FiUpload },
-      validee: { label: "Validée", color: "#28a745", icon: FiCheckCircle },
-      modification: {
-        label: "Modification",
-        color: "#dc3545",
-        icon: FiRefreshCw,
-      },
-    };
-    const s = statuts[statut] || statuts.a_venir;
-    const Icon = s.icon;
-    return (
-      <span
-        className="collab-statut-badge"
-        style={{ backgroundColor: `${s.color}20`, color: s.color }}
-      >
-        <Icon /> {s.label}
-      </span>
-    );
+  const handleSignContract = async () => {
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
+      try { await signContractMutation.mutateAsync(sId); } catch (err: any) { toast.error(err?.message); }
+    } else {
+      accepterContrat(isPro ? "freelance" : "porteur");
+    }
   };
 
-    const stageViewModel = useCollaborationStageViewModel({
+  const handleConfirmPayment = async () => {
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
+      try { await confirmPaymentMutation.mutateAsync(sId); } catch (err: any) { toast.error(err?.message); }
+    } else {
+      deposerPaiement();
+    }
+  };
+
+  const handleSubmitDeliverable = async () => {
+    const sId = backendSpace?.id || resolvedSpaceId;
+    if (sId) {
+      try {
+        await submitDeliverableMutation.mutateAsync({
+          id: sId,
+          params: {},
+        });
+      } catch (err: any) { toast.error(err?.message); }
+    } else {
+      livrerEtape(1);
+    }
+  };
+
+  const { mutateAsync: submitReviewMutation, isPending: submitReviewPending } = useSubmitReview();
+
+  const handleFinalSubmitReview = async () => {
+    if (!resolvedSpaceId || !freelance.id) return;
+    try {
+      await submitReviewMutation({
+        targetProId: String(freelance.id),
+        payload: { rating: avis.note, comment: avis.commentaire },
+      });
+      setReviewSubmitSuccess(true);
+    } catch (err) {}
+  };
+
+  const stageViewModel = useCollaborationStageViewModel({
     messages,
     porteur,
     freelance,
     newMessage,
     setNewMessage,
-    handleKeyPress,
+    handleKeyPress: (e) => e.key === "Enter" && sendMessage(),
     sendMessage,
-    onRetryMessage: retryMessage,
-    isMessagingLocked,
-    messagingStatusNotice,
+    onRetryMessage: async (id) => { await sendBackendMessage(messages.find(m => m.id === id)?.text || "", id); },
+    isMessagingLocked: isMessageBlockedByStatus(backendSpace?.status || "PENDING"),
+    messagingStatusNotice: "Messagerie verrouillée",
     messagesEndRef,
     isRecording,
     setIsRecording,
-    canPropose: canPerformAction("propose") && backendSpace?.status !== "REJECTED",
-    proposerCollaboration,
+    canPropose: currentStep === 0 && isCustomer,
+    proposerCollaboration: async () => transitionToStep(1, "COLLABORATION_PROPOSED"),
     isPro,
-    requestContextMessage,
+    requestContextMessage: "Demande de collaboration",
     actor,
     decisionState,
-    accepterCollaboration,
-    demanderPlusInfos,
-    refuserCollaboration,
+    accepterCollaboration: handleAcceptRequest,
+    demanderPlusInfos: () => setDecisionState("more_info"),
+    refuserCollaboration: handleDeclineRequest,
     transitionToStep,
     isOwnerIdentityLoading,
     isFreelanceIdentityLoading,
-    canOpenBrief: canPerformAction("open_brief"),
+    canOpenBrief: currentStep === 2 && isCustomer,
     brief,
     setBrief,
     briefProgress,
     livrablesSuggestions: LIVRABLES_SUGGESTIONS,
     isCustomer,
-    validerBrief,
-    confirmerReceptionBrief,
+    validerBrief: handleValidateBrief,
+    confirmerReceptionBrief: () => transitionToStep(4, "STEP_CHANGED"),
     toggleLivrable,
     contratAccepte,
     setContratAccepte,
-    accepterContrat: signerContrat,
+    accepterContrat: async (p) => accepterContrat(p),
     modePaiement,
     setModePaiement,
     etapes,
     paiementDepose,
-    deposerPaiement: deposerPaiementBackend,
-    getStatutBadge,
+    deposerPaiement: handleConfirmPayment,
+    getStatutBadge: (s) => <span>{s}</span>,
     livrerEtape,
     validerEtape,
     demanderModification,
     setEtapes,
-    soumettrelivrable,
-    libererPaiement,
-    cloturerEspace,
-    isCheckingExistingReview,
+    soumettrelivrable: handleSubmitDeliverable,
+    libererPaiement: async () => {
+      const sId = backendSpace?.id || resolvedSpaceId;
+      if (sId) await releasePaymentMutation.mutateAsync(sId);
+      else transitionToStep(9, "STEP_CHANGED");
+    },
+    cloturerEspace: async () => {
+      const sId = backendSpace?.id || resolvedSpaceId;
+      if (sId) await closeSpaceMutation.mutateAsync(sId);
+      navigate("/dashboard");
+    },
+    isCheckingExistingReview: false,
     hasExistingReview,
     avis,
-    setAvis,
-    renderStars,
+    setAvis: (val) => {
+      if (typeof val === 'function') setAvis(prev => ({ ...val(prev), recommande: prev.recommande }));
+      else setAvis({ ...val, recommande: null });
+    },
+    renderStars: (n) => <span>{n}⭐</span>,
     onBackMarketplace: () => navigate("/marketplace"),
-    submitReview,
-    submitReviewPending: submitReviewMutation.isPending,
+    submitReview: handleFinalSubmitReview,
+    submitReviewPending,
     reviewSubmitSuccess,
   });
 
+  if (profileError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <ErrorState
+          icon={<FiAlertCircle size={48} />}
+          title="Collaboration introuvable"
+          description={sidebarErrorMessage || "Erreur de chargement"}
+          action={{ label: "Retour", onClick: () => navigate("/dashboard") }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="collab-page">
-      {profileError ? (
-        <div style={{ padding: "40px", maxWidth: "600px", margin: "0 auto" }}>
-          <ErrorState
-            title="Profil introuvable"
-            description="Le profil du professionnel ou du porteur de projet n'a pas pu être chargé. Ce profil a peut-être été supprimé ou n'existe pas."
-            icon={<FiAlertCircle size={48} />}
-            action={{
-              label: "Retour au tableau de bord",
-              onClick: () => navigate("/dashboard"),
-            }}
-          />
-        </div>
-      ) : (
-        <>
-          {/* Animation Match */}
-          {showMatchAnimation && (
-        <div className="collab-match-overlay">
-          <div className="collab-match-animation">
-            <div className="collab-match-photos">
-              <img
-                src={porteur.photo}
-                alt={porteur.nom}
-                className="collab-match-photo"
-              />
-              <div className="collab-match-heart">
-                <FaHandshake />
-              </div>
-              <img
-                src={freelance.photo}
-                alt={freelance.nom}
-                className="collab-match-photo"
-              />
-            </div>
-            <h2 className="collab-match-title">Match validé ! 🎉</h2>
-            <p className="collab-match-subtitle">
-              Votre espace de travail est prêt
-            </p>
-            <div className="collab-match-confetti"></div>
-          </div>
-        </div>
-      )}
-
-      {/* HEADER */}
+      {/* Header */}
       <header className="collab-header">
         <div className="collab-header-content">
-          <div className="collab-logo" onClick={() => navigate("/")}>
-            <Logo alt="Jobty" />
+          <div className="collab-header-left">
+             <button onClick={() => navigate(-1)} className="collab-back-btn">
+               <FiArrowLeft /> Retour
+             </button>
           </div>
-
           <div className="collab-header-center">
-            <span className="collab-header-title">
-              <FaHandshake /> Espace Collaboration
-            </span>
+            <h1 className="collab-header-title">
+              <FiMessageCircle /> Collaboration avec {isCustomer ? freelance.nom : porteur.nom}
+            </h1>
           </div>
-
           <div className="collab-header-actions">
-            <button className="collab-back-btn" onClick={() => navigate(-1)}>
-              <FiArrowLeft /> Retour
-            </button>
-            <button
-              className="collab-burger-btn"
-              onClick={toggleMenu}
-              aria-expanded={menuOpen}
-              aria-label="Ouvrir le menu"
-            >
+            <button className="collab-burger-btn" onClick={() => setMenuOpen(!menuOpen)}>
               <FiMenu />
             </button>
+            <div className="desktop-actions">
+              <button className="collab-back-btn" style={{ background: '#f8f9fa' }}>
+                <FiShield /> Aide & Sécurité
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Barre de progression */}
+      {/* Stepper Horizontal */}
       <div className="collab-progress-bar">
         <div className="collab-progress-track">
-          {PROCESS_STEPS.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={step.num}
-                className={`collab-progress-step ${currentStep >= step.num ? "active" : ""} ${currentStep === step.num ? "current" : ""}`}
-              >
-                <div className="collab-progress-icon">
-                  <Icon />
-                </div>
-                <span className="collab-progress-label">{step.label}</span>
-                {index < PROCESS_STEPS.length - 1 && (
-                  <div
-                    className={`collab-progress-line ${currentStep > step.num ? "filled" : ""}`}
-                  ></div>
-                )}
+          {PROCESS_STEPS.map((step, idx) => (
+            <div 
+              key={idx} 
+              className={`collab-progress-step ${idx <= currentStep ? "active" : ""} ${idx === currentStep ? "current" : ""}`}
+            >
+              <div className="collab-progress-icon">
+                {idx < currentStep ? <FiCheck /> : idx + 1}
               </div>
-            );
-          })}
+              <span className="collab-progress-label">{step.label}</span>
+              {idx < PROCESS_STEPS.length - 1 && (
+                <div className={`collab-progress-line ${idx < currentStep ? "filled" : ""}`}></div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* CONTENU PRINCIPAL */}
       <main className="collab-main">
         <div className="collab-container">
-          {/* Sidebar - Infos acteur */}
-          <aside className="collab-sidebar-info">
-            {(proProfileLoadError || cannotIdentifyPro) ? (
-              <div className="collab-freelance-card" style={{ textAlign: "center", padding: "32px 16px" }}>
-                <FiAlertCircle size={36} style={{ color: "#ef4444", marginBottom: 12 }} />
-                <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "#dc2626", marginBottom: 8 }}>
-                  Profil introuvable
-                </h3>
-                <p style={{ fontSize: "0.85rem", color: "#991b1b", marginBottom: 20, lineHeight: 1.5 }}>
-                  {proProfileLoadError
-                    ? "Le profil du professionnel n'a pas pu être chargé depuis le serveur."
-                    : "Impossible d'identifier le professionnel associé à cette collaboration."}
-                </p>
-                <button className="collab-btn-secondary" onClick={() => navigate(-1)}>
-                  <FiArrowLeft /> Retour
-                </button>
-              </div>
-            ) : (
+          {/* Sidebar - Détails du profil */}
+          <aside className={`collab-sidebar-info ${menuOpen ? "open" : ""}`}>
             <div className="collab-freelance-card">
-              <div className="collab-freelance-header">
-                <div className="collab-freelance-photo-wrapper">
-                  {sidebarIdentityLoading ? (
-                    <div className="collab-skeleton collab-avatar-skeleton" />
-                  ) : (
-                    <img
-                      src={sidebarProfile.photo}
-                      alt={sidebarProfile.nom}
-                      className="collab-freelance-photo"
-                    />
-                  )}
-                  {sidebarProfile.verified && (
-                    <span className="collab-verified-badge">
-                      <FiCheckCircle />
-                    </span>
-                  )}
-                </div>
-                <div className="collab-freelance-info">
-                  {sidebarIdentityLoading ? (
-                    <>
-                      <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name" />
-                      <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-subtitle" />
-                      <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-location" />
-                    </>
-                  ) : (
-                    <>
+              {sidebarIdentityLoading ? (
+                <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
+              ) : sidebarError ? (
+                <div className="error-placeholder">{sidebarErrorMessage}</div>
+              ) : (
+                <>
+                  <div className="collab-freelance-header">
+                    <div className="collab-freelance-photo-wrapper">
+                      <img src={sidebarProfile.photo} alt={sidebarProfile.nom} className="collab-freelance-photo" />
+                      {sidebarProfile.verified && <div className="collab-verified-badge"><FiCheck /></div>}
+                    </div>
+                    <div className="collab-freelance-info">
                       <h3>{sidebarProfile.nom}</h3>
                       <p>{sidebarProfile.poste}</p>
                       <div className="collab-freelance-location">
                         <FiMapPin /> {sidebarProfile.location}
                       </div>
-                      {sidebarProfile.specialite && (
-                        <div className="collab-freelance-location">
-                          <FiBriefcase /> {sidebarProfile.specialite}
-                        </div>
-                      )}
-                      {sidebarProfile.tarifHoraire !== null && (
-                        <div className="collab-freelance-location">
-                          <FiDollarSign /> {Math.round(sidebarProfile.tarifHoraire).toLocaleString("fr-FR")} FCFA / h
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="collab-freelance-stats">
-                <div className="collab-stat-item">
-                  <div className="collab-stat-value">
-                    {renderStars(Math.floor(sidebarProfile.note))}
+                    </div>
                   </div>
-                  <div className="collab-stat-label">{sidebarProfile.avis} avis</div>
-                </div>
-                <div className="collab-stat-item">
-                  <div className="collab-stat-value">
-                    {sidebarProfile.projetsRealises}
+                  
+                  <div className="collab-freelance-stats">
+                    <div className="collab-stat-item">
+                      <div className="collab-stat-value">
+                        <FiStar className="collab-star" /> {sidebarProfile.note}
+                      </div>
+                      <div className="collab-stat-label">{sidebarProfile.avis} avis</div>
+                    </div>
+                    <div className="collab-stat-item">
+                      <div className="collab-stat-value">{sidebarProfile.projetsRealises}</div>
+                      <div className="collab-stat-label">Projets</div>
+                    </div>
+                    <div className="collab-stat-item">
+                      <div className="collab-stat-value">98%</div>
+                      <div className="collab-stat-label">Réponse</div>
+                    </div>
                   </div>
-                  <div className="collab-stat-label">Projets</div>
-                </div>
 
-                <div className="collab-stat-item">
-                  <div className="collab-stat-value">
-                    {sidebarProfile.collaborationsEnCours}
+                  <div className="collab-freelance-competences">
+                    {sidebarProfile.competences.map((skill, i) => (
+                      <span key={i} className="collab-comp-tag">{skill}</span>
+                    ))}
                   </div>
-                  <div className="collab-stat-label">Projets en cours</div>
-                </div>
-              </div>
 
-              <div className="collab-freelance-competences">
-                {sidebarProfile.competences.map((comp, index) => (
-                  <span key={index} className="collab-comp-tag">
-                    {comp}
-                  </span>
-                ))}
-              </div>
-
-              <div className="collab-security-badge">
-                <FiShield /> Collaboration sécurisée par Jobty
-              </div>
+                  <div className="collab-security-badge">
+                    <FiShield /> <span>Paiement 100% sécurisé</span>
+                  </div>
+                </>
+              )}
             </div>
-            )}
 
-            {/* Résumé du projet (affiché après le brief) */}
-            {currentStep >= 3 && brief.objectif && (
+            {/* Résumé rapide si le brief est là */}
+            {currentStep >= 3 && (
               <div className="collab-project-summary">
-                <h4>
-                  <FiTarget /> Résumé du projet
-                </h4>
+                <h4><FiShield /> Résumé du projet</h4>
                 <div className="collab-summary-item">
-                  <span className="collab-summary-label">Objectif</span>
-                  <p>{brief.objectif}</p>
+                  <span className="collab-summary-label">Budget</span>
+                  <p className="collab-budget-display">{brief.budget ? parseInt(brief.budget).toLocaleString() : '0'} FCFA</p>
                 </div>
-                {brief.budget && (
-                  <div className="collab-summary-item">
-                    <span className="collab-summary-label">Budget</span>
-                    <p className="collab-budget-display">
-                      {parseInt(brief.budget).toLocaleString()} FCFA
-                    </p>
-                  </div>
-                )}
-                {brief.delai && (
-                  <div className="collab-summary-item">
-                    <span className="collab-summary-label">Délai</span>
-                    <p>{brief.delai}</p>
-                  </div>
-                )}
+                <div className="collab-summary-item">
+                  <span className="collab-summary-label">Délai</span>
+                  <p>{brief.delai || "Non défini"}</p>
+                </div>
               </div>
             )}
           </aside>
 
-          {/* Zone principale */}
-          <div className="collab-workspace">
-            {backendSpace?.id && (
-              <div className="collab-alert-info" style={{ marginBottom: 16 }}>
-                <FiCheckCircle />
-                <span>
-                  Projet synchronisé: {backendSpace.id} - statut {backendSpace.status}
-                </span>
-              </div>
-            )}
-
-            {isSyncing && (
-              <div className="collab-alert-info" style={{ marginBottom: 16 }}>
-                <FiClock />
-                <span>Synchronisation de la collaboration en cours...</span>
-              </div>
-            )}
-
-            {syncErrorMessage && (
-              <div className="collab-alert-info" style={{ marginBottom: 16 }}>
-                <FiAlertCircle />
-                <span>{syncErrorMessage}</span>
-              </div>
-            )}
-
-            {/* ÉTAPE 0 : Prise de contact */}
-            {currentStep === 0 && (
-              <StepContact {...stageViewModel.contact} />
-            )}
-
-            {/* ÉTAPE 1 : Décision du professionnel */}
-            {currentStep === 1 && (
-              <StepDecision {...stageViewModel.decision} />
-            )}
-
-            {/* ÉTAPE 2 : Match confirmé */}
-            {currentStep === 2 && (
-              <StepMatch {...stageViewModel.match} />
-            )}
-
-            {/* ÉTAPE 3 : Brief express */}
-            {currentStep === 3 && (
-              <StepBrief {...stageViewModel.briefStep} />
-            )}
-
-            {/* ÉTAPE 4 : Contrat intelligent */}
-            {currentStep === 4 && (
-              <StepContract {...stageViewModel.contract} />
-            )}
-
-            {/* ÉTAPE 5 : Paiement sécurisé */}
-            {currentStep === 5 && (
-              <StepPayment {...stageViewModel.payment} />
-            )}
-
-            {/* ÉTAPE 6 : Tableau de collaboration */}
-            {currentStep === 6 && (
-              <StepExecution {...stageViewModel.execution} />
-            )}
-
-            {/* ÉTAPE 7 : Livraison */}
-            {currentStep === 7 && (
-              <StepDelivery {...stageViewModel.delivery} />
-            )}
-
-            {/* ÉTAPE 8 : Paiement libéré */}
-            {currentStep === 8 && (
-              <StepRelease {...stageViewModel.release} />
-            )}
-
-            {/* ÉTAPE 9 : Clôture & Avis */}
-            {currentStep === 9 && (
-              <StepClosure {...stageViewModel.closure} />
-            )}
-          </div>
+          {/* Espace de Travail Central */}
+          <section className="collab-workspace">
+            <div className="workspace-content">
+              {currentStep === 0 && <StepContact {...stageViewModel.contact} />}
+              {currentStep === 1 && <StepDecision {...stageViewModel.decision} />}
+              {currentStep === 2 && <StepMatch {...stageViewModel.match} />}
+              {currentStep === 3 && <StepBrief {...stageViewModel.briefStep} />}
+              {currentStep === 4 && <StepContract {...stageViewModel.contract} />}
+              {currentStep === 5 && <StepPayment {...stageViewModel.payment} />}
+              {currentStep === 6 && <StepExecution {...stageViewModel.execution} />}
+              {currentStep === 7 && <StepDelivery {...stageViewModel.delivery} />}
+              {currentStep === 8 && <StepRelease {...stageViewModel.release} />}
+              {currentStep === 9 && <StepClosure {...stageViewModel.closure} />}
+            </div>
+          </section>
         </div>
       </main>
 
-      {/* FOOTER */}
-      <footer className="collab-footer">
-        <div className="collab-footer-content">
-          <div className="collab-footer-security">
-            <FiShield />
-            <span>
-              Espace sécurisé par Jobty - Toutes les interactions sont archivées
-              et horodatées
-            </span>
-          </div>
-          <div className="collab-footer-links">
-            <a href="/aide">Aide</a>
-            <a href="/conditions">CGU</a>
-            <a href="/contact">Contact support</a>
-          </div>
-        </div>
-      </footer>
-      </>
-      )}
+      {/* Overlay Mobile */}
+      {menuOpen && <div className="collab-overlay" onClick={() => setMenuOpen(false)}></div>}
     </div>
   );
 };
+
+export default CollaborationSpace;

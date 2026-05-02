@@ -452,6 +452,18 @@
   box-shadow: 0 6px 20px rgba(61, 199, 201, 0.4);
 }
 
+.cta-outline {
+  background-color: transparent !important;
+  color: #3dc7c9 !important;
+  border: 2px solid #3dc7c9 !important;
+}
+
+.cta-outline:hover {
+  background-color: #3dc7c9 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(61, 199, 201, 0.2) !important;
+}
+
 /* ========================================================================== */
 /*                    SECTION TÉMOIGNAGES - AVATARS                           */
 /* ========================================================================== */
@@ -1980,3 +1992,241 @@
     font-size: 16px;
   }
 }
+
+/* ========================================================================== */
+/*                          SECTION VIVIER PROFILS                            */
+/* ========================================================================== */
+
+.vivier-section {
+  padding: 80px 20px;
+  background-color: transparent;
+  overflow: hidden;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.vivier-section .section-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.vivier-section .section-header h2 {
+  font-size: 32px;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.vivier-section .section-header p {
+  font-size: 16px;
+  color: #666;
+}
+
+.vivier-carousel-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 20px 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+
+
+.vivier-track {
+  display: flex;
+  width: max-content;
+  animation: scrollVivier 35s linear infinite;
+  gap: 24px;
+}
+
+.vivier-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scrollVivier {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 12px)); }
+}
+
+.vivier-card {
+  width: 240px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
+}
+
+.vivier-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+}
+
+.vivier-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 16px;
+  background: #f3f4f6;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.vivier-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.vivier-role {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.vivier-country {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.vivier-action-btn {
+  background: rgba(96, 68, 163, 0.08);
+  color: #6044a3;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.vivier-action-btn:hover {
+  background: #3dc7c9;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(61, 199, 201, 0.3);
+}
+
+.vivier-footer-link {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.vivier-footer-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6044a3;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+
+.vivier-footer-link a:hover {
+  color: #4a3482;
+}
+
+.vivier-footer-link a svg {
+  transition: transform 0.2s;
+}
+
+.vivier-footer-link a:hover svg {
+  transform: translateX(4px);
+}
+
+/* --- SKELETON / WIREFRAME --- */
+.vivier-card.skeleton {
+  pointer-events: none;
+  border: 1px dashed #ccc;
+  background: #fafafa;
+}
+
+.skeleton-box {
+  background: #eee;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-box::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.3) 20%,
+    rgba(255, 255, 255, 0.6) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.vivier-avatar.skeleton {
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  font-size: 24px;
+  border: 1px dashed #ccc;
+}
+
+.vivier-name.skeleton {
+  height: 16px;
+  width: 140px;
+  margin: 0 auto 12px auto;
+  border-radius: 4px;
+}
+
+.vivier-role.skeleton {
+  height: 12px;
+  width: 100px;
+  margin: 0 auto 8px auto;
+  border-radius: 4px;
+}
+
+.vivier-country.skeleton {
+  height: 12px;
+  width: 80px;
+  margin: 0 auto 20px auto;
+  border-radius: 4px;
+}
+
+.vivier-action-btn.skeleton {
+  background: #eee !important;
+  color: transparent !important;
+  border: none !important;
+  width: 120px !important;
+  height: 36px !important;
+  margin: 0 auto !important;
+  border-radius: 50px !important;
+}
