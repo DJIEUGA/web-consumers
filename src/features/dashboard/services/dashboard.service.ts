@@ -554,23 +554,22 @@ export async function fetchCollaborations(): Promise<DashboardResponse<Collabora
     const counterpartName = String(targetName || fallbackName || 'Collaboration').trim();
     const displayTitle = String(space.title || `Mission avec ${counterpartName}`).trim();
 
-    const avatarSeed = encodeURIComponent(counterpartName || space.id);
-    const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`;
+    const clientImgUrl = space.clientImgUrl;
+    const proImgUrl =  space.proImgUrl;
 
     return {
       id: space.id,
       nom: counterpartName,
       role: 'Collaboration',
-      photo: avatar,
+      proImgUrl: proImgUrl,
       backendStatus: space.status,
       statut: mapBackendStatusToUiStatut(space.status),
-      clientPhoto: avatar,
       client: counterpartName,
       titre: displayTitle,
       montant: 0,
-      progression: space.status === 'COMPLETED' ? 100 : space.status === 'ACTIVE' ? 60 : 0,
+      progression: space.status === 'COMPLETED' ? 100 : space.status === 'MATCH_CONFIRMED' ? 60 : 0,
       prochaineLivraison: space.status === 'COMPLETED' ? 'Livrée' : 'À planifier',
-      clientImage: avatar,
+      clientImgUrl: clientImgUrl,
     };
   };
 

@@ -7,6 +7,7 @@
  */
 
 import { ReactNode } from "react";
+import { Url } from "url";
 
 /**
  * DASHBOARD_ENDPOINTS
@@ -329,18 +330,17 @@ export interface PostDto {
  * Collaboration Record (Pro/Enterprise)
  */
 export interface CollaborationDto {
-  clientPhoto: string;
+  clientImgUrl?: string;
+  proImgUrl?: string;
   client: string;
   titre: ReactNode;
   montant: any;
   progression: any;
   prochaineLivraison: any;
-  clientImage: any;
   backendStatus?: string;
   id: string;
   nom: string;
   role: string;
-  photo?: string;
   statut: 'actif' | 'inactif' | 'en_attente';
 }
 

@@ -39,7 +39,7 @@ const CollaborationsTab: React.FC = () => {
         {collaborations.map((collab) => (
           <div key={collab.id} className="dash-collab-card">
             <div className="dash-collab-header">
-              <img src={collab.clientPhoto} alt={collab.client} />
+              <img src={collab.clientImgUrl} alt={collab.client} />
               <div className="dash-collab-info">
                 <h3>{collab.titre}</h3>
                 <p>{collab.client}</p>

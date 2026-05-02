@@ -10,6 +10,7 @@ export type CollaborationStatus =
   | "BRIEFING"
   | "CONTRACTING"
   | "PAYMENT_PENDING"
+  | "MATCH_CONFIRMED"
   | "IN_PROGRESS"
   | "DELIVERED"
   | "PAYMENT_RELEASED"
@@ -19,6 +20,8 @@ export type CollaborationStatus =
 export type CollaborationSpaceResponse = {
   id: string;
   customerId: string;
+  clientImgUrl: string;
+  proImgUrl: string;
   proId: string;
   title: string;
   brief: string;
