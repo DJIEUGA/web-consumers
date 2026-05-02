@@ -79,7 +79,11 @@ export const useCollaborationWorkspaceSync = ({
     },
   );
 
-  const spaceDetailQuery = useSpaceDetail(isUuidLike(incomingId) ? incomingId : undefined);
+  const spaceDetailQuery = useSpaceDetail(
+    isUuidLike(incomingId) && (resolvedSpaceId === incomingId || !collaborationRoomId.startsWith("room:"))
+      ? incomingId 
+      : undefined
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

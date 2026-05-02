@@ -1,26 +1,15 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  FiX,
-  FiMenu,
   FiCheck,
-  FiClock,
-  FiDollarSign,
-  FiMessageCircle,
-  FiCheckCircle,
-  FiAlertCircle,
   FiStar,
-  FiUpload,
-  FiEdit3,
-  FiTarget,
-  FiArrowLeft,
-  FiPlay,
-  FiRefreshCw,
-  FiShield,
+  FiAlertCircle,
   FiMapPin,
-  FiBriefcase,
+  FiArrowLeft,
+  FiShield,
+  FiMenu,
+  FiMessageCircle,
 } from "react-icons/fi";
-import Logo from "@/components/shared/Logo";
 import { useAuthStore } from "@/stores/auth.store";
 import {
   type CollaborationSpaceResponse,
@@ -39,7 +28,6 @@ import {
   LIVRABLES_SUGGESTIONS,
   PROCESS_STEPS,
   STEP_TO_STAGE,
-  canActorPerformAction,
 } from "@/features/collaboration/constants/workflow";
 import {
   buildRoomId,
@@ -154,16 +142,12 @@ export const CollaborationSpace = () => {
   const collaborationRoomId = (() => {
     if (!incomingId) return "room:anonymous";
     if (incomingId.startsWith("room:")) return incomingId;
-    if (isUuidLike(incomingId)) return incomingId;
-
-    if (roleValue === "ROLE_CUSTOMER" && currentUserId) {
+    if (roleValue === "ROLE_CUSTOMER" && currentUserId && incomingId !== currentUserId) {
       return buildRoomId(currentUserId, incomingId);
     }
-
-    if (roleValue === "ROLE_PRO" && currentUserId) {
+    if (roleValue === "ROLE_PRO" && currentUserId && incomingId !== currentUserId) {
       return buildRoomId(incomingId, currentUserId);
     }
-
     return incomingId;
   })();
 
@@ -207,7 +191,6 @@ export const CollaborationSpace = () => {
     currentUserProfile,
   });
 
-  // États de la collaboration
   const [currentStep, setCurrentStep] = useState(0); 
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [decisionState, setDecisionState] = useState<CollaborationDecisionState>("pending");
@@ -215,7 +198,6 @@ export const CollaborationSpace = () => {
   const [reviewSubmitSuccess, setReviewSubmitSuccess] = useState(false);
   const [hasExistingReview, setHasExistingReview] = useState(false);
 
-  // États des données
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -547,91 +529,144 @@ export const CollaborationSpace = () => {
   }
 
   return (
-    <div className="collab-container">
+    <div className="collab-page">
+      {/* Header */}
       <header className="collab-header">
-        <div className="header-left">
-          <button onClick={() => navigate(-1)} className="back-button"><FiArrowLeft /></button>
-          <div className="header-info">
-            <h1 className="header-title">Collaboration avec {isCustomer ? freelance.nom : porteur.nom}</h1>
-            <div className="header-status">
-              <span className={`status-dot step-${currentStep}`}></span>
-              <span className="status-text">{PROCESS_STEPS[currentStep].label}</span>
+        <div className="collab-header-content">
+          <div className="collab-header-left">
+             <button onClick={() => navigate(-1)} className="collab-back-btn">
+               <FiArrowLeft /> Retour
+             </button>
+          </div>
+          <div className="collab-header-center">
+            <h1 className="collab-header-title">
+              <FiMessageCircle /> Collaboration avec {isCustomer ? freelance.nom : porteur.nom}
+            </h1>
+          </div>
+          <div className="collab-header-actions">
+            <button className="collab-burger-btn" onClick={() => setMenuOpen(!menuOpen)}>
+              <FiMenu />
+            </button>
+            <div className="desktop-actions">
+              <button className="collab-back-btn" style={{ background: '#f8f9fa' }}>
+                <FiShield /> Aide & Sécurité
+              </button>
             </div>
           </div>
-        </div>
-        <div className="header-actions">
-          <button className="icon-button mobile-only" onClick={() => setMenuOpen(!menuOpen)}><FiMenu /></button>
-          <div className="desktop-actions"><button className="help-button"><FiShield /> Aide</button></div>
         </div>
       </header>
 
-      <main className="collab-main">
-        <aside className={`collab-sidebar ${menuOpen ? "open" : ""}`}>
-          <div className="sidebar-section profile-card-mini">
-            {sidebarIdentityLoading ? <div>Chargement...</div> : sidebarError ? <div>{sidebarErrorMessage}</div> : (
-              <>
-                <div className="profile-header-mini">
-                  <img src={sidebarProfile.photo} alt={sidebarProfile.nom} className="avatar-md" />
-                  <div className="profile-meta-mini">
-                    <h3>{sidebarProfile.nom}</h3>
-                    <p>{sidebarProfile.poste}</p>
-                    {sidebarProfile.verified && <span className="verified-badge"><FiCheckCircle /> Vérifié</span>}
-                  </div>
-                </div>
-                <div className="profile-stats-mini">
-                  <div className="stat-item"><FiStar className="stat-icon star" /><span>{sidebarProfile.note} ({sidebarProfile.avis})</span></div>
-                  <div className="stat-item"><FiMapPin className="stat-icon" /><span>{sidebarProfile.location}</span></div>
-                </div>
-              </>
-            )}
-          </div>
-          <div className="sidebar-section workflow-progress">
-            <h4>Progression</h4>
-            <div className="steps-vertical">
-              {PROCESS_STEPS.map((step, idx) => (
-                <div key={idx} className={`step-item ${idx <= currentStep ? "active" : ""} ${idx === currentStep ? "current" : ""}`}>
-                  <div className="step-number">{idx < currentStep ? <FiCheck /> : idx + 1}</div>
-                  <div className="step-label">{step.label}</div>
-                </div>
-              ))}
+      {/* Stepper Horizontal */}
+      <div className="collab-progress-bar">
+        <div className="collab-progress-track">
+          {PROCESS_STEPS.map((step, idx) => (
+            <div 
+              key={idx} 
+              className={`collab-progress-step ${idx <= currentStep ? "active" : ""} ${idx === currentStep ? "current" : ""}`}
+            >
+              <div className="collab-progress-icon">
+                {idx < currentStep ? <FiCheck /> : idx + 1}
+              </div>
+              <span className="collab-progress-label">{step.label}</span>
+              {idx < PROCESS_STEPS.length - 1 && (
+                <div className={`collab-progress-line ${idx < currentStep ? "filled" : ""}`}></div>
+              )}
             </div>
-          </div>
-        </aside>
+          ))}
+        </div>
+      </div>
 
-        <section className="collab-workspace">
-          <div className="workspace-content">
-            {currentStep === 0 && <StepContact {...stageViewModel.contact} />}
-            {currentStep === 1 && <StepDecision {...stageViewModel.decision} />}
-            {currentStep === 2 && <StepMatch {...stageViewModel.match} />}
-            {currentStep === 3 && <StepBrief {...stageViewModel.briefStep} />}
-            {currentStep === 4 && <StepContract {...stageViewModel.contract} />}
-            {currentStep === 5 && <StepPayment {...stageViewModel.payment} />}
-            {currentStep === 6 && <StepExecution {...stageViewModel.execution} />}
-            {currentStep === 7 && <StepDelivery {...stageViewModel.delivery} />}
-            {currentStep === 8 && <StepRelease {...stageViewModel.release} />}
-            {currentStep === 9 && <StepClosure {...stageViewModel.closure} />}
-          </div>
-        </section>
+      <main className="collab-main">
+        <div className="collab-container">
+          {/* Sidebar - Détails du profil */}
+          <aside className={`collab-sidebar-info ${menuOpen ? "open" : ""}`}>
+            <div className="collab-freelance-card">
+              {sidebarIdentityLoading ? (
+                <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
+              ) : sidebarError ? (
+                <div className="error-placeholder">{sidebarErrorMessage}</div>
+              ) : (
+                <>
+                  <div className="collab-freelance-header">
+                    <div className="collab-freelance-photo-wrapper">
+                      <img src={sidebarProfile.photo} alt={sidebarProfile.nom} className="collab-freelance-photo" />
+                      {sidebarProfile.verified && <div className="collab-verified-badge"><FiCheck /></div>}
+                    </div>
+                    <div className="collab-freelance-info">
+                      <h3>{sidebarProfile.nom}</h3>
+                      <p>{sidebarProfile.poste}</p>
+                      <div className="collab-freelance-location">
+                        <FiMapPin /> {sidebarProfile.location}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="collab-freelance-stats">
+                    <div className="collab-stat-item">
+                      <div className="collab-stat-value">
+                        <FiStar className="collab-star" /> {sidebarProfile.note}
+                      </div>
+                      <div className="collab-stat-label">{sidebarProfile.avis} avis</div>
+                    </div>
+                    <div className="collab-stat-item">
+                      <div className="collab-stat-value">{sidebarProfile.projetsRealises}</div>
+                      <div className="collab-stat-label">Projets</div>
+                    </div>
+                    <div className="collab-stat-item">
+                      <div className="collab-stat-value">98%</div>
+                      <div className="collab-stat-label">Réponse</div>
+                    </div>
+                  </div>
 
-        <aside className="collab-messages">
-          <div className="messages-header"><h3>Messagerie</h3></div>
-          <div className="messages-list">
-            {messages.length === 0 ? <div className="empty-messages"><FiMessageCircle /><p>Aucun message</p></div> : 
-              messages.map((msg) => (
-                <div key={msg.id} className={`message-bubble ${msg.sender === (isCustomer ? "porteur" : "freelance") ? "own" : ""}`}>
-                  <div className="message-content"><p>{msg.text}</p><span className="message-time">{msg.time}</span></div>
+                  <div className="collab-freelance-competences">
+                    {sidebarProfile.competences.map((skill, i) => (
+                      <span key={i} className="collab-comp-tag">{skill}</span>
+                    ))}
+                  </div>
+
+                  <div className="collab-security-badge">
+                    <FiShield /> <span>Paiement 100% sécurisé</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Résumé rapide si le brief est là */}
+            {currentStep >= 3 && (
+              <div className="collab-project-summary">
+                <h4><FiShield /> Résumé du projet</h4>
+                <div className="collab-summary-item">
+                  <span className="collab-summary-label">Budget</span>
+                  <p className="collab-budget-display">{brief.budget ? parseInt(brief.budget).toLocaleString() : '0'} FCFA</p>
                 </div>
-              ))
-            }
-            <div ref={messagesEndRef} />
-          </div>
-          <div className="message-input-area">
-            <input type="text" placeholder="Message..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyPress={(e) => e.key === "Enter" && sendMessage()} />
-            <button className="send-button" onClick={sendMessage}>Envoyer</button>
-          </div>
-        </aside>
+                <div className="collab-summary-item">
+                  <span className="collab-summary-label">Délai</span>
+                  <p>{brief.delai || "Non défini"}</p>
+                </div>
+              </div>
+            )}
+          </aside>
+
+          {/* Espace de Travail Central */}
+          <section className="collab-workspace">
+            <div className="workspace-content">
+              {currentStep === 0 && <StepContact {...stageViewModel.contact} />}
+              {currentStep === 1 && <StepDecision {...stageViewModel.decision} />}
+              {currentStep === 2 && <StepMatch {...stageViewModel.match} />}
+              {currentStep === 3 && <StepBrief {...stageViewModel.briefStep} />}
+              {currentStep === 4 && <StepContract {...stageViewModel.contract} />}
+              {currentStep === 5 && <StepPayment {...stageViewModel.payment} />}
+              {currentStep === 6 && <StepExecution {...stageViewModel.execution} />}
+              {currentStep === 7 && <StepDelivery {...stageViewModel.delivery} />}
+              {currentStep === 8 && <StepRelease {...stageViewModel.release} />}
+              {currentStep === 9 && <StepClosure {...stageViewModel.closure} />}
+            </div>
+          </section>
+        </div>
       </main>
-      {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)}></div>}
+
+      {/* Overlay Mobile */}
+      {menuOpen && <div className="collab-overlay" onClick={() => setMenuOpen(false)}></div>}
     </div>
   );
 };
