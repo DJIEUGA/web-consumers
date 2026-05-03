@@ -78,6 +78,7 @@ import NotificationsDrawer from '../../../../components/shared/NotificationsDraw
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
 import MessagingDrawer from '@/features/collaboration/components/MessagingDrawer';
 import { useMessagePolling } from "@/features/collaboration/hooks/useMessagePolling";
+import { useUIStore } from "@/stores/ui.store";
 import { useDashboardProfile } from '../../hooks/useDashboardProfile';
 import { useCollaborations } from '../../hooks/useDashboardData';
 import {
@@ -97,6 +98,8 @@ const CustomerDashboard = () => {
   const [messagingOpen, setMessagingOpen] = useState(false);
   const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("apercu");
+
+  const notifications = useUIStore((state) => state.notifications);
 
   // Use message polling to simulate real-time notifications
   useMessagePolling(10000);
@@ -232,7 +235,9 @@ const CustomerDashboard = () => {
             </button>
             <button className="admin-notif-btn" onClick={() => setNotificationsOpen(true)}>
               <FiBell />
-              <span className="admin-notif-badge">15</span>
+              {notifications.length > 0 && (
+                <span className="admin-notif-badge">{notifications.length}</span>
+              )}
             </button>
             <button className="admin-profile-btn" onClick={openProfile}>
               <img src={adminUser.photo} alt="" />

@@ -48,6 +48,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const closeMenu = () => setMenuOpen(false);
   const openProfile = () => setProfileOpen(true);
   const closeProfile = () => setProfileOpen(false);
+  const notifications = useUIStore((state) => state.notifications);
 
   // Use message polling to simulate real-time notifications (check every 10 seconds)
   useMessagePolling(10000);
@@ -88,9 +89,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </button>
             <button className="dash-notif-btn" onClick={() => setNotificationsOpen(true)}>
               <FiBell />
-              <span className="dash-notif-badge">
-                {profile.unreadNotifications || 0}
-              </span>
+              {notifications.length > 0 && (
+                <span className="dash-notif-badge">
+                  {notifications.length}
+                </span>
+              )}
             </button>
             <button className="dash-profile-btn" onClick={openProfile}>
               <img src={profile.avatarUrl} alt="" />
