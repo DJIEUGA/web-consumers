@@ -117,7 +117,7 @@ export const unwrapEnvelope = <T>(response: unknown): T => {
 export const collaborationApi = {
   async listMySpaces(): Promise<CollaborationSpaceResponse[]> {
     const response = await axiosInstance.get<MaybeEnvelope<CollaborationSpaceResponse[]>>(
-      COLLABORATION_ENDPOINTS.MY_SPACES,
+      `${COLLABORATION_ENDPOINTS.MY_SPACES}?_t=${Date.now()}`,
     );
     return unwrapEnvelope<CollaborationSpaceResponse[]>(response) || [];
   },
@@ -250,9 +250,10 @@ export const collaborationApi = {
   },
 
   async listMessages(spaceId: string): Promise<MessageDTO[]> {
-    const response = await axiosInstance.get<MaybeEnvelope<MessageDTO[]>>(
-      COLLABORATION_ENDPOINTS.MESSAGES(encodeURIComponent(spaceId)),
-    );
+    const encodedId = encodeURIComponent(spaceId);
+    // Add cache busting for polling
+    const url = `${COLLABORATION_ENDPOINTS.MESSAGES(encodedId)}${COLLABORATION_ENDPOINTS.MESSAGES(encodedId).includes('?') ? '&' : '?'}_t=${Date.now()}`;
+    const response = await axiosInstance.get<MaybeEnvelope<MessageDTO[]>>(url);
     return unwrapEnvelope<MessageDTO[]>(response) || [];
   },
 

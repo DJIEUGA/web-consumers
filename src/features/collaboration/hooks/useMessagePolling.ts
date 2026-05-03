@@ -31,8 +31,9 @@ export const useMessagePolling = (intervalMs = 15000) => {
           const messages = await collaborationApi.listMessages(space.id);
           if (!messages || messages.length === 0) continue;
           
-          // Messages are assumed to be chronological
-          const latestMsg = messages[messages.length - 1];
+          // Ensure messages are sorted chronologically (oldest to newest)
+          const sortedMessages = [...messages].sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+          const latestMsg = sortedMessages[sortedMessages.length - 1];
           const latestTime = new Date(latestMsg.sentAt).getTime();
           const storedTime = lastSeenMap.current[space.id] || 0;
           
