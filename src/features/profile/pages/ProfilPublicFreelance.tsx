@@ -1057,7 +1057,10 @@ function ProfilPublicFreelance() {
       <MessagingDrawer 
         isOpen={isMessagingOpen} 
         onClose={() => setIsMessagingOpen(false)} 
-        freelance={freelance} 
+        freelance={{
+          ...freelance,
+          nom: freelance.isEnterprise ? freelance.nom : `${freelance.prenom} ${freelance.nom}`.trim()
+        }} 
       />
     </div>
   );
