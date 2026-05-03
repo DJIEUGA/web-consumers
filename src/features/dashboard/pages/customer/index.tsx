@@ -63,6 +63,7 @@ import {
   FiPercent,
   FiMail,
   FiPhone,
+  FiMessageSquare,
 } from "react-icons/fi";
 import {
   FaHandshake,
@@ -75,6 +76,8 @@ import {
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import NotificationsDrawer from '../../../../components/shared/NotificationsDrawer';
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import MessagingDrawer from '@/features/collaboration/components/MessagingDrawer';
+import { useMessagePolling } from "@/features/collaboration/hooks/useMessagePolling";
 import { useDashboardProfile } from '../../hooks/useDashboardProfile';
 import { useCollaborations } from '../../hooks/useDashboardData';
 import {
@@ -91,7 +94,13 @@ const CustomerDashboard = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [messagingOpen, setMessagingOpen] = useState(false);
+  const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("apercu");
+
+  // Use message polling to simulate real-time notifications
+  useMessagePolling(10000);
+
   const { profile: dashboardProfile } = useDashboardProfile();
   const {
     data: collaborations = [],
@@ -201,6 +210,7 @@ const CustomerDashboard = () => {
           subtitle: adminUser.role,
           photo: adminUser.photo,
         }}
+        onMessagesOpen={() => setMessagingOpen(true)}
       />
 
       {/* MAIN CONTENT */}
@@ -494,6 +504,21 @@ const CustomerDashboard = () => {
       <NotificationsDrawer
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
+        onNotificationClick={(notif) => {
+          if (notif.metadata?.spaceId) {
+            setActiveSpaceId(notif.metadata.spaceId);
+            setNotificationsOpen(false);
+            setMessagingOpen(true);
+          }
+        }}
+      />
+      <MessagingDrawer
+        isOpen={messagingOpen}
+        onClose={() => {
+          setMessagingOpen(false);
+          setActiveSpaceId(null);
+        }}
+        initialSpaceId={activeSpaceId}
       />
     </div>
   );

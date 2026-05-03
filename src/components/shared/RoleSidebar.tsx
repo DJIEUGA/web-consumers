@@ -17,6 +17,7 @@ import {
   FiCompass,
   FiGlobe,
   FiStar,
+  FiMessageSquare,
 } from "react-icons/fi";
 import { FaBalanceScale, FaUserShield, FaHandshake, FaBullhorn } from "react-icons/fa";
 import type { UserRole } from "@/stores/auth.store";
@@ -49,6 +50,7 @@ interface RoleSidebarProps {
   isLoggingOut?: boolean;
   user: SidebarUser;
   userExtra?: React.ReactNode;
+  onMessagesOpen?: () => void;
 }
 
 const adminItems: NavItem[] = [
@@ -113,6 +115,7 @@ const RoleSidebar: React.FC<RoleSidebarProps> = ({
   isLoggingOut = false,
   user,
   userExtra,
+  onMessagesOpen,
 }) => {
   const navigate = useNavigate();
   const authUserId = useAuthStore((state) => state.user?.id);
@@ -177,6 +180,15 @@ const RoleSidebar: React.FC<RoleSidebarProps> = ({
               onClick={() => navigate(`/profiles/${encodeURIComponent(String(authUserId))}`)}
             >
               <FiUser /> Mon profil public
+            </button>
+          )}
+
+          {onMessagesOpen && (
+            <button
+              className={navItemClass}
+              onClick={onMessagesOpen}
+            >
+              <FiMessageSquare /> Messages
             </button>
           )}
         </nav>

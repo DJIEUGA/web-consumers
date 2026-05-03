@@ -8,6 +8,7 @@ type NotificationsDrawerProps = {
   open: boolean;
   onClose: () => void;
   title?: string;
+  onNotificationClick?: (notification: any) => void;
 };
 
 const iconByType: Record<string, React.ReactNode> = {
@@ -70,6 +71,7 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
   open,
   onClose,
   title = "Notifications",
+  onNotificationClick,
 }) => {
   const notifications = useUIStore((state) => state.notifications);
   const removeNotification = useUIStore((state) => state.removeNotification);
@@ -122,7 +124,11 @@ const NotificationsDrawer: React.FC<NotificationsDrawerProps> = ({
                 .slice()
                 .reverse()
                 .map((item) => (
-                  <li key={item.id} className="notifications-item">
+                  <li 
+                    key={item.id} 
+                    className={`notifications-item ${onNotificationClick ? 'clickable' : ''}`}
+                    onClick={() => onNotificationClick?.(item)}
+                  >
                     <div className="notifications-item-icon">
                       {iconByType[item.type || "info"] || <FiInfo className="notif-type info" />}
                     </div>

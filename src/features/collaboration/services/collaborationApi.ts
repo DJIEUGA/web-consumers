@@ -285,6 +285,16 @@ export const collaborationApi = {
     return Array.isArray(details?.reviews) ? details.reviews : [];
   },
 
+  async getProProfileDetails(
+    proProfileId: string,
+  ): Promise<Record<string, unknown>> {
+    const encodedId = encodeURIComponent(proProfileId);
+    const response = await axiosInstance.get<MaybeEnvelope<Record<string, unknown>>>(
+      `/public/profiles/${encodedId}/details`,
+    );
+    return unwrapEnvelope<Record<string, unknown>>(response) || {};
+  },
+
   async getCustomerProfileDetails(
     customerProfileId: string,
   ): Promise<CustomerProfileDetails> {

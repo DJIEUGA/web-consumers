@@ -196,3 +196,18 @@
 .notif-type.error {
   color: #dc2626;
 }
+
+.notifications-item.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notifications-item.clickable:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.notifications-item.clickable:active {
+  transform: translateY(0);
+}

@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { FiX, FiSend, FiPaperclip, FiMic, FiMoreVertical, FiImage, FiSmile, FiTrash2, FiChevronLeft } from 'react-icons/fi';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth.store';
 import collaborationApi, { CollaborationSpaceResponse } from '../services/collaborationApi';
+import profileApi from '../../profile/services/profileApi';
+import { useUIStore } from '@/stores/ui.store';
 import '../styles/MessagingDrawer.css';
 
 interface Message {
@@ -11,20 +14,22 @@ interface Message {
   time: string;
   type: 'text' | 'voice' | 'file';
   fileUrl?: string;
+  fullDate: string;
 }
 
 interface MessagingDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  freelance: {
+  freelance?: {
     id: string;
     nom: string;
     photo: string;
     disponible?: boolean;
   };
+  initialSpaceId?: string | null;
 }
 
-const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, freelance }) => {
+const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, freelance, initialSpaceId }) => {
   const [view, setView] = useState<'list' | 'chat'>('chat');
   const [spaces, setSpaces] = useState<CollaborationSpaceResponse[]>([]);
   const [selectedSpace, setSelectedSpace] = useState<CollaborationSpaceResponse | null>(null);
@@ -35,6 +40,8 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
   const [isSending, setIsSending] = useState(false);
   const [spaceId, setSpaceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeParticipantPhoto, setActiveParticipantPhoto] = useState<string | null>(null);
+  const [photosMap, setPhotosMap] = useState<Record<string, string>>({});
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,9 +74,10 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       const remoteMessages = await collaborationApi.listMessages(sid);
       setMessages(remoteMessages.map(msg => ({
         id: msg.id,
-        sender: msg.senderId === currentUser?.id ? 'me' : 'them',
+        sender: String(msg.senderId) === String(currentUser?.id) ? 'me' : 'them',
         text: msg.content,
         time: new Date(msg.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        fullDate: new Date(msg.sentAt).toISOString().split('T')[0],
         type: 'text'
       })));
     } catch (error) {
@@ -86,13 +94,18 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
           const allSpaces = await collaborationApi.listMySpaces();
           setSpaces(allSpaces);
 
-          if (freelance.id) {
+          if (initialSpaceId) {
+            const existing = allSpaces.find(s => s.id === initialSpaceId);
+            if (existing) {
+              handleSelectSpace(existing);
+              return;
+            }
+          }
+
+          if (freelance?.id) {
             const existing = allSpaces.find(s => s.proId === freelance.id || s.customerId === freelance.id);
             if (existing) {
-              setSelectedSpace(existing);
-              setSpaceId(existing.id);
-              setView('chat');
-              await loadMessages(existing.id);
+              handleSelectSpace(existing);
             } else {
               setSelectedSpace(null);
               setSpaceId(null);
@@ -110,7 +123,48 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       };
       init();
     }
-  }, [isOpen, isAuthenticated, freelance.id]);
+  }, [isOpen, isAuthenticated, freelance?.id, initialSpaceId]);
+  
+  // Fetch real photos for all spaces in the list
+  useEffect(() => {
+    if (view === 'list' && spaces.length > 0) {
+      const fetchPhotos = async () => {
+        const newPhotos = { ...photosMap };
+        let hasNew = false;
+        
+        for (const space of spaces) {
+          const other = getOtherParticipant(space);
+          if (other.id && !newPhotos[other.id]) {
+            try {
+              let details: Record<string, unknown> | null = null;
+              const isCurrentUserCustomer = currentUser?.role === 'ROLE_CUSTOMER' || currentUser?.role === 'ROLE_ENTERPRISE';
+              if (isCurrentUserCustomer) {
+                details = await collaborationApi.getProProfileDetails(other.id);
+              } else {
+                details = await collaborationApi.getCustomerProfileDetails(other.id);
+              }
+              
+              if (details) {
+                const photo = details.avatarUrl || details.logoUrl || details.avatar || details.photo || details.profilePictureUrl;
+                if (photo && typeof photo === 'string') {
+                  newPhotos[other.id] = photo;
+                  hasNew = true;
+                }
+              }
+            } catch (e) {
+              console.warn("Failed to fetch photo for", other.id, e);
+            }
+          }
+        }
+        
+        if (hasNew) {
+          setPhotosMap(newPhotos);
+        }
+      };
+      
+      fetchPhotos();
+    }
+  }, [view, spaces]);
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || isSending) return;
@@ -126,6 +180,7 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       sender: 'me',
       text: textToSend,
       time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      fullDate: new Date().toISOString().split('T')[0],
       type: 'text'
     };
     setMessages(prev => [...prev, newMessage]);
@@ -134,7 +189,7 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       let currentSpaceId = spaceId;
       
       // Create space if doesn't exist
-      if (!currentSpaceId && freelance.id) {
+      if (!currentSpaceId && freelance?.id) {
         const newSpace = await collaborationApi.createSpace({
           proId: freelance.id,
           title: `Conversation avec ${freelance.nom}`
@@ -150,6 +205,15 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
 
       if (currentSpaceId) {
         await collaborationApi.sendMessage(currentSpaceId, textToSend);
+        toast.success("Message envoyé");
+        
+        // Add a local notification for better feedback
+        useUIStore.getState().addNotification({
+          type: 'success',
+          title: 'Message envoyé',
+          message: `Votre message a été envoyé à ${currentChatInfo.name}.`,
+          metadata: { spaceId: currentSpaceId }
+        });
       }
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -163,6 +227,30 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
     setSpaceId(space.id);
     setView('chat');
     setIsLoading(true);
+    
+    // Fetch real photo for active participant
+    const isCurrentUserCustomer = currentUser?.role === 'ROLE_CUSTOMER' || currentUser?.role === 'ROLE_ENTERPRISE';
+    const otherId = isCurrentUserCustomer ? space.proId : space.customerId;
+    
+    try {
+      let details: Record<string, unknown> | null = null;
+      if (isCurrentUserCustomer) {
+        details = await collaborationApi.getProProfileDetails(otherId);
+      } else {
+        details = await collaborationApi.getCustomerProfileDetails(otherId);
+      }
+
+      if (details) {
+        const realPhoto = details.avatarUrl || details.logoUrl || details.avatar || details.photo || details.profilePictureUrl;
+        if (realPhoto && typeof realPhoto === 'string') {
+          setActiveParticipantPhoto(realPhoto);
+          setPhotosMap(prev => ({ ...prev, [otherId]: realPhoto }));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch participant photo", e);
+    }
+
     await loadMessages(space.id);
     setIsLoading(false);
   };
@@ -176,6 +264,7 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
         sender: 'me',
         text: 'Message vocal (' + formatTime(recordingTime) + ')',
         time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        fullDate: new Date().toISOString().split('T')[0],
         type: 'voice'
       };
       setMessages(prev => [...prev, newMessage]);
@@ -190,6 +279,7 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
         sender: 'me',
         text: `Fichier : ${file.name}`,
         time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        fullDate: new Date().toISOString().split('T')[0],
         type: 'file'
       };
       setMessages(prev => [...prev, newMessage]);
@@ -209,11 +299,24 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
     }
   };
 
+  const formatDateHeader = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+
+    const dStr = d.toDateString();
+    if (dStr === now.toDateString()) return "Aujourd'hui";
+    if (dStr === yesterday.toDateString()) return "Hier";
+    
+    return `Envoyé le ${d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}`;
+  };
+
   const getOtherParticipant = (space: CollaborationSpaceResponse) => {
-    const isCustomer = currentUser?.id === space.customerId;
+    const isCurrentUserCustomer = currentUser?.role === 'ROLE_CUSTOMER' || currentUser?.role === 'ROLE_ENTERPRISE';
     return {
-      name: isCustomer ? space.proName : space.customerName,
-      id: isCustomer ? space.proId : space.customerId
+      name: isCurrentUserCustomer ? space.proName : space.customerName,
+      id: String(isCurrentUserCustomer ? space.proId : space.customerId)
     };
   };
 
@@ -226,16 +329,23 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       const other = getOtherParticipant(selectedSpace);
       return {
         name: other.name,
-        photo: getParticipantPhoto(other.name),
+        photo: activeParticipantPhoto || photosMap[String(other.id)] || getParticipantPhoto(other.name),
         disponible: false
       };
     }
+    if (freelance) {
+      return {
+        name: freelance.nom,
+        photo: freelance.photo || getParticipantPhoto(freelance.nom),
+        disponible: freelance.disponible
+      };
+    }
     return {
-      name: freelance.nom,
-      photo: freelance.photo,
-      disponible: freelance.disponible
+      name: "Messagerie",
+      photo: "",
+      disponible: false
     };
-  }, [selectedSpace, freelance, currentUser]);
+  }, [selectedSpace, freelance, currentUser, activeParticipantPhoto, photosMap]);
 
   return (
     <>
@@ -283,9 +393,10 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
               ) : (
                 spaces.map(space => {
                   const other = getOtherParticipant(space);
+                  const photo = photosMap[other.id] || getParticipantPhoto(other.name);
                   return (
                     <div key={space.id} className="conversation-item" onClick={() => handleSelectSpace(space)}>
-                      <img src={getParticipantPhoto(other.name)} alt={other.name} className="conversation-avatar" />
+                      <img src={photo} alt={other.name} className="conversation-avatar" />
                       <div className="conversation-details">
                         <div className="conversation-header">
                           <span className="conversation-name">{other.name}</span>
@@ -309,14 +420,24 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
                   <p>Envoyez un message pour démarrer la conversation avec {currentChatInfo.name}.</p>
                 </div>
               ) : (
-                messages.map(msg => (
-                  <div key={msg.id} className={`message-bubble ${msg.sender === 'me' ? 'sent' : 'received'}`}>
-                    {msg.type === 'voice' && <FiMic style={{marginRight: '8px'}} />}
-                    {msg.type === 'file' && <FiPaperclip style={{marginRight: '8px'}} />}
-                    {msg.text}
-                    <span className="message-time">{msg.time}</span>
-                  </div>
-                ))
+                messages.map((msg, index) => {
+                  const showDateHeader = index === 0 || messages[index - 1].fullDate !== msg.fullDate;
+                  return (
+                    <React.Fragment key={msg.id}>
+                      {showDateHeader && (
+                        <div className="message-date-header">
+                          <span>{formatDateHeader(msg.fullDate)}</span>
+                        </div>
+                      )}
+                      <div className={`message-bubble ${msg.sender === 'me' ? 'sent' : 'received'}`}>
+                        {msg.type === 'voice' && <FiMic style={{marginRight: '8px'}} />}
+                        {msg.type === 'file' && <FiPaperclip style={{marginRight: '8px'}} />}
+                        {msg.text}
+                        <span className="message-time">{msg.time}</span>
+                      </div>
+                    </React.Fragment>
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </>
