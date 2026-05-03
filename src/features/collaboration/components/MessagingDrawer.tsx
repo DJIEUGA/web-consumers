@@ -206,14 +206,6 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       if (currentSpaceId) {
         await collaborationApi.sendMessage(currentSpaceId, textToSend);
         toast.success("Message envoyé");
-        
-        // Add a local notification for better feedback
-        useUIStore.getState().addNotification({
-          type: 'success',
-          title: 'Message envoyé',
-          message: `Votre message a été envoyé à ${currentChatInfo.name}.`,
-          metadata: { spaceId: currentSpaceId }
-        });
       }
     } catch (error) {
       console.error("Failed to send message:", error);

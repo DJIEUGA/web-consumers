@@ -48,7 +48,7 @@ export const useMessagePolling = (intervalMs = 15000) => {
             addNotification({
               type: 'info',
               title: 'Nouveau message',
-              message: `${senderName || 'Un utilisateur'} vous a envoyé un message.`,
+              message: `vous avez recu un message de ${senderName || 'Un utilisateur'}`,
               metadata: { spaceId: space.id }
             });
           }
