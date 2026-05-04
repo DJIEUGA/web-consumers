@@ -144,6 +144,7 @@ export const useCollaborationStageViewModel = ({
   reviewSubmitSuccess,
 }: UseCollaborationStageViewModelParams) => {
   const contact = {
+    isCustomer,
     messages,
     porteurPhoto: porteur.photo,
     freelancePhoto: freelance.photo,
@@ -163,6 +164,7 @@ export const useCollaborationStageViewModel = ({
 
   const decision = {
     isPro,
+    porteur,
     freelance,
     requestContextMessage,
     actor,

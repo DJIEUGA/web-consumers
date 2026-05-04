@@ -6,6 +6,8 @@ import type { UiMessage } from '@/features/collaboration/types/workflow';
 type Props = {
   title?: string;
   subtitle?: string;
+  headerPhoto: string;
+  isCustomer: boolean;
   messages: UiMessage[];
   porteurPhoto: string;
   freelancePhoto: string;
@@ -23,6 +25,8 @@ type Props = {
 export const CollabChatWidget: React.FC<Props> = ({
   title = 'Messagerie',
   subtitle,
+  headerPhoto,
+  isCustomer,
   messages,
   porteurPhoto,
   freelancePhoto,
@@ -47,7 +51,7 @@ export const CollabChatWidget: React.FC<Props> = ({
     <div className="messaging-drawer open relative" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <header className="messaging-header" style={{ flex: '0 0 auto' }}>
         <div className="messaging-user-info">
-          <img src={freelancePhoto || porteurPhoto} alt={title} className="messaging-avatar" />
+          <img src={headerPhoto} alt={title} className="messaging-avatar" />
           <div className="messaging-user-details">
             <h3>{title}</h3>
             {subtitle && <div className="messaging-status">{subtitle}</div>}
@@ -61,23 +65,26 @@ export const CollabChatWidget: React.FC<Props> = ({
             <p>Aucun message pour l'instant.</p>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div key={msg.id} className={`message-bubble ${msg.sender === 'porteur' ? 'sent' : 'received'}`}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {msg.text}
-              </span>
-              <span className="message-time">{msg.time}</span>
-              {msg.deliveryStatus === 'sending' && (
-                <span className="message-time" style={{ color: '#fd7e14' }}>Envoi...</span>
-              )}
-              {msg.deliveryStatus === 'failed' && onRetryMessage && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
-                  <span className="message-time" style={{ color: '#dc3545' }}>Echec d'envoi</span>
-                  <button className="input-btn" onClick={() => onRetryMessage(msg.id)}>Réessayer</button>
-                </div>
-              )}
-            </div>
-          ))
+          messages.map((msg) => {
+            const isSentByMe = isCustomer ? msg.sender === 'porteur' : msg.sender === 'freelance';
+            return (
+              <div key={msg.id} className={`message-bubble ${isSentByMe ? 'sent' : 'received'}`}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {msg.text}
+                </span>
+                <span className="message-time">{msg.time}</span>
+                {msg.deliveryStatus === 'sending' && (
+                  <span className="message-time" style={{ color: '#fd7e14' }}>Envoi...</span>
+                )}
+                {msg.deliveryStatus === 'failed' && onRetryMessage && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                    <span className="message-time" style={{ color: '#dc3545' }}>Echec d'envoi</span>
+                    <button className="input-btn" onClick={() => onRetryMessage(msg.id)}>Réessayer</button>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
         <div ref={messagesEndRef || innerEndRef} />
       </div>
@@ -115,3 +122,4 @@ export const CollabChatWidget: React.FC<Props> = ({
 };
 
 export default CollabChatWidget;
+

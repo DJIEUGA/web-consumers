@@ -94,6 +94,8 @@ export function useProProfileDetails(
     queryKey: COLLABORATION_KEYS.proProfile(proId || 'unknown'),
     queryFn: async () => collaborationApi.getProPublicProfileDetails(proId!),
     enabled: enabled && !!proId,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 min — avoid re-fetching constantly
   });
 }
 
@@ -105,6 +107,8 @@ export function useCustomerProfileDetails(
     queryKey: COLLABORATION_KEYS.customerProfile(customerProfileId || 'unknown'),
     queryFn: async () => collaborationApi.getCustomerProfileDetails(customerProfileId!),
     enabled: enabled && !!customerProfileId,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

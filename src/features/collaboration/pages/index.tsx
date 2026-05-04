@@ -190,6 +190,7 @@ export const CollaborationSpace = () => {
       (Boolean(incomingId) && !resolvedSpaceId && !backendSpace && !mySpacesQuery.isError),
     backendSpace,
     authUser,
+    currentUserProfile,
   });
 
   const [currentStep, setCurrentStep] = useState(0); 
@@ -591,14 +592,24 @@ export const CollaborationSpace = () => {
                   <span className="collab-actor-role">Porteur de projet</span>
                   <strong>{porteur.nom}</strong>
                   <small>{porteur.entreprise || "Client Jobty"}</small>
+                  {porteur.location && (
+                    <small className="collab-actor-location" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', color: '#64748b' }}>
+                      <FiMapPin size={12} /> {porteur.location}
+                    </small>
+                  )}
                 </div>
               </div>
               <div className="collab-actor-row">
-                <img src={freelance.avatarUrl} alt={freelance.nom} className="collab-actor-avatar" />
+                <img src={freelance.photo} alt={freelance.nom} className="collab-actor-avatar" />
                 <div className="collab-actor-info">
                   <span className="collab-actor-role">Professionnel</span>
                   <strong>{freelance.nom}</strong>
                   <small>{freelance.poste || "Professionnel Jobty"}</small>
+                  {freelance.location && (
+                    <small className="collab-actor-location" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', color: '#64748b' }}>
+                      <FiMapPin size={12} /> {freelance.location}
+                    </small>
+                  )}
                 </div>
               </div>
             </div>
@@ -626,13 +637,15 @@ export const CollaborationSpace = () => {
 
           {/* Right column: persistent chat widget */}
           <aside className="collab-right-chat">
-            {!(currentStep === 0 && !isPro) && currentStep !== 6 && (
+            {!(currentStep === 0 && !isPro) && (
               <CollabChatWidget
                 title={isPro ? porteur.nom : freelance.nom}
+                headerPhoto={isPro ? porteur.photo : freelance.photo}
+                isCustomer={isCustomer}
                 subtitle={isMessageBlockedByStatus(backendSpace?.status) ? 'Messagerie verrouillée' : (isPro ? 'Porteur de projet' : 'Professionnel')}
                 messages={messages}
                 porteurPhoto={porteur.photo}
-                freelancePhoto={isPro ? porteur.photo : freelance.photo}
+                freelancePhoto={freelance.photo}
                 newMessage={newMessage}
                 onMessageChange={setNewMessage}
                 onKeyPress={(e) => { if (e.key === 'Enter') void sendMessage(); }}
