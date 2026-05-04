@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collaborationService } from '../services/collaboration.service';
-import collaborationApi, { type CollaborationSpaceResponse, type PublicReviewItem, type ReviewRequest, type ProPublicProfileDetails, type CustomerProfileDetails } from '../services/collaborationApi';
+import collaborationApi from '../services/collaborationApi';
+import type {
+  CollaborationSpaceResponse,
+  CustomerProfileDetails,
+  ProPublicProfileDetails,
+  PublicReviewItem,
+  ReviewRequest,
+} from '../types';
 import type {
   CreateSpaceParams,
   SendMessageParams,

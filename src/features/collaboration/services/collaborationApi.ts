@@ -1,186 +1,45 @@
 import axiosInstance from "@/api/axios";
 import { COLLABORATION_ENDPOINTS } from "@/api/collaborationEndpoints";
 import type { ApiResponse as ApiEnvelope } from "@/types/api";
+import type {
+  CollaborationDetailEnvelope,
+  CollaborationSpaceResponse,
+  CustomerProfileDetails,
+  CreateSpaceParams,
+  GenericActionPayload,
+  LifecycleActionParams,
+  LifecycleTimelineItem,
+  MessageDTO,
+  OpenSpaceParams,
+  PreCollaborationDetailResponse,
+  ProPublicProfileDetails,
+  PublicReviewItem,
+  ReviewRequest,
+  SendMessageParams,
+  SubmitDeliverableParams,
+  UiHints,
+  CollaborationStatus,
+} from "../types";
 
-export type CollaborationStatus =
-  | "PENDING"
-  | "REQUEST_INFO"
-  | "ACCEPTED"
-  | "MATCH_CONFIRMED"
-  | "BRIEF"
-  | "CONTRACT"
-  | "PAYMENT"
-  | "REJECTED"
-  | "ACTIVE"
-  | "DELIVERABLE"
-  | "PAYMENT_RELEASED"
-  | "CLOSED"
-  | "COMPLETED"
-  | "CANCELLED";
-
-export type LifecycleTimelineItem = {
-  index: number;
-  key: string;
-  label: string;
-  state: string;
-};
-
-export type UiHints = {
-  messageEnabled?: boolean;
-  reviewAllowed?: boolean;
-  canCustomerSubmitBrief?: boolean;
-  canProDecide?: boolean;
-  nextRecommendedAction?: string;
-};
-
-export type ProfileDetailsDTO = {
-  userId?: string;
-  firstName?: string;
-  lastName?: string;
-  displayName?: string;
-  fullName?: string;
-  email?: string;
-  role?: string;
-  verified?: boolean;
-  country?: string;
-  city?: string;
-  phoneNumber?: string;
-  avatarUrl?: string;
-  bio?: string;
-  hourlyRate?: number;
-  specialization?: string;
-  experienceYears?: number;
-  sector?: string;
-  skills?: string[];
-  reputationScore?: number;
-  reviewCount?: number;
-  averageRating?: number;
-  isPremium?: boolean;
-  walletBalance?: number;
-  kycStatus?: string;
-  isAvailable?: boolean;
-  coverImageUrl?: string;
-};
-
-export type CollaborationDetailResponse = {
-  id?: string;
-  customerId?: string;
-  proId?: string;
-  customerName?: string;
-  proName?: string;
-  customerDetails?: ProfileDetailsDTO;
-  proDetails?: ProfileDetailsDTO;
-  viewerRole?: string;
-  title?: string;
-  brief?: string | null;
-  status?: CollaborationStatus;
-  phase?: string;
-  lifecycleStep?: string;
-  lifecycleStepLabel?: string;
-  lifecycleTimeline?: LifecycleTimelineItem[];
-  allowedActions?: string[];
-  alreadyReviewed?: boolean;
-  uiHints?: UiHints;
-};
-
-export type PreCollaborationDetailResponse = {
-  id?: string;
-  customerId?: string;
-  proId?: string;
-  viewerRole?: string;
-  title?: string;
-  brief?: string | null;
-  status?: "PENDING" | "REQUEST_INFO" | "ACCEPTED" | "REJECTED";
-  createdAt?: string;
-  updatedAt?: string;
-  allowedActions?: string[];
-  nextRecommendedAction?: string;
-  uiHints?: UiHints;
-};
-
-export type CollaborationDetailEnvelope = {
-  collaborationDetail?: CollaborationDetailResponse | null;
-  preCollaborationDetail?: PreCollaborationDetailResponse | null;
-};
-
-export type CollaborationSpaceResponse = {
-  id: string;
-  customerId: string;
-  proId: string;
-  customerName?: string;
-  proName?: string;
-  title: string;
-  brief: string | null;
-  status: CollaborationStatus;
-  viewerRole?: string;
-  phase?: string;
-  lifecycleStep?: string;
-  lifecycleStepLabel?: string;
-  lifecycleTimeline?: LifecycleTimelineItem[];
-  allowedActions?: string[];
-  alreadyReviewed?: boolean;
-  uiHints?: UiHints;
-  customerDetails?: ProfileDetailsDTO;
-  proDetails?: ProfileDetailsDTO;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-type CollaborationSpaceDetailData = {
-  collaborationDetail: CollaborationSpaceResponse;
-  preCollaborationDetail: unknown;
-};
-
-export type MessageDTO = {
-  id: string;
-  senderId: string;
-  senderName: string;
-  senderRole: string;
-  content: string;
-  sentAt: string;
-};
-
-export type CreateCollaborationRequest = {
-  proId: string;
-  title?: string;
-  brief?: string;
-};
-
-export type OpenCollaborationRequest = {
-  proId: string;
-  title?: string;
-};
-
-export type GenericActionPayload = Record<string, unknown>;
-
-export type ReviewRequest = {
-  rating: number;
-  comment?: string;
-  projectId?: string;
-};
-
-export type PublicReviewItem = {
-  userFrom?: string;
-  userAvatar?: string;
-  projectId?: string;
-  projectName?: string;
-  rating?: number;
-  comment?: string;
-  commentedAt?: string;
-  author?: {
-    id?: string;
-    firstName?: string;
-    lastName?: string;
-  };
-  reviewerId?: string;
-  userId?: string;
-};
-
-export type ProPublicProfileDetails = Record<string, unknown> & {
-  reviews?: PublicReviewItem[];
-};
-
-export type CustomerProfileDetails = Record<string, unknown>;
+export type {
+  CollaborationDetailEnvelope,
+  CollaborationSpaceResponse,
+  CustomerProfileDetails,
+  CreateSpaceParams,
+  GenericActionPayload,
+  LifecycleActionParams,
+  LifecycleTimelineItem,
+  MessageDTO,
+  OpenSpaceParams,
+  PreCollaborationDetailResponse,
+  ProPublicProfileDetails,
+  PublicReviewItem,
+  ReviewRequest,
+  SendMessageParams,
+  SubmitDeliverableParams,
+  UiHints,
+  CollaborationStatus,
+} from "../types";
 
 type MaybeEnvelope<T> = ApiEnvelope<T> | T;
 
@@ -271,7 +130,7 @@ export const collaborationApi = {
   },
 
   async createSpace(
-    payload: CreateCollaborationRequest,
+    payload: CreateSpaceParams,
   ): Promise<CollaborationSpaceResponse> {
     const response = await axiosInstance.post<MaybeEnvelope<CollaborationSpaceResponse>>(
       COLLABORATION_ENDPOINTS.CREATE_SPACE,
@@ -281,7 +140,7 @@ export const collaborationApi = {
   },
 
   async openSpace(
-    payload: OpenCollaborationRequest,
+    payload: OpenSpaceParams,
   ): Promise<CollaborationSpaceResponse> {
     const response = await axiosInstance.post<MaybeEnvelope<CollaborationSpaceResponse>>(
       COLLABORATION_ENDPOINTS.OPEN_SPACE,

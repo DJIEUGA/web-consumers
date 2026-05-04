@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import {
+  type CollaborationCardSummary,
   type CollaborationSpaceResponse,
-} from "@/features/collaboration/services/collaborationApi";
+} from "@/features/collaboration/types";
 import {
   getProfilePayload,
   parseRoomPair,
@@ -14,30 +15,9 @@ type AuthUserLike = {
   avatar?: string;
 };
 
-type PersonSummary = {
-  photo: string;
-  id: string | number;
-  nom: string;
-  avatarUrl?: string;
-  poste?: string;
-  entreprise?: string;
-  location?: string;
-  specialite?: string;
-  tarifHoraire?: number | null;
-  note?: number;
-  avis?: number;
-  projetsRealises?: number;
-  tauxReponse?: string;
-  delaiReponse?: string;
-  competences?: string[];
-  verified?: boolean;
-  anciennete?: string;
-  collaborationsEnCours?: number;
-};
-
 type SidebarProfile = {
   nom: string;
-  photo: string;
+  avatarUrl: string;
   poste: string;
   location: string;
   specialite: string;
@@ -109,7 +89,6 @@ const resolveAvatar = (profile: Record<string, any>): string => {
   const avatarUrl = pickString(
     profile?.avatarUrl,
     profile?.avatar,
-    profile?.photo,
     profile?.profilePicture,
     profile?.profileImage,
     profile?.imageUrl,
@@ -271,7 +250,7 @@ export const useCollaborationProfiles = ({
 
   const isOwnerIdentityLoading = Boolean(ownerProfileLookupId) && Object.keys(resolvedOwnerProfile).length === 0;
 
-  const freelance = useMemo<PersonSummary>(() => {
+  const freelance = useMemo<CollaborationCardSummary>(() => {
     const p = (publicProProfile || {}) as Record<string, any>;
     const pd = (space?.proDetails || {}) as Record<string, any>;
     const proFullName = [pd.firstName ?? p.firstName, pd.lastName ?? p.lastName].filter(Boolean).join(" ").trim();
@@ -337,7 +316,7 @@ export const useCollaborationProfiles = ({
       id: proProfileLookupId,
       nom: displayName,
       poste: headline || "Profil non renseigné",
-      photo: pickString(pd.avatarUrl, resolveAvatar(p)) || buildAvatarFallback(displayName, proProfileLookupId || space?.proId),
+      avatarUrl: pickString(pd.avatarUrl, resolveAvatar(p)) || buildAvatarFallback(displayName, proProfileLookupId || space?.proId),
       location: locationStr || "Localisation non renseignée",
       note: Number.isFinite(rating) ? rating : 0,
       avis: Number.isFinite(reviewCount) ? reviewCount : 0,
@@ -346,6 +325,7 @@ export const useCollaborationProfiles = ({
       delaiReponse: String(p.stats?.avgResponseTime ?? "< 2h").trim(),
       competences: normalizedSkills.length > 0 ? normalizedSkills : [],
       verified: isVerified,
+      specialization: specialty,
       specialite: specialty,
       tarifHoraire: Number.isFinite(hourlyRate) ? hourlyRate : null,
       anciennete: String(p.stats?.durationOnPlatform ?? p.anciennete ?? "N/A").trim(),
@@ -353,7 +333,7 @@ export const useCollaborationProfiles = ({
     };
   }, [space, proProfileLookupId, publicProProfile]);
 
-  const porteur = useMemo<PersonSummary>(() => {
+  const porteur = useMemo<CollaborationCardSummary>(() => {
     const o = (resolvedOwnerProfile || {}) as Record<string, any>;
     const cd = (space?.customerDetails || {}) as Record<string, any>;
     const custFullName = [cd.firstName ?? o.firstName, cd.lastName ?? o.lastName].filter(Boolean).join(" ").trim();
@@ -372,7 +352,7 @@ export const useCollaborationProfiles = ({
     return {
       id: ownerProfileLookupId || "owner",
       nom: displayName,
-      photo: pickString(cd.avatarUrl, resolveAvatar(o)) || buildAvatarFallback(displayName, ownerProfileLookupId || space?.customerId),
+      avatarUrl: pickString(cd.avatarUrl, resolveAvatar(o)) || buildAvatarFallback(displayName, ownerProfileLookupId || space?.customerId),
       entreprise: pickString(companyName, "Client Jobty"),
     };
   }, [space, ownerProfileLookupId, resolvedOwnerProfile]);
@@ -454,7 +434,7 @@ export const useCollaborationProfiles = ({
 
       return {
         nom: porteur.nom,
-        photo: porteur.avatarUrl,
+        avatarUrl: porteur.avatarUrl,
         poste: pickString(o.specialization, o.sector, porteur.entreprise, "Client Jobty"),
         location: ownerLocation || "Localisation non renseignée",
         specialite: pickString(o.specialization, o.specialty, o.specialite, o.sector, o.secteur),
@@ -470,7 +450,7 @@ export const useCollaborationProfiles = ({
 
     return {
       nom: freelance.nom,
-      photo: freelance.avatarUrl,
+      avatarUrl: freelance.avatarUrl,
       poste: String(freelance.poste || "Profil non renseigné"),
       location: String(freelance.location || "Localisation non renseignée"),
       specialite: String(freelance.specialite || ""),

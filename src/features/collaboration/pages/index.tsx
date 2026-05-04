@@ -586,7 +586,7 @@ export const CollaborationSpace = () => {
             <div className="collab-actors-card">
               <h4>Acteurs de la collaboration</h4>
               <div className="collab-actor-row">
-                <img src={porteur.photo} alt={porteur.nom} className="collab-actor-avatar" />
+                <img src={porteur.avatarUrl} alt={porteur.nom} className="collab-actor-avatar" />
                 <div className="collab-actor-info">
                   <span className="collab-actor-role">Porteur de projet</span>
                   <strong>{porteur.nom}</strong>
@@ -598,7 +598,7 @@ export const CollaborationSpace = () => {
                 <div className="collab-actor-info">
                   <span className="collab-actor-role">Professionnel</span>
                   <strong>{freelance.nom}</strong>
-                  <small>{freelance.poste || "Professionnel Jobty"}</small>
+                  <small>{freelance.specialization || "Professionnel Jobty"}</small>
                 </div>
               </div>
             </div>
@@ -631,8 +631,8 @@ export const CollaborationSpace = () => {
                 title={isPro ? porteur.nom : freelance.nom}
                 subtitle={isMessageBlockedByStatus(backendSpace?.status) ? 'Messagerie verrouillée' : (isPro ? 'Porteur de projet' : 'Professionnel')}
                 messages={messages}
-                porteurPhoto={porteur.photo}
-                freelancePhoto={isPro ? porteur.photo : freelance.photo}
+                porteurPhoto={porteur.avatarUrl}
+                freelancePhoto={isPro ? porteur.avatarUrl : freelance.avatarUrl}
                 newMessage={newMessage}
                 onMessageChange={setNewMessage}
                 onKeyPress={(e) => { if (e.key === 'Enter') void sendMessage(); }}
