@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import { toast } from 'sonner';
 
+
 export const COLLABORATION_KEYS = {
   all: ['collaborations'] as const,
   mySpaces: () => [...COLLABORATION_KEYS.all, 'me'] as const,

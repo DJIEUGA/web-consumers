@@ -118,6 +118,7 @@ export const useCollaborationWorkspaceSync = ({
         matchedSpace = spaces.find((space) => space.id === incomingId);
       }
     }
+    
 
     if (!matchedSpace) {
       const pair = parseRoomPair(collaborationRoomId);
