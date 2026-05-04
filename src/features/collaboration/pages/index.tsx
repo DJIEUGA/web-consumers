@@ -445,6 +445,7 @@ export const CollaborationSpace = () => {
       return ;
     }
   };
+  
 
   const stageViewModel = useCollaborationStageViewModel({
     messages,

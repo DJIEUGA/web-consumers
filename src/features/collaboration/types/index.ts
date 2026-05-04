@@ -191,36 +191,6 @@ export type SubmitDeliverableParams = {
 
 export type LifecycleActionParams = {
   action: string;
-  payload?: unknown;
-};
+  payload?: any;
+}
 
-export type GenericActionPayload = Record<string, unknown>;
-
-export type ReviewRequest = {
-  rating: number;
-  comment?: string;
-  projectId?: string;
-};
-
-export type PublicReviewItem = {
-  userFrom?: string;
-  userAvatar?: string;
-  projectId?: string;
-  projectName?: string;
-  rating?: number;
-  comment?: string;
-  commentedAt?: string;
-  author?: {
-    id?: string;
-    firstName?: string;
-    lastName?: string;
-  };
-  reviewerId?: string;
-  userId?: string;
-};
-
-export type ProPublicProfileDetails = Record<string, unknown> & {
-  reviews?: PublicReviewItem[];
-};
-
-export type CustomerProfileDetails = Record<string, unknown>;

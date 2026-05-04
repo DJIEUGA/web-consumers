@@ -55,6 +55,7 @@ export type UiMessage = {
   deliveryStatus?: "sending" | "failed";
 };
 
+
 export type BriefState = {
   objectif: string;
   livrables: string[];

@@ -322,6 +322,7 @@ export const useCollaborationProfiles = ({
     if (isCustomer && (currentUserProfile || authUser)) {
       return recordToProfileDTO({ ...authUser, ...currentUserProfile });
     }
+    
 
     const base = spaceCustomerDTO || {};
     const publicData = customerProfileQuery.data ? recordToProfileDTO(customerProfileQuery.data as Record<string, unknown>) : {};
