@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import {useParams} from "react-router-dom"
 import {
   type CollaborationSpaceResponse,
   type ProfileDetailsDTO,
@@ -84,11 +83,6 @@ const pick = (...values: unknown[]): string => {
   return "";
 };
 
-const buildAvatarFallback = (name: string, seed?: string): string => {
-  const label = str(name) || "Jobty";
-  const safeSeed = encodeURIComponent(str(seed) || label);
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(label)}&background=EEF2FF&color=3730A3&bold=true&size=256&rounded=true&seed=${safeSeed}`;
-};
 
 /**
  * Build a "{city}, {country}" string from a ProfileDetailsDTO.
@@ -113,22 +107,13 @@ const formatDisplayName = (
   const d = dto || ({} as ProfileDetailsDTO);
   const fullName = [str(d.firstName), str(d.lastName)].filter(Boolean).join(" ");
 
-  return pick(fullName, d.displayName, d.fullName, spaceLevelName, d.email, d.userId) || fallback;
+  return pick(fullName, d.displayName, d.fullName) || fallback;
 };
 
 /**
  * Resolve the avatar URL from the DTO.
  * The API schema field is `avatarUrl`.
  */
-const resolvePhoto = (
-  dto: ProfileDetailsDTO | undefined | null,
-  displayName: string,
-  seedId?: string,
-): string => {
-  const url = pick(dto?.avatarUrl);
-  return url || buildAvatarFallback(displayName, seedId);
-};
-
 const toSkillsList = (skills: unknown): string[] => {
   if (!Array.isArray(skills)) return [];
   return skills
@@ -216,7 +201,7 @@ export const useCollaborationProfiles = ({
     backendSpace?.customerName,
     (space as any)?.clientName,
     (space as any)?.client?.name,
-    (space as any)?.client?.fullName,
+    (space as any)?.customerDetails?.fullName,
     (space as any)?.customer?.name,
     (space as any)?.customer?.fullName,
   );
@@ -237,12 +222,10 @@ export const useCollaborationProfiles = ({
     (space as any)?.professional?.userId,
     (space as any)?.freelance?.id,
   );
-  console.log("pro id ",  roomPair?.proId);
   const customerId = pick(
     backendSpace?.customerId,
     spaceCustomerDTO?.userId,
   );
-  console.log("customer id ", customerId);
 
   // ── Fallback: fetch profile details separately when space detail doesn't include them ──
   // Always trigger the API call when we have an ID but are missing a real photo or location.
@@ -252,7 +235,7 @@ export const useCollaborationProfiles = ({
   // Pro profile: public endpoint, works for listed pros
   const proProfileQuery = useProProfileDetails(proId || undefined, needsProFallback);
 
-  // Customer profile: uses the same /public/profiles/{id}/details endpoint.
+  // Customer profile: uses the same /customer/profiles/{id}/details endpoint.
   const customerProfileQuery = useCustomerProfileDetails(customerId || undefined, needsCustomerFallback);
 
   const isFreelanceQueryLoading = Boolean(proId) && needsProFallback && proProfileQuery.isPending;
@@ -305,7 +288,7 @@ export const useCollaborationProfiles = ({
 
     if (Object.keys(merged).length === 0) return undefined;
     return merged as ProfileDetailsDTO;
-  }, [spaceProDTO, proProfileQuery.data, effectiveProName, proId, isPro, currentUserProfile, authUser]);
+  }, [spaceProDTO, proProfileQuery.data, effectiveProName, isPro, currentUserProfile, authUser]);
 
   const customerDTO: ProfileDetailsDTO | undefined = useMemo(() => {
     // Current user context (highest priority if I am the customer)
@@ -326,7 +309,7 @@ export const useCollaborationProfiles = ({
 
     if (Object.keys(merged).length === 0) return undefined;
     return merged as ProfileDetailsDTO;
-  }, [spaceCustomerDTO, customerProfileQuery.data, effectiveCustomerName, customerId, isCustomer, currentUserProfile, authUser]);
+  }, [spaceCustomerDTO, customerProfileQuery.data, effectiveCustomerName, isCustomer, currentUserProfile, authUser]);
 
   const isFreelanceIdentityLoading = Boolean(proId) && !proDTO && (needsProFallback ? proProfileQuery.isPending : false);
   const isOwnerIdentityLoading = Boolean(customerId) && !customerDTO && (needsCustomerFallback
@@ -339,7 +322,7 @@ export const useCollaborationProfiles = ({
     const d = proDTO;
     const displayName = formatDisplayName(d, effectiveProName, "Professionnel Jobty");
     const location = formatLocation(d);
-    const photo = resolvePhoto(d, displayName, proId || (space as any)?.proId);
+    const photo = (space as any)?.proDetails?.avatarUrl;
     const skills = toSkillsList(d?.skills);
     const specialty = pick(d?.specialization, d?.sector);
 
@@ -369,7 +352,7 @@ export const useCollaborationProfiles = ({
     const d = customerDTO;
     const displayName = formatDisplayName(d, effectiveCustomerName, "Client Jobty");
     const location = formatLocation(d);
-    const photo = resolvePhoto(d, displayName, customerId || (space as any)?.customerId);
+    const photo = (space as any)?.customerDetails?.avatarUrl;
 
     return {
       id: customerId || "owner",
