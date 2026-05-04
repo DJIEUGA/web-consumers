@@ -2,23 +2,11 @@ import axiosInstance from "@/api/axios";
 import { COLLABORATION_ENDPOINTS } from "@/api/collaborationEndpoints";
 import type { ApiResponse as ApiEnvelope } from "@/types/api";
 import type {
-  CollaborationDetailEnvelope,
-  CollaborationSpaceResponse,
-  CustomerProfileDetails,
   CreateSpaceParams,
-  GenericActionPayload,
-  LifecycleActionParams,
-  LifecycleTimelineItem,
-  MessageDTO,
   OpenSpaceParams,
-  PreCollaborationDetailResponse,
-  ProPublicProfileDetails,
-  PublicReviewItem,
-  ReviewRequest,
+  LifecycleActionParams,
   SendMessageParams,
   SubmitDeliverableParams,
-  UiHints,
-  CollaborationStatus,
 } from "../types";
 
 export type CollaborationStatus =
