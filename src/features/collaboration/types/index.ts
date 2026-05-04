@@ -71,7 +71,7 @@ export type PersonSummary = {
 export type CollaborationCardSummary = {
   id: string | number;
   nom: string;
-  avatarUrl: string;
+  avatarUrl?: string;
   poste?: string;
   specialization?: string;
   entreprise?: string;
@@ -95,8 +95,8 @@ export type CollaborationDetailResponse = {
   proId?: string;
   customerName?: string;
   proName?: string;
-  customerDetails?: PersonSummary;
-  proDetails?: PersonSummary;
+  customerDetails?: CollaborationCardSummary;
+  proDetails?: CollaborationCardSummary;
   viewerRole?: string;
   title?: string;
   brief?: string | null;
@@ -132,10 +132,6 @@ export type CollaborationDetailEnvelope = {
 
 export type CollaborationSpaceResponse = {
   id: string;
-  customerId: string;
-  proId: string;
-  customerName?: string;
-  proName?: string;
   title: string;
   brief: string | null;
   status: CollaborationStatus;
@@ -147,8 +143,8 @@ export type CollaborationSpaceResponse = {
   allowedActions?: string[];
   alreadyReviewed?: boolean;
   uiHints?: UiHints;
-  customerDetails?: PersonSummary;
-  proDetails?: PersonSummary;
+  customerDetails?: CollaborationCardSummary;
+  proDetails?: CollaborationCardSummary;
   createdAt?: string;
   updatedAt?: string;
 };

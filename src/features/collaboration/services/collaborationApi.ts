@@ -534,7 +534,7 @@ export const collaborationApi = {
     const encodedId = encodeURIComponent(customerProfileId);
     try {
       const response = await axiosInstance.get<MaybeEnvelope<CustomerProfileDetails>>(
-        `/public/profiles/${encodedId}/details`,
+        `/customer/profiles/${encodedId}/details`,
       );
       return unwrapEnvelope<CustomerProfileDetails>(response) || {};
     } catch (err: unknown) {

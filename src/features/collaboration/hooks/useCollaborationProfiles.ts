@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import {useParams} from "react-router-dom"
 import {
   type CollaborationSpaceResponse,
   type ProfileDetailsDTO,
@@ -184,6 +185,7 @@ export const useCollaborationProfiles = ({
   authUser,
   currentUserProfile,
 }: UseCollaborationProfilesParams) => {
+   // re-render on route param change (e.g. spaceId) to trigger refetches in child hooks
   // Fetch space detail (shares react-query cache with useCollaborationWorkspaceSync)
   const spaceQuery = useSpaceDetail(resolvedSpaceId || undefined);
 
@@ -196,13 +198,13 @@ export const useCollaborationProfiles = ({
   // The detail endpoint may return preCollaborationDetail without profiles,
   // while the list endpoint may carry them.
   const spaceProDTO: ProfileDetailsDTO | undefined =
-    space?.proDetails ?? 
+    (space as any)?.proDetails ?? 
     backendSpace?.proDetails ?? 
     (space as any)?.professional ?? 
     (space as any)?.freelance ?? 
     undefined;
   const spaceCustomerDTO: ProfileDetailsDTO | undefined =
-    space?.customerDetails ?? 
+    (space as any)?.customerDetails ?? 
     backendSpace?.customerDetails ?? 
     (space as any)?.client ?? 
     (space as any)?.customer ?? 
@@ -211,7 +213,6 @@ export const useCollaborationProfiles = ({
 
   // Also merge name fields from all available sources
   const effectiveCustomerName = pick(
-    space?.customerName,
     backendSpace?.customerName,
     (space as any)?.clientName,
     (space as any)?.client?.name,
@@ -220,7 +221,6 @@ export const useCollaborationProfiles = ({
     (space as any)?.customer?.fullName,
   );
   const effectiveProName = pick(
-    space?.proName,
     backendSpace?.proName,
     (space as any)?.freelanceName,
     (space as any)?.professional?.name,
@@ -230,7 +230,6 @@ export const useCollaborationProfiles = ({
   );
 
   const proId = pick(
-    space?.proId,
     backendSpace?.proId,
     spaceProDTO?.userId,
     roomPair?.proId,
@@ -238,16 +237,12 @@ export const useCollaborationProfiles = ({
     (space as any)?.professional?.userId,
     (space as any)?.freelance?.id,
   );
+  console.log("pro id ",  roomPair?.proId);
   const customerId = pick(
-    space?.customerId,
     backendSpace?.customerId,
     spaceCustomerDTO?.userId,
-    roomPair?.customerId,
-    (space as any)?.client?.id,
-    (space as any)?.client?.userId,
-    (space as any)?.customer?.id,
-    (space as any)?.owner?.id,
   );
+  console.log("customer id ", customerId);
 
   // ── Fallback: fetch profile details separately when space detail doesn't include them ──
   // Always trigger the API call when we have an ID but are missing a real photo or location.
@@ -273,14 +268,9 @@ export const useCollaborationProfiles = ({
   // DEBUG: trace data sources for profile mapping
   if ((space || backendSpace) && (typeof window !== "undefined")) {
     console.debug("[CollabProfiles] data sources →", {
-      spaceId: space?.id,
+      spaceId: resolvedSpaceId,
       proId,
       customerId,
-      // Detail endpoint data
-      "detail.customerName": spaceQuery.data?.customerName,
-      "detail.proName": spaceQuery.data?.proName,
-      "detail.hasCustomerDetails": !!spaceQuery.data?.customerDetails,
-      "detail.hasProDetails": !!spaceQuery.data?.proDetails,
       // List endpoint data (backendSpace)
       "list.customerName": backendSpace?.customerName,
       "list.proName": backendSpace?.proName,
@@ -349,7 +339,7 @@ export const useCollaborationProfiles = ({
     const d = proDTO;
     const displayName = formatDisplayName(d, effectiveProName, "Professionnel Jobty");
     const location = formatLocation(d);
-    const photo = resolvePhoto(d, displayName, proId || space?.proId);
+    const photo = resolvePhoto(d, displayName, proId || (space as any)?.proId);
     const skills = toSkillsList(d?.skills);
     const specialty = pick(d?.specialization, d?.sector);
 
@@ -379,7 +369,7 @@ export const useCollaborationProfiles = ({
     const d = customerDTO;
     const displayName = formatDisplayName(d, effectiveCustomerName, "Client Jobty");
     const location = formatLocation(d);
-    const photo = resolvePhoto(d, displayName, customerId || space?.customerId);
+    const photo = resolvePhoto(d, displayName, customerId || (space as any)?.customerId);
 
     return {
       id: customerId || "owner",

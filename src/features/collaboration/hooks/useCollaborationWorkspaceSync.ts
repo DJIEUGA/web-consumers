@@ -92,12 +92,15 @@ export const useCollaborationWorkspaceSync = ({
   useEffect(() => {
     if (!incomingId) return;
 
-    const expectedPath = `/collaboration/${encodeURIComponent(collaborationRoomId)}`;
+    // Prefer canonical space UUID in the URL when we have it resolved.
+    // This prevents showing encoded room identifiers like "room%3A...".
+    const canonical = resolvedSpaceId && resolvedSpaceId !== "" ? resolvedSpaceId : collaborationRoomId;
+    const expectedPath = `/collaboration/${encodeURIComponent(canonical)}`;
     const currentPath = `/collaboration/${encodeURIComponent(incomingId)}`;
-    if (collaborationRoomId !== incomingId && currentPath !== expectedPath) {
+    if (canonical !== incomingId && currentPath !== expectedPath) {
       navigate(expectedPath, { replace: true });
     }
-  }, [collaborationRoomId, incomingId, navigate]);
+  }, [collaborationRoomId, incomingId, navigate, resolvedSpaceId]);
 
   useEffect(() => {
     if (!currentUserId || !incomingId) return;
@@ -112,8 +115,8 @@ export const useCollaborationWorkspaceSync = ({
 
     if (isUuidLike(incomingId)) {
       // Prioritize the detailed response from the specific endpoint if available
-      if (spaceDetailQuery.data && spaceDetailQuery.data.id === incomingId) {
-        matchedSpace = spaceDetailQuery.data;
+      if (spaceDetailQuery.data && (spaceDetailQuery.data as unknown as CollaborationSpaceResponse).id === incomingId) {
+        matchedSpace = spaceDetailQuery.data as unknown as CollaborationSpaceResponse;
       } else {
         matchedSpace = spaces.find((space) => space.id === incomingId);
       }
@@ -139,7 +142,7 @@ export const useCollaborationWorkspaceSync = ({
     // If still no matched space and we have a UUID-like incomingId, try fetching directly
     if (!matchedSpace && isUuidLike(incomingId)) {
       if (spaceDetailQuery.data) {
-        matchedSpace = spaceDetailQuery.data;
+        matchedSpace = spaceDetailQuery.data as unknown as CollaborationSpaceResponse;
       }
     }
 
@@ -174,10 +177,10 @@ export const useCollaborationWorkspaceSync = ({
     if (Array.isArray(spaceMessagesQuery.data)) {
       const serverMessages = spaceMessagesQuery.data.map(mapBackendMessageToUi);
       const uniqueServerMessages = serverMessages.filter(
-        (msg, index, arr) => arr.findIndex((candidate) => candidate.id === msg.id) === index,
+        (msg: { id: any; }, index: any, arr: any[]) => arr.findIndex((candidate) => candidate.id === msg.id) === index,
       );
 
-      setMessages((prev) => {
+      setMessages((prev: any[]) => {
         const optimisticMessages = prev.filter((msg) => String(msg.id).startsWith("optimistic:"));
         if (optimisticMessages.length === 0) {
           return uniqueServerMessages;
@@ -186,7 +189,7 @@ export const useCollaborationWorkspaceSync = ({
         const pendingOptimistic = optimisticMessages.filter(
           (optimistic) =>
             !uniqueServerMessages.some(
-              (server) =>
+              (server: { sender: any; text: string; }) =>
                 server.sender === optimistic.sender &&
                 server.text.trim() === optimistic.text.trim(),
             ),

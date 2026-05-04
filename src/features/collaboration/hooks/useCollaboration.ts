@@ -51,7 +51,7 @@ export function useSpaceDetail(id: string | undefined) {
   return useQuery<CollaborationSpaceResponse>({
     queryKey: COLLABORATION_KEYS.detail(id!),
     queryFn: async () => {
-      return collaborationApi.getSpaceDetail(id!);
+      return collaborationApi.getSpaceDetail(id!) as unknown as CollaborationSpaceResponse;
     },
     enabled: !!id,
   });
