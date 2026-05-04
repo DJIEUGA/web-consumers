@@ -1,14 +1,12 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
-  collaborationApi,
   type CollaborationSpaceResponse,
 } from "@/features/collaboration/services/collaborationApi";
-import { usePublicProfile } from "@/features/profile/hooks/useProfileActions";
 import {
   getProfilePayload,
-  isUuidLike,
+  parseRoomPair,
 } from "@/features/collaboration/utils/workflow";
+import { useSpaceDetail } from "./useCollaboration";
 
 type AuthUserLike = {
   firstName?: string;
@@ -17,9 +15,10 @@ type AuthUserLike = {
 };
 
 type PersonSummary = {
+  photo: string;
   id: string | number;
   nom: string;
-  photo: string;
+  avatarUrl?: string;
   poste?: string;
   entreprise?: string;
   location?: string;
@@ -54,13 +53,11 @@ type SidebarProfile = {
 type UseCollaborationProfilesParams = {
   isPro: boolean;
   isCustomer: boolean;
-  currentUserId: string;
-  incomingId: string;
-  backendSpace: CollaborationSpaceResponse | null;
+  collaborationRoomId?: string;
+  resolvedSpaceId: string;
+  isSpaceResolving?: boolean;
+  backendSpace?: CollaborationSpaceResponse | null;
   authUser?: AuthUserLike | null;
-  currentUserProfile?: Record<string, unknown> | null;
-  resolvedSpaceId?: string;
-  isSpaceLoading?: boolean;
 };
 
 const toStringValue = (value: unknown): string =>
@@ -80,8 +77,58 @@ const pickString = (...values: unknown[]): string => {
   return "";
 };
 
+const hasMeaningfulValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+};
+
+const mergeProfileParts = (...parts: Record<string, unknown>[]): Record<string, unknown> => {
+  const merged: Record<string, unknown> = {};
+
+  for (const part of parts) {
+    for (const [key, value] of Object.entries(part || {})) {
+      if (!hasMeaningfulValue(value)) continue;
+      if (!hasMeaningfulValue(merged[key])) {
+        merged[key] = value;
+      }
+    }
+  }
+
+  return merged;
+};
+
+const buildAvatarFallback = (name: string, seed?: string): string => {
+  const label = toStringValue(name) || "Jobty";
+  const normalizedSeed = encodeURIComponent(toStringValue(seed) || label);
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(label)}&background=EEF2FF&color=3730A3&bold=true&size=256&rounded=true&seed=${normalizedSeed}`;
+};
+
+const resolveAvatar = (profile: Record<string, any>): string => {
+  const avatarUrl = pickString(
+    profile?.avatarUrl,
+    profile?.avatar,
+    profile?.photo,
+    profile?.profilePicture,
+    profile?.profileImage,
+    profile?.imageUrl,
+    profile?.logoUrl,
+    profile?.companyLogo,
+    profile?.logo,
+    profile?.user?.avatarUrl,
+    profile?.user?.avatar,
+    profile?.profile?.avatarUrl,
+    profile?.profile?.avatar,
+    profile?.company?.logoUrl,
+    profile?.company?.avatarUrl,
+  );
+  return avatarUrl;
+};
+
 const resolveLocationLabel = (profile: Record<string, any>): string => {
   const locationRaw = profile.location;
+  const addressRaw = profile.address;
   if (locationRaw && typeof locationRaw === "object") {
     const asObj = locationRaw as Record<string, unknown>;
     const composed = [
@@ -93,8 +140,20 @@ const resolveLocationLabel = (profile: Record<string, any>): string => {
     if (composed) return composed;
   }
 
+  if (addressRaw && typeof addressRaw === "object") {
+    const asAddress = addressRaw as Record<string, unknown>;
+    const composed = [
+      toStringValue(asAddress.city ?? asAddress.ville),
+      toStringValue(asAddress.country ?? asAddress.pays),
+    ]
+      .filter(Boolean)
+      .join(", ");
+    if (composed) return composed;
+  }
+
   return pickString(
     locationRaw,
+    addressRaw,
     [toStringValue(profile.city ?? profile.ville), toStringValue(profile.country ?? profile.pays)]
       .filter(Boolean)
       .join(", "),
@@ -119,162 +178,114 @@ const normalizeSkillsList = (...candidates: unknown[]): string[] => {
   return Array.from(new Set(flattened));
 };
 
+const formatLocation = (profile: Record<string, any>): string =>
+  pickString(
+    [toStringValue(profile.city), toStringValue(profile.country)].filter(Boolean).join(", "),
+    profile.city,
+    profile.country,
+  );
+
 export const useCollaborationProfiles = ({
   isPro,
   isCustomer,
-  currentUserId,
-  incomingId,
+  collaborationRoomId,
+  resolvedSpaceId,
+  isSpaceResolving,
   backendSpace,
   authUser,
-  currentUserProfile,
-  resolvedSpaceId,
-  isSpaceLoading,
 }: UseCollaborationProfilesParams) => {
-  const hasCurrentUserProfile = Boolean(
-    currentUserProfile && Object.keys(currentUserProfile).length > 0,
-  );
-
   const normalizeProfile = (value: unknown): Record<string, any> => {
     const payload = getProfilePayload(value);
-    const nestedUser =
-      payload?.user && typeof payload.user === "object"
-        ? (payload.user as Record<string, unknown>)
+    const readObject = (candidate: unknown): Record<string, unknown> =>
+      candidate && typeof candidate === "object"
+        ? (candidate as Record<string, unknown>)
         : {};
 
-    return {
-      ...nestedUser,
-      ...(payload || {}),
-    } as Record<string, any>;
+    const nestedUser = readObject(payload?.user);
+    const nestedProfile = readObject(payload?.profile);
+    const nestedCustomerProfile = readObject(payload?.customerProfile);
+    const nestedCustomer = readObject(payload?.customer);
+    const nestedCustomerUser = readObject(nestedCustomer?.user);
+    const nestedCustomerInfo = readObject(nestedCustomer?.profile);
+    const nestedEnterpriseProfile = readObject(payload?.enterpriseProfile);
+    const nestedCompany = readObject(payload?.company);
+
+    return mergeProfileParts(
+      nestedUser,
+      nestedProfile,
+      nestedCustomerProfile,
+      nestedCustomer,
+      nestedCustomerUser,
+      nestedCustomerInfo,
+      nestedEnterpriseProfile,
+      nestedCompany,
+      payload || {},
+    ) as Record<string, any>;
   };
 
-  const proProfileLookupId = useMemo(() => {
-    // If current user is a Pro, we don't need to look up our own public profile via public API here,
-    // as we rely on currentUserProfile for self-details. This prevents false errors if the pro is not yet public.
-    if (isPro) return "";
+  // Step 1 — fetch the space. Shares the cache with useCollaborationWorkspaceSync
+  // via useSpaceDetail so no duplicate network request is made.
+  const spaceQuery = useSpaceDetail(resolvedSpaceId || undefined);
 
-    const backendProId = String(backendSpace?.proId || "").trim();
-    if (backendProId && isUuidLike(backendProId)) {
-      return backendProId;
-    }
+  const space = spaceQuery.data ?? backendSpace ?? null;
+  const isSpaceLoading = Boolean(resolvedSpaceId) && !space && spaceQuery.isPending;
+  const roomPair = parseRoomPair(String(collaborationRoomId || ""));
+  const isIdentityResolutionPending =
+    isSpaceLoading ||
+    Boolean(isSpaceResolving) ||
+    (!space && !resolvedSpaceId && Boolean(roomPair));
 
-    // Never speculate on incoming UUID while spaces are still loading.
-    if (isSpaceLoading) return "";
-
-    // Only treat incomingId as participant ID if it's not confirmed as a space ID.
-    const isIncomingSpaceId = resolvedSpaceId === incomingId;
-
-    if (
-      isCustomer &&
-      incomingId &&
-      isUuidLike(incomingId) &&
-      incomingId !== currentUserId &&
-      !isIncomingSpaceId
-    ) {
-      return incomingId;
-    }
-
-    const matchedPair = incomingId.match(/^room:(.+)::(.+)$/);
-    const pairProId = String(matchedPair?.[2] || "").trim();
-    if (pairProId && isUuidLike(pairProId)) {
-      return pairProId;
-    }
-
-    return "";
-  }, [backendSpace?.proId, currentUserId, incomingId, isCustomer, isPro, isSpaceLoading, resolvedSpaceId]);
-
-  const publicProProfileQuery = usePublicProfile(
-    proProfileLookupId || undefined,
-  );
-  const publicProProfile = useMemo(
-    () => normalizeProfile(publicProProfileQuery.data),
-    [publicProProfileQuery.data],
+  const detailProProfile = useMemo(() => normalizeProfile(space?.proDetails), [space?.proDetails]);
+  const detailCustomerProfile = useMemo(
+    () => normalizeProfile(space?.customerDetails),
+    [space?.customerDetails],
   );
 
-  const ownerProfileLookupId = useMemo(() => {
-    const backendCustomerId = String(backendSpace?.customerId || "").trim();
-    if (backendCustomerId && isUuidLike(backendCustomerId)) {
-      return backendCustomerId;
-    }
+  // IDs come from the resolved space first (including nested participant objects),
+  // then room-pair fallback when available.
+  const proId = String(
+    pickString(
+      space?.proId,
+      (space as any)?.pro?.id,
+      (space as any)?.professional?.id,
+      roomPair?.proId,
+    ),
+  ).trim();
+  const customerId = String(
+    pickString(
+      space?.customerId,
+      (space as any)?.customer?.id,
+      (space as any)?.client?.id,
+      (space as any)?.enterprise?.id,
+      roomPair?.customerId,
+    ),
+  ).trim();
 
-    if (isSpaceLoading) return "";
+  const proProfileLookupId = proId;
+  const ownerProfileLookupId = customerId;
+  const publicProProfile = useMemo(() => detailProProfile, [detailProProfile]);
+  const customer = useMemo(() => detailCustomerProfile, [detailCustomerProfile]);
+  const resolvedOwnerProfile = customer;
 
-    const isIncomingSpaceId = resolvedSpaceId === incomingId;
+  const isFreelanceIdentityLoading = Boolean(proProfileLookupId) && Object.keys(publicProProfile).length === 0;
 
-    if (
-      isPro &&
-      incomingId &&
-      isUuidLike(incomingId) &&
-      incomingId !== currentUserId &&
-      !isIncomingSpaceId
-    ) {
-      return incomingId;
-    }
-
-    const matchedPair = incomingId.match(/^room:(.+)::(.+)$/);
-    const pairCustomerId = String(matchedPair?.[1] || "").trim();
-    if (pairCustomerId && isUuidLike(pairCustomerId)) {
-      return pairCustomerId;
-    }
-
-    return "";
-  }, [backendSpace?.customerId, currentUserId, incomingId, isPro, isSpaceLoading, resolvedSpaceId]);
-
-  const publicOwnerProfileQuery = usePublicProfile(
-    !isPro ? ownerProfileLookupId || undefined : undefined,
-  );
-  const publicOwnerProfile = useMemo(
-    () => normalizeProfile(publicOwnerProfileQuery.data),
-    [publicOwnerProfileQuery.data],
-  );
-
-  const customerOwnerProfileQuery = useQuery({
-    queryKey: ["collaboration", "customer-profile", ownerProfileLookupId],
-    queryFn: () =>
-      collaborationApi.getCustomerProfileDetails(ownerProfileLookupId),
-    enabled: isPro && Boolean(ownerProfileLookupId),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const customer = useMemo(
-    () => normalizeProfile(customerOwnerProfileQuery.data),
-    [customerOwnerProfileQuery.data],
-  );
-
-  const resolvedOwnerProfile = isPro
-    ? customer
-    : (hasCurrentUserProfile
-      ? normalizeProfile(currentUserProfile)
-      : publicOwnerProfile);
-
-  const isFreelanceIdentityLoading =
-    Boolean(proProfileLookupId) &&
-    publicProProfileQuery.isPending &&
-    Object.keys(publicProProfile).length === 0;
-
-  const isOwnerIdentityLoading =
-    Boolean(ownerProfileLookupId) &&
-    (isPro
-      ? customerOwnerProfileQuery.isPending
-      : publicOwnerProfileQuery.isPending) &&
-    Object.keys(resolvedOwnerProfile).length === 0;
+  const isOwnerIdentityLoading = Boolean(ownerProfileLookupId) && Object.keys(resolvedOwnerProfile).length === 0;
 
   const freelance = useMemo<PersonSummary>(() => {
-    const p = ((isPro
-      ? { ...(publicProProfile || {}), ...(currentUserProfile || {}) }
-      : publicProProfile) || {}) as Record<string, any>;
-
-    // --- Name ---
-    const fullName = [p.firstName, p.lastName].filter(Boolean).join(" ").trim();
+    const p = (publicProProfile || {}) as Record<string, any>;
+    const pd = (space?.proDetails || {}) as Record<string, any>;
+    const proFullName = [pd.firstName ?? p.firstName, pd.lastName ?? p.lastName].filter(Boolean).join(" ").trim();
     const displayName = pickString(
-      backendSpace?.proName,
-      fullName,
-      p.displayName,
-      p.username,
-      p.companyName,
+      space?.proName,
+      proFullName,
+      pd.displayName ?? p.displayName,
+      pd.fullName ?? p.fullName,
+      pd.name ?? p.name,
+      pd.email ?? p.email,
+      pd.userId ?? p.userId,
       "Professionnel Jobty",
     );
 
-    // --- Rating & reviews ---
     const rating = toNumberValue(p.averageRating ?? p.stats?.averageRating ?? p.rating, 0);
     const reviewCount = toNumberValue(
       p.reviewCount ?? p.stats?.reviewCount ??
@@ -282,7 +293,6 @@ export const useCollaborationProfiles = ({
       0,
     );
 
-    // --- Projects ---
     const completedProjects = toNumberValue(
       p.completedProjects ?? p.stats?.completedProjects ?? 0,
       0,
@@ -292,36 +302,13 @@ export const useCollaborationProfiles = ({
       0,
     );
 
-    // --- Hourly rate ---
     const hourlyRate = Number(p.hourlyRate ?? p.tarifHoraire ?? NaN);
 
-    // --- Headline / position ---
-    const headline = pickString(
-      p.headline,
-      p.poste,
-      p.jobTitle,
-      p.specialty,
-      p.specialization,
-      p.specialite,
-      p.bio,
-    );
+    const headline = pickString(p.specialization, p.sector, p.bio);
+    const specialty = pickString(p.specialization, p.sector);
+    const locationStr = formatLocation(p);
+    const isVerified = Boolean(p.verified ?? p.isVerified ?? false);
 
-    // --- Specialty ---
-    const specialty = pickString(
-      p.specialty,
-      p.specialization,
-      p.specialite,
-      p.sector,
-      p.secteur,
-    );
-
-    // --- Location: handle LocationDto object OR top-level city/country strings ---
-    const locationStr = resolveLocationLabel(p);
-
-    // --- Verified ---
-    const isVerified = Boolean(p.isVerified ?? p.verified ?? false);
-
-    // --- Skills aggregation ---
     const skillArrays = normalizeSkillsList(
       p.skills,
       p.competences,
@@ -332,16 +319,12 @@ export const useCollaborationProfiles = ({
       p.topSkills,
     );
 
-    const skillsFromServices = (publicProProfile?.services ?? [])
-      .map((s: any) => String(s?.title ?? "").trim())
-      .filter(Boolean)
-      .slice(0, 4);
+    const skillsFromServices = normalizeSkillsList(p.services).slice(0, 4);
 
     const normalizedSkills = Array.from(
       new Set([...skillArrays, ...skillsFromServices, specialty].filter(Boolean)),
     ).slice(0, 5);
 
-    // --- Response rate ---
     const responseRateRaw = p.stats?.responseRate ?? p.responseRate ?? p.stats?.responseRatePercent;
     const responseRate =
       typeof responseRateRaw === "number"
@@ -351,13 +334,10 @@ export const useCollaborationProfiles = ({
         : "N/A";
 
     return {
-      id: proProfileLookupId || 1,
+      id: proProfileLookupId,
       nom: displayName,
       poste: headline || "Profil non renseigné",
-      photo:
-        p.avatarUrl ||
-        p.avatar ||
-        "/images/avatars/avatar1.jpg",
+      photo: pickString(pd.avatarUrl, resolveAvatar(p)) || buildAvatarFallback(displayName, proProfileLookupId || space?.proId),
       location: locationStr || "Localisation non renseignée",
       note: Number.isFinite(rating) ? rating : 0,
       avis: Number.isFinite(reviewCount) ? reviewCount : 0,
@@ -371,54 +351,71 @@ export const useCollaborationProfiles = ({
       anciennete: String(p.stats?.durationOnPlatform ?? p.anciennete ?? "N/A").trim(),
       collaborationsEnCours: Number.isFinite(collaborationsEnCours) ? collaborationsEnCours : 0,
     };
-  }, [backendSpace?.proName, currentUserProfile, isPro, proProfileLookupId, publicProProfile]);
+  }, [space, proProfileLookupId, publicProProfile]);
 
   const porteur = useMemo<PersonSummary>(() => {
     const o = (resolvedOwnerProfile || {}) as Record<string, any>;
-    const fullName = [o.firstName, o.lastName].filter(Boolean).join(" ").trim();
-    const companyName = pickString(o.companyName, o.businessName, o.entreprise, o.nomEntreprise);
+    const cd = (space?.customerDetails || {}) as Record<string, any>;
+    const custFullName = [cd.firstName ?? o.firstName, cd.lastName ?? o.lastName].filter(Boolean).join(" ").trim();
     const displayName = pickString(
-      backendSpace?.customerName,
-      fullName,
-      o.displayName,
-      o.username,
-      companyName,
-      [authUser?.firstName, authUser?.lastName].filter(Boolean).join(" ").trim(),
+      space?.customerName,
+      custFullName,
+      cd.displayName ?? o.displayName,
+      cd.fullName ?? o.fullName,
+      cd.name ?? o.name,
+      cd.email ?? o.email,
+      cd.userId ?? o.userId,
       "Client Jobty",
     );
+    const companyName = pickString(cd.bio ?? o.bio, cd.specialization ?? o.specialization, cd.sector ?? o.sector);
 
     return {
       id: ownerProfileLookupId || "owner",
       nom: displayName,
-      photo:
-        o.avatarUrl ||
-        o.avatar ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=F3F4F6&color=6B7280&bold=true`,
-      entreprise: pickString(o.headline, o.poste, o.jobTitle, companyName, o.displayName, "Client Jobty"),
+      photo: pickString(cd.avatarUrl, resolveAvatar(o)) || buildAvatarFallback(displayName, ownerProfileLookupId || space?.customerId),
+      entreprise: pickString(companyName, "Client Jobty"),
     };
-  }, [
-    authUser?.firstName,
-    authUser?.lastName,
-    backendSpace?.customerName,
-    ownerProfileLookupId,
-    resolvedOwnerProfile,
-  ]);
+  }, [space, ownerProfileLookupId, resolvedOwnerProfile]);
 
-  const sidebarIdentityLoading =
-    (isPro ? isOwnerIdentityLoading : isFreelanceIdentityLoading) ||
-    Boolean(isSpaceLoading);
+  const sidebarIdentityLoading = (isPro ? isOwnerIdentityLoading : isFreelanceIdentityLoading) || isSpaceLoading;
 
   // Error states for Customer view (looking at a Professional)
-  const proProfileLoadError = Boolean(isCustomer && proProfileLookupId && publicProProfileQuery.isError);
-  const cannotIdentifyPro = isCustomer && !proProfileLookupId && !backendSpace?.proId && !isSpaceLoading;
+  const proProfileLoadError = false;
+  const hasProFallbackIdentity = Boolean(space?.proId || detailProProfile);
+  const cannotIdentifyPro =
+    isCustomer &&
+    !proProfileLookupId &&
+    !proId &&
+    !hasProFallbackIdentity &&
+    !isIdentityResolutionPending;
 
   // Error states for Pro view (looking at a Customer)
-  const ownerProfileLoadError = Boolean(isPro && ownerProfileLookupId && customerOwnerProfileQuery.isError);
-  const cannotIdentifyCustomer = isPro && !ownerProfileLookupId && !backendSpace?.customerId && !isSpaceLoading;
+  const ownerProfileLoadError = false;
+  const hasCustomerFallbackIdentity = Boolean(space?.customerId || detailCustomerProfile);
+  const hasRenderableCustomerIdentity = Boolean(
+    ownerProfileLookupId ||
+    customerId ||
+    space?.customerId ||
+    pickString(
+      resolvedOwnerProfile?.firstName,
+      resolvedOwnerProfile?.lastName,
+      resolvedOwnerProfile?.displayName,
+      resolvedOwnerProfile?.companyName,
+      resolvedOwnerProfile?.businessName,
+      resolvedOwnerProfile?.nomEntreprise,
+    ),
+  );
+  const cannotIdentifyCustomer =
+    isPro &&
+    !ownerProfileLookupId &&
+    !customerId &&
+    !hasCustomerFallbackIdentity &&
+    !hasRenderableCustomerIdentity &&
+    !isIdentityResolutionPending;
 
   const sidebarError = isCustomer
-    ? proProfileLoadError || cannotIdentifyPro
-    : ownerProfileLoadError || cannotIdentifyCustomer;
+    ? (proProfileLoadError && !hasProFallbackIdentity) || cannotIdentifyPro
+    : (ownerProfileLoadError && !hasCustomerFallbackIdentity && !hasRenderableCustomerIdentity) || cannotIdentifyCustomer;
 
   const sidebarErrorMessage = useMemo(() => {
     if (isCustomer) {
@@ -439,23 +436,14 @@ export const useCollaborationProfiles = ({
   ]);
 
   /**
-   * profileError determines if we show the "Profil introuvable" full-page ErrorState.
-   * We only block the page if the lookup for the OTHER participant fails.
-   * We don't block if our own redundant public profile lookup fails.
+  * profileError is kept false because the embedded detail payload is authoritative.
    */
-  const profileError = isCustomer
-    ? proProfileLoadError
-    : isPro
-      ? customerOwnerProfileQuery.isError
-      : false;
+  const profileError = false;
 
   const sidebarProfile = useMemo<SidebarProfile>(() => {
     if (isPro) {
-      // Pro sees the customer/porteur profile in sidebar
       const o = (resolvedOwnerProfile || {}) as Record<string, any>;
-
       const ownerLocation = resolveLocationLabel(o);
-
       const ownerSkills = normalizeSkillsList(
         o.skills,
         o.competences,
@@ -466,8 +454,8 @@ export const useCollaborationProfiles = ({
 
       return {
         nom: porteur.nom,
-        photo: porteur.photo,
-        poste: pickString(o.headline, o.poste, o.jobTitle, porteur.entreprise, "Client Jobty"),
+        photo: porteur.avatarUrl,
+        poste: pickString(o.specialization, o.sector, porteur.entreprise, "Client Jobty"),
         location: ownerLocation || "Localisation non renseignée",
         specialite: pickString(o.specialization, o.specialty, o.specialite, o.sector, o.secteur),
         tarifHoraire: null,
@@ -480,10 +468,9 @@ export const useCollaborationProfiles = ({
       };
     }
 
-    // Customer sees the pro/freelance profile in sidebar
     return {
       nom: freelance.nom,
-      photo: freelance.photo,
+      photo: freelance.avatarUrl,
       poste: String(freelance.poste || "Profil non renseigné"),
       location: String(freelance.location || "Localisation non renseignée"),
       specialite: String(freelance.specialite || ""),
@@ -508,10 +495,9 @@ export const useCollaborationProfiles = ({
     sidebarIdentityLoading,
     sidebarProfile,
     profileError,
-    proProfileLoadError,
     cannotIdentifyPro,
     sidebarError,
     sidebarErrorMessage,
-    publicProProfileQuery,
+    spaceQuery,
   };
 };

@@ -9,7 +9,10 @@ import {
   FiShield,
   FiMenu,
   FiMessageCircle,
+  FiMessageSquare,
 } from "react-icons/fi";
+import { CollabChatBox } from "@/features/collaboration/components/CollabChatBox";
+import CollabChatWidget from "@/features/collaboration/components/CollabChatWidget";
 import { useAuthStore } from "@/stores/auth.store";
 import {
   type CollaborationSpaceResponse,
@@ -64,7 +67,7 @@ import "../styles/collaboration/style.css";
 
 export const CollaborationSpace = () => {
   const navigate = useNavigate();
-  const { freelanceId, spaceId } = useParams();
+  const { freelanceId, spaceId, } = useParams();
   const [searchParams] = useSearchParams();
   const authUser = useAuthStore((state) => state.user);
   const authRole = useAuthStore((state) => state.role);
@@ -152,12 +155,10 @@ export const CollaborationSpace = () => {
   })();
 
   const resolvedSpaceId = useMemo(() => {
-    if (backendSpace?.id) return backendSpace.id;
+    // A UUID-shaped incomingId is the space ID itself — use it directly.
+    if (incomingId && isUuidLike(incomingId)) return incomingId;
+    // For room-pair or freelance IDs, look up the matching space from the list.
     const spaces = mySpacesQuery.data || [];
-    if (incomingId && isUuidLike(incomingId)) {
-      const exactSpace = spaces.find((space) => space.id === incomingId);
-      if (exactSpace?.id) return exactSpace.id;
-    }
     const pair = parseRoomPair(collaborationRoomId);
     if (pair) {
       const matchedByPair = spaces.find(
@@ -167,7 +168,7 @@ export const CollaborationSpace = () => {
       if (matchedByPair?.id) return matchedByPair.id;
     }
     return "";
-  }, [backendSpace?.id, collaborationRoomId, incomingId, mySpacesQuery.data]);
+  }, [collaborationRoomId, incomingId, mySpacesQuery.data]);
 
   const {
     freelance,
@@ -182,13 +183,13 @@ export const CollaborationSpace = () => {
   } = useCollaborationProfiles({
     isPro,
     isCustomer,
-    currentUserId,
-    incomingId,
+    collaborationRoomId,
     resolvedSpaceId,
-    isSpaceLoading: mySpacesQuery.isLoading || (!!incomingId && isUuidLike(incomingId) && !backendSpace),
+    isSpaceResolving:
+      mySpacesQuery.isPending ||
+      (Boolean(incomingId) && !resolvedSpaceId && !backendSpace && !mySpacesQuery.isError),
     backendSpace,
     authUser,
-    currentUserProfile,
   });
 
   const [currentStep, setCurrentStep] = useState(0); 
@@ -439,7 +440,9 @@ export const CollaborationSpace = () => {
         payload: { rating: avis.note, comment: avis.commentaire },
       });
       setReviewSubmitSuccess(true);
-    } catch (err) {}
+    } catch (err) {
+      return ;
+    }
   };
 
   const stageViewModel = useCollaborationStageViewModel({
@@ -578,79 +581,35 @@ export const CollaborationSpace = () => {
 
       <main className="collab-main">
         <div className="collab-container">
-          {/* Sidebar - Détails du profil */}
+          {/* Sidebar - keep only the actors card */}
           <aside className={`collab-sidebar-info ${menuOpen ? "open" : ""}`}>
-            <div className="collab-freelance-card">
-              {sidebarIdentityLoading ? (
-                <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
-              ) : sidebarError ? (
-                <div className="error-placeholder">{sidebarErrorMessage}</div>
-              ) : (
-                <>
-                  <div className="collab-freelance-header">
-                    <div className="collab-freelance-photo-wrapper">
-                      <img src={sidebarProfile.photo} alt={sidebarProfile.nom} className="collab-freelance-photo" />
-                      {sidebarProfile.verified && <div className="collab-verified-badge"><FiCheck /></div>}
-                    </div>
-                    <div className="collab-freelance-info">
-                      <h3>{sidebarProfile.nom}</h3>
-                      <p>{sidebarProfile.poste}</p>
-                      <div className="collab-freelance-location">
-                        <FiMapPin /> {sidebarProfile.location}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="collab-freelance-stats">
-                    <div className="collab-stat-item">
-                      <div className="collab-stat-value">
-                        <FiStar className="collab-star" /> {sidebarProfile.note}
-                      </div>
-                      <div className="collab-stat-label">{sidebarProfile.avis} avis</div>
-                    </div>
-                    <div className="collab-stat-item">
-                      <div className="collab-stat-value">{sidebarProfile.projetsRealises}</div>
-                      <div className="collab-stat-label">Projets</div>
-                    </div>
-                    <div className="collab-stat-item">
-                      <div className="collab-stat-value">98%</div>
-                      <div className="collab-stat-label">Réponse</div>
-                    </div>
-                  </div>
-
-                  <div className="collab-freelance-competences">
-                    {sidebarProfile.competences.map((skill, i) => (
-                      <span key={i} className="collab-comp-tag">{skill}</span>
-                    ))}
-                  </div>
-
-                  <div className="collab-security-badge">
-                    <FiShield /> <span>Paiement 100% sécurisé</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Résumé rapide si le brief est là */}
-            {currentStep >= 3 && (
-              <div className="collab-project-summary">
-                <h4><FiShield /> Résumé du projet</h4>
-                <div className="collab-summary-item">
-                  <span className="collab-summary-label">Budget</span>
-                  <p className="collab-budget-display">{brief.budget ? parseInt(brief.budget).toLocaleString() : '0'} FCFA</p>
-                </div>
-                <div className="collab-summary-item">
-                  <span className="collab-summary-label">Délai</span>
-                  <p>{brief.delai || "Non défini"}</p>
+            <div className="collab-actors-card">
+              <h4>Acteurs de la collaboration</h4>
+              <div className="collab-actor-row">
+                <img src={porteur.photo} alt={porteur.nom} className="collab-actor-avatar" />
+                <div className="collab-actor-info">
+                  <span className="collab-actor-role">Porteur de projet</span>
+                  <strong>{porteur.nom}</strong>
+                  <small>{porteur.entreprise || "Client Jobty"}</small>
                 </div>
               </div>
-            )}
+              <div className="collab-actor-row">
+                <img src={freelance.avatarUrl} alt={freelance.nom} className="collab-actor-avatar" />
+                <div className="collab-actor-info">
+                  <span className="collab-actor-role">Professionnel</span>
+                  <strong>{freelance.nom}</strong>
+                  <small>{freelance.poste || "Professionnel Jobty"}</small>
+                </div>
+              </div>
+            </div>
           </aside>
 
           {/* Espace de Travail Central */}
           <section className="collab-workspace">
             <div className="workspace-content">
-              {currentStep === 0 && <StepContact {...stageViewModel.contact} />}
+              {/* Step 0: pro lands directly on the decision screen; customer sees the contact/chat */}
+              {currentStep === 0 && isPro && <StepDecision {...stageViewModel.decision} />}
+              {currentStep === 0 && !isPro && <StepContact {...stageViewModel.contact} />}
               {currentStep === 1 && <StepDecision {...stageViewModel.decision} />}
               {currentStep === 2 && <StepMatch {...stageViewModel.match} />}
               {currentStep === 3 && <StepBrief {...stageViewModel.briefStep} />}
@@ -661,7 +620,31 @@ export const CollaborationSpace = () => {
               {currentStep === 8 && <StepRelease {...stageViewModel.release} />}
               {currentStep === 9 && <StepClosure {...stageViewModel.closure} />}
             </div>
+
+            {/* Chat is rendered in the right-side column on large viewports. */}
           </section>
+
+          {/* Right column: persistent chat widget */}
+          <aside className="collab-right-chat">
+            {!(currentStep === 0 && !isPro) && currentStep !== 6 && (
+              <CollabChatWidget
+                title={isPro ? porteur.nom : freelance.nom}
+                subtitle={isMessageBlockedByStatus(backendSpace?.status) ? 'Messagerie verrouillée' : (isPro ? 'Porteur de projet' : 'Professionnel')}
+                messages={messages}
+                porteurPhoto={porteur.photo}
+                freelancePhoto={isPro ? porteur.photo : freelance.photo}
+                newMessage={newMessage}
+                onMessageChange={setNewMessage}
+                onKeyPress={(e) => { if (e.key === 'Enter') void sendMessage(); }}
+                onSend={() => void sendMessage()}
+                onRetryMessage={async (msgId) => { const msg = messages.find((m) => m.id === msgId); if (msg) await sendBackendMessage(msg.text, msgId); }}
+                isMessagingLocked={isMessageBlockedByStatus(backendSpace?.status)}
+                messagesEndRef={messagesEndRef}
+                isRecording={isRecording}
+                onToggleRecording={() => setIsRecording((s) => !s)}
+              />
+            )}
+          </aside>
         </div>
       </main>
 

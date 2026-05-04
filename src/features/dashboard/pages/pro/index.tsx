@@ -75,7 +75,6 @@ import {
 } from "../../hooks/useDashboardData";
 import { getCollaborationStatusMeta, isCollaborationPending } from "../../utils/collaborationStatus";
 import "./css/style.css";
-import collaborationApi from "@/features/collaboration/services/collaborationApi";
 
 const TAB_TO_ROUTE_SEGMENT: Record<string, string> = {
   apercu: "overview",
@@ -185,7 +184,7 @@ function ProDashboard() {
           montant: project.amount,
           progression: project.progressPercentage,
           prochaineLivraison: project.deadlineDescription,
-          clientPhoto:
+          clientImgUrl:
             "https://api.dicebear.com/7.x/avataaars/svg?seed=" +
             encodeURIComponent(project.clientName || `client-${index}`),
         }))
@@ -804,7 +803,7 @@ function ProDashboard() {
                   {ongoingProjects.map((collab) => (
                       <div key={collab.id} className="dash-project-quick-card">
                         <div className="dash-project-quick-header">
-                          <img src={collab.clientPhoto} alt={collab.client} />
+                          <img src={collab.clientImgUrl} alt={collab.client} />
                           <div>
                             <h4>{collab.titre}</h4>
                             <p>{collab.client}</p>
@@ -1324,7 +1323,7 @@ function ProDashboard() {
                 {collaborations.map((collab) => (
                   <div key={collab.id} className="dash-collab-card">
                     <div className="dash-collab-header">
-                      <img src={collab.clientPhoto} alt={collab.client} />
+                      <img src={collab.clientImgUrl} alt={collab.client} />
                       <div className="dash-collab-info">
                         <h3>{collab.titre}</h3>
                         <p>{collab.client}</p>
@@ -1360,10 +1359,7 @@ function ProDashboard() {
 
                     <button
                       className="dash-btn-outline dash-btn-sm"
-                      onClick={async () => {
-                        await collaborationApi.getSpaceDetail(collab.id);
-                        navigate(`/dashboard/my/collaborations/${collab.id}`);
-                      }}
+                      onClick={() => navigate(`/collaboration/${collab.id}`)}
                     >
                       Ouvrir l'espace projet
                     </button>

@@ -508,7 +508,7 @@ const performanceServices = [
                       {collaborations?.filter(c => c.statut === 'actif').map(collab => (
                         <div key={collab.id} className="dash-project-quick-card">
                           <div className="dash-project-quick-header">
-                            <img src={collab.clientPhoto} alt={collab.client} />
+                            <img src={collab.clientImgUrl} alt={collab.client} />
                             <div>
                               <h4>{collab.titre}</h4>
                               <p>{collab.client}</p>
@@ -899,7 +899,7 @@ const performanceServices = [
                 {collaborations.map(collab => (
                   <div key={collab.id} className="dash-collab-card">
                     <div className="dash-collab-header">
-                        <img src={collab.clientImage || collab.clientPhoto || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'} alt={collab.client} />
+                        <img src={collab.clientImgUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'} alt={collab.client} />
                       <div className="dash-collab-info">
                         <h3>{collab.titre}</h3>
                         <p>{collab.client}</p>

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collaborationService } from '../services/collaboration.service';
-import collaborationApi, { type PublicReviewItem, type ReviewRequest } from '../services/collaborationApi';
+import collaborationApi, { type CollaborationSpaceResponse, type PublicReviewItem, type ReviewRequest, type ProPublicProfileDetails, type CustomerProfileDetails } from '../services/collaborationApi';
 import type {
   CreateSpaceParams,
   SendMessageParams,
@@ -14,6 +14,8 @@ export const COLLABORATION_KEYS = {
   detail: (id: string) => [...COLLABORATION_KEYS.all, 'detail', id] as const,
   messages: (spaceId: string) => [...COLLABORATION_KEYS.all, 'messages', spaceId] as const,
   reviews: (proId: string) => [...COLLABORATION_KEYS.all, 'reviews', proId] as const,
+  proProfile: (proId: string) => [...COLLABORATION_KEYS.all, 'proProfile', proId] as const,
+  customerProfile: (customerId: string) => [...COLLABORATION_KEYS.all, 'customerProfile', customerId] as const,
 };
 
 const getErrorMessage = (error: any, fallback: string) => {
@@ -37,14 +39,15 @@ export function useMySpaces() {
 }
 
 /**
- * Fetch details of a single workspace by ID
+ * Fetch details of a single workspace by ID.
+ * The detail endpoint returns { collaborationDetail: {...}, preCollaborationDetail: null }
+ * inside the envelope — unwrap it so callers always get a flat CollaborationSpaceResponse.
  */
 export function useSpaceDetail(id: string | undefined) {
-  return useQuery({
+  return useQuery<CollaborationSpaceResponse>({
     queryKey: COLLABORATION_KEYS.detail(id!),
     queryFn: async () => {
-      const response = await collaborationService.getSpaceDetail(id!);
-      return response.data;
+      return collaborationApi.getSpaceDetail(id!);
     },
     enabled: !!id,
   });
@@ -80,6 +83,28 @@ export function usePublicProfileReviews(
     queryKey: COLLABORATION_KEYS.reviews(targetProId || 'unknown'),
     queryFn: async () => collaborationApi.getPublicProfileReviews(targetProId!),
     enabled: enabled && !!targetProId,
+  });
+}
+
+export function useProProfileDetails(
+  proId: string | undefined,
+  enabled = true,
+) {
+  return useQuery<ProPublicProfileDetails>({
+    queryKey: COLLABORATION_KEYS.proProfile(proId || 'unknown'),
+    queryFn: async () => collaborationApi.getProPublicProfileDetails(proId!),
+    enabled: enabled && !!proId,
+  });
+}
+
+export function useCustomerProfileDetails(
+  customerProfileId: string | undefined,
+  enabled = true,
+) {
+  return useQuery<CustomerProfileDetails>({
+    queryKey: COLLABORATION_KEYS.customerProfile(customerProfileId || 'unknown'),
+    queryFn: async () => collaborationApi.getCustomerProfileDetails(customerProfileId!),
+    enabled: enabled && !!customerProfileId,
   });
 }
 

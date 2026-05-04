@@ -9,7 +9,7 @@ export const COLLABORATION_ENDPOINTS = {
 
   // Queries
   MY_SPACES: '/collaborations/spaces/me',
-  SPACE_DETAIL: (id: string) => `/collaborations/spaces/${id}`,
+  SPACE_DETAIL: (id: string) => `/collaborations/${id}`,
   MESSAGES: (spaceId: string) => `/collaborations/spaces/${spaceId}/messages`,
   
   // Creation/Opening

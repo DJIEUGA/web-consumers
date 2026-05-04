@@ -4,32 +4,131 @@ import type { ApiResponse as ApiEnvelope } from "@/types/api";
 
 export type CollaborationStatus =
   | "PENDING"
+  | "REQUEST_INFO"
   | "ACCEPTED"
+  | "MATCH_CONFIRMED"
+  | "BRIEF"
+  | "CONTRACT"
+  | "PAYMENT"
   | "REJECTED"
   | "ACTIVE"
-  | "BRIEFING"
-  | "CONTRACTING"
-  | "PAYMENT_PENDING"
-  | "MATCH_CONFIRMED"
-  | "IN_PROGRESS"
-  | "DELIVERED"
+  | "DELIVERABLE"
   | "PAYMENT_RELEASED"
+  | "CLOSED"
   | "COMPLETED"
   | "CANCELLED";
+
+export type LifecycleTimelineItem = {
+  index: number;
+  key: string;
+  label: string;
+  state: string;
+};
+
+export type UiHints = {
+  messageEnabled?: boolean;
+  reviewAllowed?: boolean;
+  canCustomerSubmitBrief?: boolean;
+  canProDecide?: boolean;
+  nextRecommendedAction?: string;
+};
+
+export type ProfileDetailsDTO = {
+  userId?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  fullName?: string;
+  email?: string;
+  role?: string;
+  verified?: boolean;
+  country?: string;
+  city?: string;
+  phoneNumber?: string;
+  avatarUrl?: string;
+  bio?: string;
+  hourlyRate?: number;
+  specialization?: string;
+  experienceYears?: number;
+  sector?: string;
+  skills?: string[];
+  reputationScore?: number;
+  reviewCount?: number;
+  averageRating?: number;
+  isPremium?: boolean;
+  walletBalance?: number;
+  kycStatus?: string;
+  isAvailable?: boolean;
+  coverImageUrl?: string;
+};
+
+export type CollaborationDetailResponse = {
+  id?: string;
+  customerId?: string;
+  proId?: string;
+  customerName?: string;
+  proName?: string;
+  customerDetails?: ProfileDetailsDTO;
+  proDetails?: ProfileDetailsDTO;
+  viewerRole?: string;
+  title?: string;
+  brief?: string | null;
+  status?: CollaborationStatus;
+  phase?: string;
+  lifecycleStep?: string;
+  lifecycleStepLabel?: string;
+  lifecycleTimeline?: LifecycleTimelineItem[];
+  allowedActions?: string[];
+  alreadyReviewed?: boolean;
+  uiHints?: UiHints;
+};
+
+export type PreCollaborationDetailResponse = {
+  id?: string;
+  customerId?: string;
+  proId?: string;
+  viewerRole?: string;
+  title?: string;
+  brief?: string | null;
+  status?: "PENDING" | "REQUEST_INFO" | "ACCEPTED" | "REJECTED";
+  createdAt?: string;
+  updatedAt?: string;
+  allowedActions?: string[];
+  nextRecommendedAction?: string;
+  uiHints?: UiHints;
+};
+
+export type CollaborationDetailEnvelope = {
+  collaborationDetail?: CollaborationDetailResponse | null;
+  preCollaborationDetail?: PreCollaborationDetailResponse | null;
+};
 
 export type CollaborationSpaceResponse = {
   id: string;
   customerId: string;
-  clientImgUrl: string;
-  proImgUrl: string;
   proId: string;
+  customerName?: string;
+  proName?: string;
   title: string;
-  brief: string;
+  brief: string | null;
   status: CollaborationStatus;
-  customerName: string;
-  proName: string;
-  createdAt: string;
-  updatedAt: string;
+  viewerRole?: string;
+  phase?: string;
+  lifecycleStep?: string;
+  lifecycleStepLabel?: string;
+  lifecycleTimeline?: LifecycleTimelineItem[];
+  allowedActions?: string[];
+  alreadyReviewed?: boolean;
+  uiHints?: UiHints;
+  customerDetails?: ProfileDetailsDTO;
+  proDetails?: ProfileDetailsDTO;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type CollaborationSpaceDetailData = {
+  collaborationDetail: CollaborationSpaceResponse;
+  preCollaborationDetail: unknown;
 };
 
 export type MessageDTO = {
@@ -77,7 +176,7 @@ export type PublicReviewItem = {
   userId?: string;
 };
 
-type PublicProfileDetails = {
+export type ProPublicProfileDetails = Record<string, unknown> & {
   reviews?: PublicReviewItem[];
 };
 
@@ -126,10 +225,49 @@ export const collaborationApi = {
   },
 
   async getSpaceDetail(spaceId: string): Promise<CollaborationSpaceResponse> {
-    const response = await axiosInstance.get<MaybeEnvelope<CollaborationSpaceResponse>>(
+    const response = await axiosInstance.get<MaybeEnvelope<CollaborationDetailEnvelope>>(
       COLLABORATION_ENDPOINTS.SPACE_DETAIL(encodeURIComponent(spaceId)),
     );
-    return unwrapEnvelope<CollaborationSpaceResponse>(response);
+    const detailData = unwrapEnvelope<CollaborationDetailEnvelope>(response);
+    const detail = detailData?.collaborationDetail ?? detailData?.preCollaborationDetail;
+    const customerDetails = detailData?.collaborationDetail?.customerDetails;
+    const proDetails = detailData?.collaborationDetail?.proDetails;
+
+    const customerId = String(
+      detail && "customerId" in detail && detail.customerId
+        ? detail.customerId
+        : customerDetails?.userId ?? "",
+    ).trim();
+    const proId = String(
+      detail && "proId" in detail && detail.proId
+        ? detail.proId
+        : proDetails?.userId ?? "",
+    ).trim();
+
+    const cd = detailData?.collaborationDetail;
+
+    return {
+      id: String(detail?.id ?? spaceId),
+      customerId,
+      proId,
+      customerName: cd?.customerName,
+      proName: cd?.proName,
+      title: String(detail?.title ?? ""),
+      brief: detail?.brief ?? null,
+      status: (detail?.status ?? "PENDING") as CollaborationStatus,
+      viewerRole: detail?.viewerRole,
+      phase: cd?.phase,
+      lifecycleStep: cd?.lifecycleStep,
+      lifecycleStepLabel: cd?.lifecycleStepLabel,
+      lifecycleTimeline: cd?.lifecycleTimeline,
+      allowedActions: detail?.allowedActions,
+      alreadyReviewed: cd?.alreadyReviewed,
+      uiHints: detail?.uiHints,
+      customerDetails: cd?.customerDetails,
+      proDetails: cd?.proDetails,
+      createdAt: detail && "createdAt" in detail ? detail.createdAt : undefined,
+      updatedAt: detail && "updatedAt" in detail ? detail.updatedAt : undefined,
+    };
   },
 
   async createSpace(
@@ -279,12 +417,15 @@ export const collaborationApi = {
     unwrapEnvelope<void>(response);
   },
 
-  async getPublicProfileReviews(targetProId: string): Promise<PublicReviewItem[]> {
-    const response = await axiosInstance.get<MaybeEnvelope<PublicProfileDetails>>(
-      `/public/profiles/${encodeURIComponent(targetProId)}/details`,
+  async getProPublicProfileDetails(proId: string): Promise<ProPublicProfileDetails> {
+    const response = await axiosInstance.get<MaybeEnvelope<ProPublicProfileDetails>>(
+      `/public/profiles/${encodeURIComponent(proId)}/details`,
     );
+    return unwrapEnvelope<ProPublicProfileDetails>(response) || {};
+  },
 
-    const details = unwrapEnvelope<PublicProfileDetails>(response);
+  async getPublicProfileReviews(targetProId: string): Promise<PublicReviewItem[]> {
+    const details = await collaborationApi.getProPublicProfileDetails(targetProId);
     return Array.isArray(details?.reviews) ? details.reviews : [];
   },
 

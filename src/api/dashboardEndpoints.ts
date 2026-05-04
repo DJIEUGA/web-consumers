@@ -331,6 +331,8 @@ export interface PostDto {
  */
 export interface CollaborationDto {
   clientImgUrl?: string;
+  customerId?: string;
+  proId?: string;
   proImgUrl?: string;
   client: string;
   titre: ReactNode;

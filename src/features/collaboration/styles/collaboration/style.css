@@ -191,8 +191,49 @@
 
 .collab-container {
   display: grid;
-  grid-template-columns: 292px 1fr;
+  grid-template-columns: 292px 1fr 360px;
   gap: 20px;
+}
+
+/* Right-side persistent chat column */
+.collab-right-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.collab-right-chat .collab-project-chat {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
+  height: calc(100vh - 200px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.collab-right-chat .collab-project-chat h3 {
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collab-right-chat .collab-project-chat .collab-chat-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Responsive: collapse right column on small screens */
+@media (max-width: 1024px) {
+  .collab-container {
+    grid-template-columns: 292px 1fr;
+  }
+  .collab-right-chat { display: none; }
+  .collab-burger-btn { display: inline-flex; }
 }
 
 /* ========================================
@@ -406,6 +447,68 @@
 
 .collab-security-badge svg {
   font-size: 18px;
+}
+
+.collab-actors-card {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.08);
+  margin-top: 14px;
+}
+
+.collab-actors-card h4 {
+  margin: 0 0 12px;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.collab-actor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+.collab-actor-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.collab-actor-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+}
+
+.collab-actor-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.collab-actor-role {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6852a3;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.collab-actor-info strong {
+  font-size: 13px;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collab-actor-info small {
+  color: #64748b;
+  font-size: 12px;
 }
 
 /* Résumé du projet */

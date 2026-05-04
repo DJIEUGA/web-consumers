@@ -13,7 +13,6 @@ import {
   FiList,
   FiLock,
   FiMessageCircle,
-  FiMessageSquare,
   FiPlay,
   FiRefreshCw,
   FiSend,
@@ -1084,30 +1083,6 @@ export const StepExecution = ({
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="collab-project-chat">
-        <h3>
-          <FiMessageSquare /> Messagerie projet
-        </h3>
-        <CollabChatBox
-          messages={messages.slice(-3)}
-          porteurPhoto={porteurPhoto}
-          freelancePhoto={freelancePhoto}
-          newMessage={newMessage}
-          onMessageChange={setNewMessage}
-          onKeyPress={handleKeyPress}
-          onSend={() => {
-            void sendMessage();
-          }}
-          onRetryMessage={(messageId) => {
-            void onRetryMessage(messageId);
-          }}
-          isMessagingLocked={isMessagingLocked}
-          messagingStatusNotice={messagingStatusNotice}
-          messagesEndRef={messagesEndRef}
-          compact
-        />
       </div>
 
       {isPro && etapes.every((e) => e.statut === "livree" || e.statut === "validee") && (

@@ -5,15 +5,17 @@ const TIME_LOCALE = "fr-FR";
 
 export const BACKEND_STATUS_TO_STEP: BackendStatusToStepMap = {
   PENDING: 1,
+  REQUEST_INFO: 1,
   ACCEPTED: 2,
   REJECTED: 1,
-  ACTIVE: 2,
-  BRIEFING: 3,
-  CONTRACTING: 4,
-  PAYMENT_PENDING: 5,
-  IN_PROGRESS: 6,
-  DELIVERED: 7,
+  MATCH_CONFIRMED: 2,
+  ACTIVE: 6,
+  BRIEF: 3,
+  CONTRACT: 4,
+  PAYMENT: 5,
+  DELIVERABLE: 7,
   PAYMENT_RELEASED: 8,
+  CLOSED: 9,
   COMPLETED: 9,
   CANCELLED: 1,
 };
@@ -21,6 +23,7 @@ export const BACKEND_STATUS_TO_STEP: BackendStatusToStepMap = {
 export const MESSAGE_BLOCKED_STATUSES: CollaborationStatus[] = [
   "REJECTED",
   "CANCELLED",
+  "CLOSED",
   "COMPLETED",
 ];
 

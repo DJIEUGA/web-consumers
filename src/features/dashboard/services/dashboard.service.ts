@@ -554,13 +554,15 @@ export async function fetchCollaborations(): Promise<DashboardResponse<Collabora
     const counterpartName = String(targetName || fallbackName || 'Collaboration').trim();
     const displayTitle = String(space.title || `Mission avec ${counterpartName}`).trim();
 
-    const clientImgUrl = space.clientImgUrl;
-    const proImgUrl =  space.proImgUrl;
+    const clientImgUrl = space.customerDetails?.avatarUrl;
+    const proImgUrl = space.proDetails?.avatarUrl;
 
     return {
       id: space.id,
       nom: counterpartName,
       role: 'Collaboration',
+      customerId: space.customerId,
+      proId: space.proId,
       proImgUrl: proImgUrl,
       backendStatus: space.status,
       statut: mapBackendStatusToUiStatut(space.status),

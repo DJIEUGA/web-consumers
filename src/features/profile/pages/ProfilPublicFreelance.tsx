@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
@@ -211,6 +211,39 @@ function ProfilPublicFreelance() {
   const [isMessagingOpen, setIsMessagingOpen] = useState(false);
   const [isStartingCollaboration, setIsStartingCollaboration] = useState(false);
 
+  // undefined = not yet checked, null = no space exists, object = space found
+  const [existingCollabSpace, setExistingCollabSpace] = useState<
+    { id: string; status: string } | null | undefined
+  >(undefined);
+  const [isCheckingSpace, setIsCheckingSpace] = useState(false);
+
+  const viewerRole = String(authRole || authUser?.role || '').toUpperCase();
+  const isProViewer = viewerRole === 'ROLE_PRO';
+  const isCustomerViewer = viewerRole === 'ROLE_CUSTOMER' || viewerRole === 'ROLE_ENTERPRISE';
+  const isCollabRejected = existingCollabSpace?.status === 'REJECTED';
+
+  useEffect(() => {
+    // resolvedProId is the pro's UUID — available early in the component, same value as freelance.id
+    if (!isAuthenticated || !isCustomerViewer || !resolvedProId || isOwnProfile) {
+      setExistingCollabSpace(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsCheckingSpace(true);
+
+    collaborationApi.listMySpaces()
+      .then((spaces) => {
+        if (cancelled) return;
+        const space = spaces.find((s) => s.proId === resolvedProId);
+        setExistingCollabSpace(space ? { id: space.id, status: space.status } : null);
+      })
+      .catch(() => { if (!cancelled) setExistingCollabSpace(null); })
+      .finally(() => { if (!cancelled) setIsCheckingSpace(false); });
+
+    return () => { cancelled = true; };
+  }, [isAuthenticated, isCustomerViewer, resolvedProId, isOwnProfile]);
+
   const handleMessagingClick = () => {
     if (!isAuthenticated) {
       navigate('/connexion', { state: { from: location.pathname } });
@@ -403,15 +436,13 @@ function ProfilPublicFreelance() {
 
   const handleCollabClick = async () => {
     if (!isAuthenticated) {
-      navigate('/connexion', {
-        state: { from: location.pathname },
-      });
+      navigate('/connexion', { state: { from: location.pathname } });
       return;
     }
 
-    const roleValue = String(authRole || authUser?.role || '').toUpperCase();
-    if (roleValue !== 'ROLE_CUSTOMER') {
-      navigate(`/collaboration/${freelance.id}`);
+    // Navigate to existing space directly without recreating
+    if (existingCollabSpace?.id) {
+      navigate(`/collaboration/${encodeURIComponent(existingCollabSpace.id)}`);
       return;
     }
 
@@ -426,29 +457,23 @@ function ProfilPublicFreelance() {
         proId: freelance.id,
         title: `Collaboration avec ${freelance.prenom || freelance.nom || 'ce professionnel'}`,
       });
-
+      setExistingCollabSpace({ id: createdSpace.id, status: createdSpace.status });
       navigate(`/collaboration/${encodeURIComponent(createdSpace.id)}`);
     } catch (error: any) {
       const statusCode = Number(error?.status || 0);
-
       if (statusCode === 409) {
         try {
           const spaces = await collaborationApi.listMySpaces();
-          const existingSpace = spaces.find(
-            (space) =>
-              space.proId === freelance.id &&
-              (!authUser?.id || space.customerId === authUser.id),
+          const found = spaces.find(
+            (s) => s.proId === freelance.id && (!authUser?.id || s.customerId === authUser.id),
           );
-
-          if (existingSpace?.id) {
-            navigate(`/collaboration/${encodeURIComponent(existingSpace.id)}`);
+          if (found?.id) {
+            setExistingCollabSpace({ id: found.id, status: found.status });
+            navigate(`/collaboration/${encodeURIComponent(found.id)}`);
             return;
           }
-        } catch {
-          // Fallback navigation below.
-        }
+        } catch { /* fallback below */ }
       }
-
       navigate(`/collaboration/${freelance.id}`);
     } finally {
       setIsStartingCollaboration(false);
@@ -699,25 +724,36 @@ function ProfilPublicFreelance() {
 
               {/* Actions */}
               <div className="profil-actions-section">
-                {freelance.actionButtonType === 'CONTACT' ? (
-                  <button className="profil-btn-primary" onClick={handleContactClick}>
-                    <FiMessageCircle /> Contacter
-                  </button>
-                ) : (
-                  <button
-                    className="profil-btn-primary"
-                    onClick={() => void handleCollabClick()}
-                    disabled={isStartingCollaboration}
-                  >
-                    <FaHandshake /> {isStartingCollaboration ? 'Connexion...' : 'Collaborer'}
+                {/* Primary action — hidden for pro viewers, own profile, or rejected state */}
+                {!isProViewer && !isOwnProfile && !isCollabRejected && (
+                  freelance.actionButtonType === 'CONTACT' ? (
+                    <button className="profil-btn-primary" onClick={handleContactClick}>
+                      <FiMessageCircle /> Contacter
+                    </button>
+                  ) : (
+                    <button
+                      className="profil-btn-primary"
+                      onClick={() => void handleCollabClick()}
+                      disabled={isStartingCollaboration || isCheckingSpace || existingCollabSpace === undefined}
+                    >
+                      <FaHandshake />
+                      {isStartingCollaboration ? 'Connexion...' : isCheckingSpace ? 'Chargement...' : 'Collaborer'}
+                    </button>
+                  )
+                )}
+
+                {/* Message button always visible for non-own profiles */}
+                {!isOwnProfile && (
+                  <button className="profil-btn-secondary" onClick={handleMessagingClick}>
+                    <FiMessageCircle /> Message
                   </button>
                 )}
-                <button className="profil-btn-secondary" onClick={handleMessagingClick}>
-                  <FiMessageCircle /> Message
-                </button>
-                <button className="profil-btn-icon">
-                  <FiMoreVertical />
-                </button>
+
+                {!isOwnProfile && (
+                  <button className="profil-btn-icon">
+                    <FiMoreVertical />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1014,19 +1050,27 @@ function ProfilPublicFreelance() {
           </div>
         </div>
 
-        {/* CTA FOOTER */}
-        <section className="profil-cta">
-          <h2>Prêt à démarrer votre projet ?</h2>
-          <p>Contactez <b>{freelance.prenom}</b> pour discuter de vos besoins et obtenir un devis personnalisé</p>
-          <div className="profil-cta-actions">
-            <button className="profil-btn-secondary" onClick={handleMessagingClick}>
-              <FiMessageCircle /> Envoyer un message
-            </button>
-            <button className="profil-btn-primary" onClick={handleCollabClick}>
-              <FaHandshake /> Démarrer une collaboration
-            </button>
-          </div>
-        </section>
+        {/* CTA FOOTER — hidden entirely for own profile and pro viewers */}
+        {!isOwnProfile && !isProViewer && (
+          <section className="profil-cta">
+            <h2>Prêt à démarrer votre projet ?</h2>
+            <p>Contactez <b>{freelance.prenom || freelance.nom}</b> pour discuter de vos besoins et obtenir un devis personnalisé</p>
+            <div className="profil-cta-actions">
+              <button className="profil-btn-secondary" onClick={handleMessagingClick}>
+                <FiMessageCircle /> Envoyer un message
+              </button>
+              {!isCollabRejected && (
+                <button
+                  className="profil-btn-primary"
+                  onClick={() => void handleCollabClick()}
+                  disabled={isStartingCollaboration || isCheckingSpace || existingCollabSpace === undefined}
+                >
+                  <FaHandshake /> {existingCollabSpace?.id ? 'Voir la collaboration' : 'Démarrer une collaboration'}
+                </button>
+              )}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* FOOTER */}
