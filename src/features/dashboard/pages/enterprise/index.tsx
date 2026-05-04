@@ -11,7 +11,7 @@ import {
   FiCalendar, FiTarget, FiZap, FiShield, FiGrid,
   FiList, FiFilter, FiSearch, FiMoreVertical, FiCamera,
   FiSave, FiLock, FiGlobe, FiDownload, FiUpload, 
-  FiCreditCard, FiFileText, FiAlertCircle
+  FiCreditCard, FiFileText, FiAlertCircle, FiMessageSquare
 } from 'react-icons/fi';
 
 import { 
@@ -25,6 +25,9 @@ import { FaHandshake, FaRocket } from 'react-icons/fa';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import NotificationsDrawer from '../../../../components/shared/NotificationsDrawer';
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import MessagingDrawer from '@/features/collaboration/components/MessagingDrawer';
+import { useMessagePolling } from "@/features/collaboration/hooks/useMessagePolling";
+import { useUIStore } from "@/stores/ui.store";
 import { useDashboardProfile } from '../../hooks/useDashboardProfile';
 import {
   useStatsOverview,
@@ -44,7 +47,14 @@ function EnterpriseDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [messagingOpen, setMessagingOpen] = useState(false);
+  const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
+
+  // Use message polling to simulate real-time notifications
+  useMessagePolling(10000);
+
   const [activeTab, setActiveTab] = useState('apercu');
+  const notifications = useUIStore((state) => state.notifications);
   const [paiementSubTab, setPaiementSubTab] = useState('recus');
   const [parametresSubTab, setParametresSubTab] = useState('notifications');
   const [pubSubTab, setPubSubTab] = useState('actives');
@@ -377,6 +387,7 @@ const performanceServices = [
           subtitle: dashboardProfile.subtitle,
           photo: dashboardProfile.avatarUrl,
         }}
+        onMessagesOpen={() => setMessagingOpen(true)}
         userExtra={
           <div className="dash-user-rating">
             {renderStars(freelance.note)}
@@ -409,7 +420,9 @@ const performanceServices = [
             </button>
             <button className="dash-notif-btn" onClick={() => setNotificationsOpen(true)}>
               <FiBell />
-              <span className="dash-notif-badge">{statsData?.messagesNonLus || mockStats.messagesNonLus || 0}</span>
+              {notifications.length > 0 && (
+                <span className="dash-notif-badge">{notifications.length}</span>
+              )}
             </button>
             <button className="dash-profile-btn" onClick={openProfile}>
               <img src={dashboardProfile.avatarUrl} alt="" />
@@ -1545,6 +1558,21 @@ const performanceServices = [
       <NotificationsDrawer
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
+        onNotificationClick={(notif) => {
+          if (notif.metadata?.spaceId) {
+            setActiveSpaceId(notif.metadata.spaceId);
+            setNotificationsOpen(false);
+            setMessagingOpen(true);
+          }
+        }}
+      />
+      <MessagingDrawer
+        isOpen={messagingOpen}
+        onClose={() => {
+          setMessagingOpen(false);
+          setActiveSpaceId(null);
+        }}
+        initialSpaceId={activeSpaceId}
       />
     </div>
   );

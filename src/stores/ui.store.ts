@@ -18,6 +18,7 @@ export interface Notification {
   type?: 'success' | 'error' | 'info' | 'warning';
   title?: string;
   message: string;
+  metadata?: any;
 }
 
 /**

@@ -219,7 +219,7 @@ export const unwrapEnvelope = <T>(response: unknown): T => {
 export const collaborationApi = {
   async listMySpaces(): Promise<CollaborationSpaceResponse[]> {
     const response = await axiosInstance.get<MaybeEnvelope<CollaborationSpaceResponse[]>>(
-      COLLABORATION_ENDPOINTS.MY_SPACES,
+      `${COLLABORATION_ENDPOINTS.MY_SPACES}?_t=${Date.now()}`,
     );
     return unwrapEnvelope<CollaborationSpaceResponse[]>(response) || [];
   },
@@ -391,9 +391,10 @@ export const collaborationApi = {
   },
 
   async listMessages(spaceId: string): Promise<MessageDTO[]> {
-    const response = await axiosInstance.get<MaybeEnvelope<MessageDTO[]>>(
-      COLLABORATION_ENDPOINTS.MESSAGES(encodeURIComponent(spaceId)),
-    );
+    const encodedId = encodeURIComponent(spaceId);
+    // Add cache busting for polling
+    const url = `${COLLABORATION_ENDPOINTS.MESSAGES(encodedId)}${COLLABORATION_ENDPOINTS.MESSAGES(encodedId).includes('?') ? '&' : '?'}_t=${Date.now()}`;
+    const response = await axiosInstance.get<MaybeEnvelope<MessageDTO[]>>(url);
     return unwrapEnvelope<MessageDTO[]>(response) || [];
   },
 
@@ -427,6 +428,16 @@ export const collaborationApi = {
   async getPublicProfileReviews(targetProId: string): Promise<PublicReviewItem[]> {
     const details = await collaborationApi.getProPublicProfileDetails(targetProId);
     return Array.isArray(details?.reviews) ? details.reviews : [];
+  },
+
+  async getProProfileDetails(
+    proProfileId: string,
+  ): Promise<Record<string, unknown>> {
+    const encodedId = encodeURIComponent(proProfileId);
+    const response = await axiosInstance.get<MaybeEnvelope<Record<string, unknown>>>(
+      `/public/profiles/${encodedId}/details`,
+    );
+    return unwrapEnvelope<Record<string, unknown>>(response) || {};
   },
 
   async getCustomerProfileDetails(
