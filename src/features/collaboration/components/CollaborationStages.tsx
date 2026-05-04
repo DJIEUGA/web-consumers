@@ -59,6 +59,7 @@ type StepContactProps = {
   onToggleRecording: () => void;
   canPropose: boolean;
   onProposeCollaboration: () => Promise<void>;
+  isCustomer: boolean;
 };
 
 export const StepContact = ({
@@ -77,6 +78,7 @@ export const StepContact = ({
   onToggleRecording,
   canPropose,
   onProposeCollaboration,
+  isCustomer,
 }: StepContactProps) => {
   return (
     <div className="collab-step-content">
@@ -105,6 +107,7 @@ export const StepContact = ({
       </div>
 
       <CollabChatBox
+        isCustomer={isCustomer}
         messages={messages}
         porteurPhoto={porteurPhoto}
         freelancePhoto={freelancePhoto}

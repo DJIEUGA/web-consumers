@@ -10,6 +10,7 @@ import {
 import type { UiMessage } from "@/features/collaboration/types/workflow";
 
 type CollabChatBoxProps = {
+  isCustomer: boolean;
   messages: UiMessage[];
   porteurPhoto: string;
   freelancePhoto: string;
@@ -27,7 +28,8 @@ type CollabChatBoxProps = {
   onRetryMessage?: (messageId: string) => void;
 };
 
-export const CollabChatBox = ({  
+export const CollabChatBox = ({
+  isCustomer,
   messages,
   porteurPhoto,
   freelancePhoto,
@@ -47,43 +49,46 @@ export const CollabChatBox = ({
   return (
     <div className={`collab-chat-container ${compact ? "small" : ""}`.trim()}>
       <div className="collab-messages">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`collab-message ${msg.sender === "porteur" ? "sent" : "received"}`}
-          >
-            <img
-              src={msg.sender === "porteur" ? porteurPhoto : freelancePhoto}
-              alt=""
-              className="collab-message-avatar"
-            />
-            <div className="collab-message-content">
-              <div className="collab-message-bubble">{msg.text}</div>
-              <span className="collab-message-time">{msg.time}</span>
-              {msg.deliveryStatus === "sending" && (
-                <span className="collab-message-time" style={{ color: "#fd7e14" }}>
-                  Envoi...
-                </span>
-              )}
-              {msg.deliveryStatus === "failed" && (
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
-                  <span className="collab-message-time" style={{ color: "#dc3545" }}>
-                    Echec d'envoi
+        {messages.map((msg) => {
+          const isSentByMe = isCustomer ? msg.sender === "porteur" : msg.sender === "freelance";
+          return (
+            <div
+              key={msg.id}
+              className={`collab-message ${isSentByMe ? "sent" : "received"}`}
+            >
+              <img
+                src={msg.sender === "porteur" ? porteurPhoto : freelancePhoto}
+                alt=""
+                className="collab-message-avatar"
+              />
+              <div className="collab-message-content">
+                <div className="collab-message-bubble">{msg.text}</div>
+                <span className="collab-message-time">{msg.time}</span>
+                {msg.deliveryStatus === "sending" && (
+                  <span className="collab-message-time" style={{ color: "#fd7e14" }}>
+                    Envoi...
                   </span>
-                  {onRetryMessage && (
-                    <button
-                      type="button"
-                      className="collab-btn-sm collab-btn-outline"
-                      onClick={() => onRetryMessage(msg.id)}
-                    >
-                      Reessayer
-                    </button>
-                  )}
-                </div>
-              )}
+                )}
+                {msg.deliveryStatus === "failed" && (
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                    <span className="collab-message-time" style={{ color: "#dc3545" }}>
+                      Echec d'envoi
+                    </span>
+                    {onRetryMessage && (
+                      <button
+                        type="button"
+                        className="collab-btn-sm collab-btn-outline"
+                        onClick={() => onRetryMessage(msg.id)}
+                      >
+                        Reessayer
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 
