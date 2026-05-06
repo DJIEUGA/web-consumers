@@ -257,7 +257,7 @@ export const collaborationApi = {
     const detail = cd ?? pre;
 
     // Also check at the raw response level for any extra fields
-    const rawAny = detailData as Record<string, unknown> | undefined;
+    const rawAny = detailData as Record<string, any> | undefined;
 
     const customerDetails = cd?.customerDetails
       ?? (rawAny?.customerDetails as ProfileDetailsDTO | undefined)
