@@ -263,6 +263,27 @@
   }
 }
 
+.admin-new-collab-btn {
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--turquoise);
+  color: var(--white);
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.admin-new-collab-btn:hover {
+  background: var(--turquoise-dark);
+  transform: translateY(-1px);
+}
+
 .admin-notif-btn {
   position: relative;
   width: 38px;

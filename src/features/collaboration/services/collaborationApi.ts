@@ -260,9 +260,15 @@ export const collaborationApi = {
     const rawAny = detailData as Record<string, unknown> | undefined;
 
     const customerDetails = cd?.customerDetails
-      ?? (rawAny?.customerDetails as ProfileDetailsDTO | undefined);
+      ?? (rawAny?.customerDetails as ProfileDetailsDTO | undefined)
+      ?? (rawAny?.client as ProfileDetailsDTO | undefined)
+      ?? (rawAny?.customer as ProfileDetailsDTO | undefined)
+      ?? (rawAny?.owner as ProfileDetailsDTO | undefined);
     const proDetails = cd?.proDetails
-      ?? (rawAny?.proDetails as ProfileDetailsDTO | undefined);
+      ?? (rawAny?.proDetails as ProfileDetailsDTO | undefined)
+      ?? (rawAny?.professional as ProfileDetailsDTO | undefined)
+      ?? (rawAny?.freelance as ProfileDetailsDTO | undefined)
+      ?? (rawAny?.provider as ProfileDetailsDTO | undefined);
 
     const customerId = String(
       detail && "customerId" in detail && detail.customerId
@@ -288,6 +294,10 @@ export const collaborationApi = {
       || (rawAny?.customerName as string | undefined)
       || (rawAny?.clientName as string | undefined)
       || (rawAny?.ownerName as string | undefined)
+      || (rawAny?.client?.name as string | undefined)
+      || (rawAny?.client?.fullName as string | undefined)
+      || (rawAny?.customer?.name as string | undefined)
+      || (rawAny?.customer?.fullName as string | undefined)
       || ((pre as Record<string, unknown> | undefined)?.customerName as string | undefined)
       || ((pre as Record<string, unknown> | undefined)?.clientName as string | undefined)
       || customerDetailsName
@@ -297,6 +307,10 @@ export const collaborationApi = {
       || (rawAny?.proName as string | undefined)
       || (rawAny?.freelanceName as string | undefined)
       || (rawAny?.providerName as string | undefined)
+      || (rawAny?.professional?.name as string | undefined)
+      || (rawAny?.professional?.fullName as string | undefined)
+      || (rawAny?.freelance?.name as string | undefined)
+      || (rawAny?.freelance?.fullName as string | undefined)
       || ((pre as Record<string, unknown> | undefined)?.proName as string | undefined)
       || ((pre as Record<string, unknown> | undefined)?.freelanceName as string | undefined)
       || proDetailsName

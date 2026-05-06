@@ -25,6 +25,7 @@ import { FaHandshake, FaRocket } from 'react-icons/fa';
 import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import NotificationsDrawer from '../../../../components/shared/NotificationsDrawer';
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
+import { NewCollaborationModal } from "@/features/collaboration/components/NewCollaborationModal";
 import MessagingDrawer from '@/features/collaboration/components/MessagingDrawer';
 import { useMessagePolling } from "@/features/collaboration/hooks/useMessagePolling";
 import { useUIStore } from "@/stores/ui.store";
@@ -47,6 +48,7 @@ function EnterpriseDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [newCollabOpen, setNewCollabOpen] = useState(false);
   const [messagingOpen, setMessagingOpen] = useState(false);
   const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
 
@@ -906,6 +908,9 @@ const performanceServices = [
                   <h2>Mes collaborations</h2>
                   <p className="dash-section-subtitle">{collaborations.length} projets au total</p>
                 </div>
+                <button className="dash-btn-primary" onClick={() => setNewCollabOpen(true)}>
+                  <FiPlus /> Nouvelle collaboration
+                </button>
               </div>
 
               <div className="dash-collab-grid">
@@ -1573,6 +1578,11 @@ const performanceServices = [
           setActiveSpaceId(null);
         }}
         initialSpaceId={activeSpaceId}
+      />
+      <NewCollaborationModal 
+        isOpen={newCollabOpen} 
+        onClose={() => setNewCollabOpen(false)} 
+        onCreated={() => collaborations.length > 0 && console.log("New collab created")}
       />
     </div>
   );

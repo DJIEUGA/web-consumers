@@ -107,12 +107,24 @@ const formatDisplayName = (
   spaceLevelName: string | undefined,
   fallback: string,
 ): string => {
-  if (!dto && !spaceLevelName) return fallback;
-
   const d = dto || ({} as ProfileDetailsDTO);
   const fullName = [str(d.firstName), str(d.lastName)].filter(Boolean).join(" ");
 
-  return pick(fullName, d.displayName, d.fullName, spaceLevelName, d.email, d.userId) || fallback;
+  // Priority: 
+  // 1. Real names from DTO (firstName + lastName)
+  // 2. Specific display name from DTO
+  // 3. Name found at the Space level (space.customerName / space.proName)
+  // 4. Email or UserID as last resort
+  // 5. Hardcoded Fallback ("Client Jobty")
+  
+  const resolved = pick(fullName, d.displayName, d.fullName, spaceLevelName, d.email, d.userId);
+  
+  // If the resolved name is generic or empty, try to at least use the spaceLevelName
+  if (!resolved || resolved.toLowerCase().includes("jobty")) {
+     return str(spaceLevelName) || resolved || fallback;
+  }
+
+  return resolved || fallback;
 };
 
 /**
@@ -147,21 +159,21 @@ const recordToProfileDTO = (
     userId: str(record.userId ?? record.id),
     firstName: str(record.firstName || record.prenom),
     lastName: str(record.lastName || record.nom),
-    displayName: str(record.displayName),
-    fullName: str(record.fullName),
+    displayName: str(record.displayName || record.name),
+    fullName: str(record.fullName || record.name),
     email: str(record.email),
     role: str(record.role),
     verified: Boolean(record.verified),
     country: str(record.country || record.pays || record.nation || (record.location as any)?.country),
     city: str(record.city || record.ville || record.town || (record.location as any)?.city),
     phoneNumber: str(record.phoneNumber || record.phone || record.tel),
-    avatarUrl: str(record.avatarUrl || record.logoUrl || record.avatar || record.photo || record.profilePictureUrl || record.avatar_url || record.profilePicture || record.picture),
-    bio: str(record.bio || record.description || record.summary),
+    avatarUrl: str(record.avatarUrl || record.logoUrl || record.avatar || record.photo || record.profilePictureUrl || record.avatar_url || record.profilePicture || record.picture || record.image),
+    bio: str(record.bio || record.description || record.summary || record.about),
     hourlyRate: record.hourlyRate != null ? Number(record.hourlyRate) : undefined,
-    specialization: str(record.specialization || record.specialite || record.headline),
+    specialization: str(record.specialization || record.specialite || record.headline || record.title || record.poste),
     experienceYears: record.experienceYears != null ? Number(record.experienceYears) : undefined,
     sector: str(record.sector || record.secteur || record.industry),
-    companyName: str(record.companyName || record.nomEntreprise || record.entreprise || record.company),
+    companyName: str(record.companyName || record.nomEntreprise || record.entreprise || record.company || record.organization),
     skills: Array.isArray(record.skills) ? record.skills as string[] : undefined,
     reputationScore: record.reputationScore != null ? Number(record.reputationScore) : undefined,
     reviewCount: record.reviewCount != null ? Number(record.reviewCount) : undefined,
@@ -214,10 +226,16 @@ export const useCollaborationProfiles = ({
     space?.customerName,
     backendSpace?.customerName,
     (space as any)?.clientName,
+    (space as any)?.ownerName,
     (space as any)?.client?.name,
     (space as any)?.client?.fullName,
+    (space as any)?.client?.displayName,
     (space as any)?.customer?.name,
     (space as any)?.customer?.fullName,
+    (space as any)?.customer?.displayName,
+    (space as any)?.owner?.name,
+    (space as any)?.owner?.fullName,
+    (space as any)?.owner?.displayName,
   );
   const effectiveProName = pick(
     space?.proName,
@@ -357,7 +375,7 @@ export const useCollaborationProfiles = ({
       nom: displayName,
       photo,
       poste: pick(d?.specialization, d?.sector, d?.bio) || "Profil non renseigné",
-      location: location || "Localisation non renseignée",
+      location: location || "",
       specialite: specialty,
       tarifHoraire: d?.hourlyRate != null && Number.isFinite(d.hourlyRate) ? d.hourlyRate : null,
       note: num(d?.averageRating),
@@ -384,7 +402,7 @@ export const useCollaborationProfiles = ({
       id: customerId || "owner",
       nom: displayName,
       photo,
-      location: location || "Localisation non renseignée",
+      location: location || "",
       entreprise: pick(d?.companyName, d?.bio, d?.specialization, d?.sector) || "Client Jobty",
     };
   }, [space, customerId, customerDTO, effectiveCustomerName]);

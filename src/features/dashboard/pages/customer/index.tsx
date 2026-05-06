@@ -77,6 +77,7 @@ import ProfileDrawer from '../../../../components/shared/ProfileDrawer';
 import NotificationsDrawer from '../../../../components/shared/NotificationsDrawer';
 import RoleSidebar from '../../../../components/shared/RoleSidebar';
 import MessagingDrawer from '@/features/collaboration/components/MessagingDrawer';
+import { NewCollaborationModal } from '@/features/collaboration/components/NewCollaborationModal';
 import { useMessagePolling } from "@/features/collaboration/hooks/useMessagePolling";
 import { useUIStore } from "@/stores/ui.store";
 import { useDashboardProfile } from '../../hooks/useDashboardProfile';
@@ -96,6 +97,7 @@ const CustomerDashboard = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [messagingOpen, setMessagingOpen] = useState(false);
+  const [newCollabOpen, setNewCollabOpen] = useState(false);
   const [activeSpaceId, setActiveSpaceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("apercu");
 
@@ -383,8 +385,20 @@ const CustomerDashboard = () => {
 
           {activeTab === "collaborations" && (
             <div className="admin-chart-card" style={{ maxWidth: "920px" }}>
-              <h3>Mes collaborations</h3>
-              <p>Accédez à vos espaces d'échange avec les professionnels et suivez l'avancement de chaque mission.</p>
+              <div className="admin-section-header" style={{ marginBottom: "20px" }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>Mes collaborations</h3>
+                  <p style={{ margin: "4px 0 0 0", color: "var(--gray-600)", fontSize: "14px" }}>
+                    Gérez vos échanges avec les professionnels
+                  </p>
+                </div>
+                <button 
+                  className="admin-new-collab-btn" 
+                  onClick={() => setNewCollabOpen(true)}
+                >
+                  <FiPlus /> Nouvelle collaboration
+                </button>
+              </div>
 
               {isCollaborationsLoading && (
                 <p style={{ marginTop: "12px", color: "var(--gray-600)" }}>
@@ -524,6 +538,11 @@ const CustomerDashboard = () => {
           setActiveSpaceId(null);
         }}
         initialSpaceId={activeSpaceId}
+      />
+      <NewCollaborationModal 
+        isOpen={newCollabOpen} 
+        onClose={() => setNewCollabOpen(false)} 
+        onCreated={() => refetchCollaborations()}
       />
     </div>
   );

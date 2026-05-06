@@ -63,6 +63,7 @@ import { FaHandshake, FaRocket } from "react-icons/fa";
 import ProfileDrawer from "../../../../components/shared/ProfileDrawer";
 import NotificationsDrawer from "../../../../components/shared/NotificationsDrawer";
 import RoleSidebar from "../../../../components/shared/RoleSidebar";
+import { NewCollaborationModal } from "@/features/collaboration/components/NewCollaborationModal";
 import { useDashboardProfile } from "../../hooks/useDashboardProfile";
 import {
   useStatsOverview,
@@ -112,6 +113,7 @@ function ProDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [newCollabOpen, setNewCollabOpen] = useState(false);
   const [paiementSubTab, setPaiementSubTab] = useState("recus");
   const [parametresSubTab, setParametresSubTab] = useState("notifications");
   const [pubSubTab, setPubSubTab] = useState("actives");
@@ -1317,6 +1319,9 @@ function ProDashboard() {
                     {collaborations.length} projets au total
                   </p>
                 </div>
+                <button className="dash-btn-primary" onClick={() => setNewCollabOpen(true)}>
+                  <FiPlus /> Nouvelle collaboration
+                </button>
               </div>
 
               <div className="dash-collab-grid">
@@ -2146,6 +2151,11 @@ function ProDashboard() {
       <NotificationsDrawer
         open={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
+      />
+      <NewCollaborationModal 
+        isOpen={newCollabOpen} 
+        onClose={() => setNewCollabOpen(false)} 
+        onCreated={() => collaborations.length > 0 && console.log("New collab created")}
       />
     </div>
   );
