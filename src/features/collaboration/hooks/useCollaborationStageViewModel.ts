@@ -1,5 +1,8 @@
 import type React from "react";
 import type {
+  CollaborationCardSummary,
+} from "@/features/collaboration/types";
+import type {
   AvisState,
   BriefState,
   CollaborationActor,
@@ -9,17 +12,10 @@ import type {
   UiMessage,
 } from "@/features/collaboration/types/workflow";
 
-type PersonSummary = {
-  nom: string;
-  photo: string;
-  poste?: string;
-  entreprise?: string;
-};
-
 type UseCollaborationStageViewModelParams = {
   messages: UiMessage[];
-  porteur: PersonSummary;
-  freelance: PersonSummary;
+  porteur: CollaborationCardSummary;
+  freelance: CollaborationCardSummary;
   newMessage: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
   handleKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
@@ -146,8 +142,8 @@ export const useCollaborationStageViewModel = ({
   const contact = {
     isCustomer,
     messages,
-    porteurPhoto: porteur.photo,
-    freelancePhoto: freelance.photo,
+    porteurPhoto: porteur.avatarUrl,
+    freelancePhoto: freelance.avatarUrl,
     newMessage,
     onMessageChange: setNewMessage,
     handleKeyPress,
@@ -242,8 +238,8 @@ export const useCollaborationStageViewModel = ({
     onRetryMessage,
     isMessagingLocked,
     messagingStatusNotice,
-    porteurPhoto: porteur.photo,
-    freelancePhoto: freelance.photo,
+    porteurPhoto: porteur.avatarUrl,
+    freelancePhoto: freelance.avatarUrl,
     messagesEndRef,
     setEtapes,
     transitionToStep,

@@ -445,6 +445,7 @@ export const CollaborationSpace = () => {
       return ;
     }
   };
+  
 
   const stageViewModel = useCollaborationStageViewModel({
     messages,
@@ -518,6 +519,7 @@ export const CollaborationSpace = () => {
     submitReviewPending,
     reviewSubmitSuccess,
   });
+  
 
   if (profileError) {
     return (

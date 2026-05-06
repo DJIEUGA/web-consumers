@@ -1,6 +1,13 @@
 import axiosInstance from "@/api/axios";
 import { COLLABORATION_ENDPOINTS } from "@/api/collaborationEndpoints";
 import type { ApiResponse as ApiEnvelope } from "@/types/api";
+import type {
+  CreateSpaceParams,
+  OpenSpaceParams,
+  LifecycleActionParams,
+  SendMessageParams,
+  SubmitDeliverableParams,
+} from "../types";
 
 export type CollaborationStatus =
   | "PENDING"
@@ -343,7 +350,7 @@ export const collaborationApi = {
   },
 
   async createSpace(
-    payload: CreateCollaborationRequest,
+    payload: CreateSpaceParams,
   ): Promise<CollaborationSpaceResponse> {
     const response = await axiosInstance.post<MaybeEnvelope<CollaborationSpaceResponse>>(
       COLLABORATION_ENDPOINTS.CREATE_SPACE,
@@ -353,7 +360,7 @@ export const collaborationApi = {
   },
 
   async openSpace(
-    payload: OpenCollaborationRequest,
+    payload: OpenSpaceParams,
   ): Promise<CollaborationSpaceResponse> {
     const response = await axiosInstance.post<MaybeEnvelope<CollaborationSpaceResponse>>(
       COLLABORATION_ENDPOINTS.OPEN_SPACE,
@@ -541,7 +548,7 @@ export const collaborationApi = {
     const encodedId = encodeURIComponent(customerProfileId);
     try {
       const response = await axiosInstance.get<MaybeEnvelope<CustomerProfileDetails>>(
-        `/public/profiles/${encodedId}/details`,
+        `/customer/profiles/${encodedId}/details`,
       );
       return unwrapEnvelope<CustomerProfileDetails>(response) || {};
     } catch (err: unknown) {

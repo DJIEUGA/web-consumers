@@ -29,6 +29,9 @@ import { FaHandshake, FaRocket } from "react-icons/fa";
 import Logo from "@/components/shared/Logo";
 import { CollabChatBox } from "@/features/collaboration/components/CollabChatBox";
 import type {
+  CollaborationCardSummary,
+} from "@/features/collaboration/types";
+import type {
   AvisState,
   BriefState,
   CollaborationActor,
@@ -37,13 +40,6 @@ import type {
   ProjectEtape,
   UiMessage,
 } from "@/features/collaboration/types/workflow";
-
-type PersonSummary = {
-  nom: string;
-  photo: string;
-  poste?: string;
-  entreprise?: string;
-};
 
 type StepContactProps = {
   messages: UiMessage[];
@@ -158,8 +154,8 @@ export const StepContact = ({
 
 type StepDecisionProps = {
   isPro: boolean;
-  porteur?: PersonSummary;
-  freelance?: PersonSummary;
+  porteur?: CollaborationCardSummary;
+  freelance?: CollaborationCardSummary;
   requestContextMessage: string;
   actor: CollaborationActor;
   decisionState: CollaborationDecisionState;
@@ -206,7 +202,7 @@ export const StepDecision = ({
             <div className="collab-waiting-animation">
               <div className="collab-pulse-ring"></div>
               <img
-                src={porteur?.photo}
+                src={porteur?.avatarUrl}
                 alt={porteur?.nom}
                 className="collab-waiting-photo"
               />
@@ -218,7 +214,7 @@ export const StepDecision = ({
             <div className="collab-waiting-animation">
               <div className="collab-pulse-ring"></div>
               <img
-                src={freelance?.photo}
+                src={freelance?.avatarUrl}
                 alt={freelance?.nom}
                 className="collab-waiting-photo"
               />
@@ -276,8 +272,8 @@ export const StepDecision = ({
 type StepMatchProps = {
   isOwnerIdentityLoading: boolean;
   isFreelanceIdentityLoading: boolean;
-  porteur: PersonSummary;
-  freelance: PersonSummary;
+  porteur: CollaborationCardSummary;
+  freelance: CollaborationCardSummary;
   canOpenBrief: boolean;
   onOpenBrief: () => void;
 };
@@ -311,7 +307,7 @@ export const StepMatch = ({
             {isOwnerIdentityLoading ? (
               <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
             ) : (
-              <img src={porteur.photo} alt={porteur.nom} />
+              <img src={porteur.avatarUrl} alt={porteur.nom} />
             )}
             {isOwnerIdentityLoading ? (
               <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
@@ -327,7 +323,7 @@ export const StepMatch = ({
             {isFreelanceIdentityLoading ? (
               <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
             ) : (
-              <img src={freelance.photo} alt={freelance.nom} />
+              <img src={freelance.avatarUrl} alt={freelance.nom} />
             )}
             {isFreelanceIdentityLoading ? (
               <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
@@ -387,7 +383,7 @@ type StepBriefProps = {
   validerBrief: () => Promise<void>;
   confirmerReceptionBrief: () => void;
   toggleLivrable: (livrable: string) => void;
-  freelance: PersonSummary;
+  freelance: CollaborationCardSummary;
 };
 
 export const StepBrief = ({
@@ -529,7 +525,7 @@ export const StepBrief = ({
 
       <div className="collab-pro-comment">
         <div className="collab-pro-comment-header">
-          <img src={freelance.photo} alt={freelance.nom} />
+          <img src={freelance.avatarUrl} alt={freelance.nom} />
           <span>Commentaire de {freelance.nom.split(" ")[0]}</span>
         </div>
         <div className="collab-pro-comment-content">
@@ -569,8 +565,8 @@ export const StepBrief = ({
 
 type StepContractProps = {
   brief: BriefState;
-  porteur: PersonSummary;
-  freelance: PersonSummary;
+  porteur: CollaborationCardSummary;
+  freelance: CollaborationCardSummary;
   contratAccepte: ContratAccepteState;
   setContratAccepte: React.Dispatch<React.SetStateAction<ContratAccepteState>>;
   isCustomer: boolean;
@@ -700,7 +696,7 @@ export const StepContract = ({
             {isOwnerIdentityLoading ? (
               <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-xs" />
             ) : (
-              <img src={porteur.photo} alt={porteur.nom} />
+              <img src={porteur.avatarUrl} alt={porteur.nom} />
             )}
             {isOwnerIdentityLoading ? (
               <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
@@ -731,7 +727,7 @@ export const StepContract = ({
             {isFreelanceIdentityLoading ? (
               <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-xs" />
             ) : (
-              <img src={freelance.photo} alt={freelance.nom} />
+              <img src={freelance.avatarUrl} alt={freelance.nom} />
             )}
             {isFreelanceIdentityLoading ? (
               <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
@@ -1105,7 +1101,7 @@ export const StepExecution = ({
 type StepClosureProps = {
   etapes: ProjectEtape[];
   isCustomer: boolean;
-  freelance: PersonSummary;
+  freelance: CollaborationCardSummary;
   isCheckingExistingReview: boolean;
   hasExistingReview: boolean;
   avis: AvisState;
@@ -1329,7 +1325,7 @@ export const StepClosure = ({
 type StepDeliveryProps = {
   isPro: boolean;
   isCustomer: boolean;
-  freelance: PersonSummary;
+  freelance: CollaborationCardSummary;
   onSubmitDeliverable: () => Promise<void>;
   onLibererPaiement: () => Promise<void>;
 };
@@ -1360,7 +1356,7 @@ export const StepDelivery = ({
       <div className="collab-paiement-card">
         <div className="collab-match-users" style={{ justifyContent: "center", marginBottom: 24 }}>
           <div className="collab-match-user">
-            <img src={freelance.photo} alt={freelance.nom} />
+            <img src={freelance.avatarUrl} alt={freelance.nom} />
             <span>{freelance.nom}</span>
             <span className="collab-role">Prestataire</span>
           </div>
@@ -1420,7 +1416,7 @@ export const StepDelivery = ({
 
 type StepReleaseProps = {
   isCustomer: boolean;
-  freelance: PersonSummary;
+  freelance: CollaborationCardSummary;
   onLibererPaiement: () => Promise<void>;
 };
 
@@ -1445,7 +1441,7 @@ export const StepRelease = ({
         <div className="collab-match-success-card" style={{ marginBottom: 16 }}>
           <div className="collab-match-users" style={{ justifyContent: "center" }}>
             <div className="collab-match-user">
-              <img src={freelance.photo} alt={freelance.nom} />
+              <img src={freelance.avatarUrl} alt={freelance.nom} />
               <span>{freelance.nom}</span>
               <span className="collab-role">Prestataire</span>
             </div>

@@ -1,12 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collaborationService } from '../services/collaboration.service';
-import collaborationApi, { type CollaborationSpaceResponse, type PublicReviewItem, type ReviewRequest, type ProPublicProfileDetails, type CustomerProfileDetails } from '../services/collaborationApi';
+import collaborationApi, { ReviewRequest, PublicReviewItem, ProPublicProfileDetails, CustomerProfileDetails} from '../services/collaborationApi';
+import type {
+  CollaborationSpaceResponse,
+} from '../types';
 import type {
   CreateSpaceParams,
   SendMessageParams,
   SubmitDeliverableParams,
 } from '../types';
 import { toast } from 'sonner';
+
 
 export const COLLABORATION_KEYS = {
   all: ['collaborations'] as const,
@@ -47,7 +51,7 @@ export function useSpaceDetail(id: string | undefined) {
   return useQuery<CollaborationSpaceResponse>({
     queryKey: COLLABORATION_KEYS.detail(id!),
     queryFn: async () => {
-      return collaborationApi.getSpaceDetail(id!);
+      return collaborationApi.getSpaceDetail(id!) as unknown as CollaborationSpaceResponse;
     },
     enabled: !!id,
   });

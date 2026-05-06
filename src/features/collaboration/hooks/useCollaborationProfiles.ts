@@ -83,11 +83,6 @@ const pick = (...values: unknown[]): string => {
   return "";
 };
 
-const buildAvatarFallback = (name: string, seed?: string): string => {
-  const label = str(name) || "Jobty";
-  const safeSeed = encodeURIComponent(str(seed) || label);
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(label)}&background=EEF2FF&color=3730A3&bold=true&size=256&rounded=true&seed=${safeSeed}`;
-};
 
 /**
  * Build a "{city}, {country}" string from a ProfileDetailsDTO.
@@ -110,6 +105,7 @@ const formatDisplayName = (
   const d = dto || ({} as ProfileDetailsDTO);
   const fullName = [str(d.firstName), str(d.lastName)].filter(Boolean).join(" ");
 
+<<<<<<< HEAD
   // Priority: 
   // 1. Real names from DTO (firstName + lastName)
   // 2. Specific display name from DTO
@@ -125,21 +121,15 @@ const formatDisplayName = (
   }
 
   return resolved || fallback;
+=======
+  return pick(fullName, d.displayName, d.fullName) || fallback;
+>>>>>>> 2fe80029ff5510c45291a81aa2feafd1153b0a01
 };
 
 /**
  * Resolve the avatar URL from the DTO.
  * The API schema field is `avatarUrl`.
  */
-const resolvePhoto = (
-  dto: ProfileDetailsDTO | undefined | null,
-  displayName: string,
-  seedId?: string,
-): string => {
-  const url = pick(dto?.avatarUrl);
-  return url || buildAvatarFallback(displayName, seedId);
-};
-
 const toSkillsList = (skills: unknown): string[] => {
   if (!Array.isArray(skills)) return [];
   return skills
@@ -196,6 +186,7 @@ export const useCollaborationProfiles = ({
   authUser,
   currentUserProfile,
 }: UseCollaborationProfilesParams) => {
+   // re-render on route param change (e.g. spaceId) to trigger refetches in child hooks
   // Fetch space detail (shares react-query cache with useCollaborationWorkspaceSync)
   const spaceQuery = useSpaceDetail(resolvedSpaceId || undefined);
 
@@ -208,13 +199,13 @@ export const useCollaborationProfiles = ({
   // The detail endpoint may return preCollaborationDetail without profiles,
   // while the list endpoint may carry them.
   const spaceProDTO: ProfileDetailsDTO | undefined =
-    space?.proDetails ?? 
+    (space as any)?.proDetails ?? 
     backendSpace?.proDetails ?? 
     (space as any)?.professional ?? 
     (space as any)?.freelance ?? 
     undefined;
   const spaceCustomerDTO: ProfileDetailsDTO | undefined =
-    space?.customerDetails ?? 
+    (space as any)?.customerDetails ?? 
     backendSpace?.customerDetails ?? 
     (space as any)?.client ?? 
     (space as any)?.customer ?? 
@@ -223,13 +214,16 @@ export const useCollaborationProfiles = ({
 
   // Also merge name fields from all available sources
   const effectiveCustomerName = pick(
-    space?.customerName,
     backendSpace?.customerName,
     (space as any)?.clientName,
     (space as any)?.ownerName,
     (space as any)?.client?.name,
+<<<<<<< HEAD
     (space as any)?.client?.fullName,
     (space as any)?.client?.displayName,
+=======
+    (space as any)?.customerDetails?.fullName,
+>>>>>>> 2fe80029ff5510c45291a81aa2feafd1153b0a01
     (space as any)?.customer?.name,
     (space as any)?.customer?.fullName,
     (space as any)?.customer?.displayName,
@@ -238,7 +232,6 @@ export const useCollaborationProfiles = ({
     (space as any)?.owner?.displayName,
   );
   const effectiveProName = pick(
-    space?.proName,
     backendSpace?.proName,
     (space as any)?.freelanceName,
     (space as any)?.professional?.name,
@@ -248,7 +241,6 @@ export const useCollaborationProfiles = ({
   );
 
   const proId = pick(
-    space?.proId,
     backendSpace?.proId,
     spaceProDTO?.userId,
     roomPair?.proId,
@@ -257,14 +249,8 @@ export const useCollaborationProfiles = ({
     (space as any)?.freelance?.id,
   );
   const customerId = pick(
-    space?.customerId,
     backendSpace?.customerId,
     spaceCustomerDTO?.userId,
-    roomPair?.customerId,
-    (space as any)?.client?.id,
-    (space as any)?.client?.userId,
-    (space as any)?.customer?.id,
-    (space as any)?.owner?.id,
   );
 
   // ── Fallback: fetch profile details separately when space detail doesn't include them ──
@@ -275,7 +261,7 @@ export const useCollaborationProfiles = ({
   // Pro profile: public endpoint, works for listed pros
   const proProfileQuery = useProProfileDetails(proId || undefined, needsProFallback);
 
-  // Customer profile: uses the same /public/profiles/{id}/details endpoint.
+  // Customer profile: uses the same /customer/profiles/{id}/details endpoint.
   const customerProfileQuery = useCustomerProfileDetails(customerId || undefined, needsCustomerFallback);
 
   const isFreelanceQueryLoading = Boolean(proId) && needsProFallback && proProfileQuery.isPending;
@@ -291,14 +277,9 @@ export const useCollaborationProfiles = ({
   // DEBUG: trace data sources for profile mapping
   if ((space || backendSpace) && (typeof window !== "undefined")) {
     console.debug("[CollabProfiles] data sources →", {
-      spaceId: space?.id,
+      spaceId: resolvedSpaceId,
       proId,
       customerId,
-      // Detail endpoint data
-      "detail.customerName": spaceQuery.data?.customerName,
-      "detail.proName": spaceQuery.data?.proName,
-      "detail.hasCustomerDetails": !!spaceQuery.data?.customerDetails,
-      "detail.hasProDetails": !!spaceQuery.data?.proDetails,
       // List endpoint data (backendSpace)
       "list.customerName": backendSpace?.customerName,
       "list.proName": backendSpace?.proName,
@@ -333,13 +314,14 @@ export const useCollaborationProfiles = ({
 
     if (Object.keys(merged).length === 0) return undefined;
     return merged as ProfileDetailsDTO;
-  }, [spaceProDTO, proProfileQuery.data, effectiveProName, proId, isPro, currentUserProfile, authUser]);
+  }, [spaceProDTO, proProfileQuery.data, effectiveProName, isPro, currentUserProfile, authUser]);
 
   const customerDTO: ProfileDetailsDTO | undefined = useMemo(() => {
     // Current user context (highest priority if I am the customer)
     if (isCustomer && (currentUserProfile || authUser)) {
       return recordToProfileDTO({ ...authUser, ...currentUserProfile });
     }
+    
 
     const base = spaceCustomerDTO || {};
     const publicData = customerProfileQuery.data ? recordToProfileDTO(customerProfileQuery.data as Record<string, unknown>) : {};
@@ -353,7 +335,7 @@ export const useCollaborationProfiles = ({
 
     if (Object.keys(merged).length === 0) return undefined;
     return merged as ProfileDetailsDTO;
-  }, [spaceCustomerDTO, customerProfileQuery.data, effectiveCustomerName, customerId, isCustomer, currentUserProfile, authUser]);
+  }, [spaceCustomerDTO, customerProfileQuery.data, effectiveCustomerName, isCustomer, currentUserProfile, authUser]);
 
   const isFreelanceIdentityLoading = Boolean(proId) && !proDTO && (needsProFallback ? proProfileQuery.isPending : false);
   const isOwnerIdentityLoading = Boolean(customerId) && !customerDTO && (needsCustomerFallback
@@ -366,7 +348,7 @@ export const useCollaborationProfiles = ({
     const d = proDTO;
     const displayName = formatDisplayName(d, effectiveProName, "Professionnel Jobty");
     const location = formatLocation(d);
-    const photo = resolvePhoto(d, displayName, proId || space?.proId);
+    const photo = (space as any)?.proDetails?.avatarUrl;
     const skills = toSkillsList(d?.skills);
     const specialty = pick(d?.specialization, d?.sector);
 
@@ -396,7 +378,7 @@ export const useCollaborationProfiles = ({
     const d = customerDTO;
     const displayName = formatDisplayName(d, effectiveCustomerName, "Client Jobty");
     const location = formatLocation(d);
-    const photo = resolvePhoto(d, displayName, customerId || space?.customerId);
+    const photo = (space as any)?.customerDetails?.avatarUrl;
 
     return {
       id: customerId || "owner",
