@@ -105,7 +105,6 @@ const formatDisplayName = (
   const d = dto || ({} as ProfileDetailsDTO);
   const fullName = [str(d.firstName), str(d.lastName)].filter(Boolean).join(" ");
 
-<<<<<<< HEAD
   // Priority: 
   // 1. Real names from DTO (firstName + lastName)
   // 2. Specific display name from DTO
@@ -121,9 +120,6 @@ const formatDisplayName = (
   }
 
   return resolved || fallback;
-=======
-  return pick(fullName, d.displayName, d.fullName) || fallback;
->>>>>>> 2fe80029ff5510c45291a81aa2feafd1153b0a01
 };
 
 /**
@@ -218,12 +214,9 @@ export const useCollaborationProfiles = ({
     (space as any)?.clientName,
     (space as any)?.ownerName,
     (space as any)?.client?.name,
-<<<<<<< HEAD
     (space as any)?.client?.fullName,
     (space as any)?.client?.displayName,
-=======
     (space as any)?.customerDetails?.fullName,
->>>>>>> 2fe80029ff5510c45291a81aa2feafd1153b0a01
     (space as any)?.customer?.name,
     (space as any)?.customer?.fullName,
     (space as any)?.customer?.displayName,
