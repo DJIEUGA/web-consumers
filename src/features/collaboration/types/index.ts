@@ -72,6 +72,7 @@ export type CollaborationCardSummary = {
   id: string | number;
   nom: string;
   avatarUrl?: string;
+  photo?: string;
   poste?: string;
   specialization?: string;
   entreprise?: string;

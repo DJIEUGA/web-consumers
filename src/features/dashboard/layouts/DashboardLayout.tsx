@@ -10,6 +10,7 @@ import { useUIStore } from "@/stores/ui.store";
 import { useMessagePolling } from "@/features/collaboration/hooks/useMessagePolling";
 import { useLogoutMutation } from "@/features/auth/hooks/useAuthMutations";
 import { useDashboardProfile } from "../hooks/useDashboardProfile";
+import "../pages/pro/css/style.css";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

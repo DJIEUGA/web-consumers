@@ -202,7 +202,7 @@ export const StepDecision = ({
             <div className="collab-waiting-animation">
               <div className="collab-pulse-ring"></div>
               <img
-                src={porteur?.avatarUrl}
+                src={porteur?.photo}
                 alt={porteur?.nom}
                 className="collab-waiting-photo"
               />
@@ -214,7 +214,7 @@ export const StepDecision = ({
             <div className="collab-waiting-animation">
               <div className="collab-pulse-ring"></div>
               <img
-                src={freelance?.avatarUrl}
+                src={freelance?.photo}
                 alt={freelance?.nom}
                 className="collab-waiting-photo"
               />
@@ -307,7 +307,7 @@ export const StepMatch = ({
             {isOwnerIdentityLoading ? (
               <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
             ) : (
-              <img src={porteur.avatarUrl} alt={porteur.nom} />
+              <img src={porteur.photo} alt={porteur.nom} />
             )}
             {isOwnerIdentityLoading ? (
               <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
@@ -323,7 +323,7 @@ export const StepMatch = ({
             {isFreelanceIdentityLoading ? (
               <div className="collab-skeleton collab-avatar-skeleton collab-avatar-skeleton-sm" />
             ) : (
-              <img src={freelance.avatarUrl} alt={freelance.nom} />
+              <img src={freelance.photo} alt={freelance.nom} />
             )}
             {isFreelanceIdentityLoading ? (
               <span className="collab-skeleton collab-text-skeleton collab-text-skeleton-name-sm" />
@@ -525,7 +525,7 @@ export const StepBrief = ({
 
       <div className="collab-pro-comment">
         <div className="collab-pro-comment-header">
-          <img src={freelance.avatarUrl} alt={freelance.nom} />
+          <img src={freelance.photo} alt={freelance.nom} />
           <span>Commentaire de {freelance.nom.split(" ")[0]}</span>
         </div>
         <div className="collab-pro-comment-content">

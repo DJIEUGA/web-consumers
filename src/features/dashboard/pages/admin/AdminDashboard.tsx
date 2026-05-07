@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiAlertCircle } from "react-icons/fi";
 import DashboardLayout from "../../layouts/DashboardLayout";
-import { useDashboardProfile } from "../../hooks/useDashboardProfile";
+import "./css/style.css";
 import {
   ADMIN_TAB_TITLES,
   ADMIN_TAB_TO_ROUTE,
@@ -24,7 +23,6 @@ import {
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile } = useDashboardProfile();
 
   // Derive active tab from URL
   const activeTab = useMemo(
@@ -107,9 +105,7 @@ const AdminDashboard: React.FC = () => {
       onTabChange={goToTab}
       userExtra={userExtra}
     >
-      <div className="admin-dashboard-content">
-        {renderTabContent()}
-      </div>
+      {renderTabContent()}
     </DashboardLayout>
   );
 };

@@ -1,143 +1,113 @@
 import React from "react";
-import { FiDollarSign, FiTrendingUp, FiCalendar } from "react-icons/fi";
+import { FiDollarSign, FiEye, FiDownload, FiAlertCircle, FiAlertTriangle } from "react-icons/fi";
+import { usePayments, useTransactions } from "../../hooks/useDashboardData";
 
-/**
- * Admin Payments Management Tab
- * Monitor platform payment transactions and revenue
- */
 const PaymentsTab: React.FC = () => {
-  // TODO: Replace with useAdminPaymentsQuery() hook
-  const payments = [
-    {
-      id: 1,
-      projectTitle: "Développement site e-commerce",
-      client: "Jean Dupont",
-      pro: "Marie Martin",
-      amount: 5000,
-      commission: 500,
-      status: "COMPLETED",
-      date: "2026-03-01",
-    },
-    {
-      id: 2,
-      projectTitle: "Design application mobile",
-      client: "Sophie Laurent",
-      pro: "Thomas Petit",
-      amount: 3500,
-      commission: 350,
-      status: "PENDING",
-      date: "2026-03-02",
-    },
-  ];
+  const { data: paiements = [] } = usePayments();
+  const { data: transactions = [] } = useTransactions();
 
-  const totalRevenue = payments.reduce((sum, p) => sum + p.commission, 0);
+  const getStatutBadge = (statut: string) => {
+    const map: Record<string, { label: string; color: string }> = {
+      valide: { label: "Validé", color: "#4CAF50" },
+      en_cours: { label: "En cours", color: "#3DC7C9" },
+      echec: { label: "Échoué", color: "#F44336" },
+      rembourse: { label: "Remboursé", color: "#FF9800" },
+    };
+    const s = map[statut] || { label: statut, color: "#9E9E9E" };
+    return (
+      <span className="admin-badge" style={{ backgroundColor: `${s.color}20`, color: s.color }}>
+        {s.label}
+      </span>
+    );
+  };
 
   return (
-    <div className="admin-payments">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">
-        Gestion des paiements
-      </h2>
+    <div className="admin-payments-section">
+      <div className="admin-section-header">
+        <div>
+          <h2>Gestion des paiements</h2>
+          <p className="admin-section-subtitle">Dashboard financier</p>
+        </div>
+        <button className="dash-btn-primary">
+          <FiDownload /> Exporter rapport
+        </button>
+      </div>
 
-      {/* Revenue Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <FiDollarSign className="text-green-600" size={24} />
-            <span className="text-sm font-medium text-slate-500">
-              Commissions totales
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {totalRevenue.toLocaleString()} €
-          </div>
+      {/* Finance metrics */}
+      <div className="admin-finance-metrics">
+        <div className="admin-metric-card primary">
+          <h3>Volume total</h3>
+          <p className="admin-metric-value">12,450,000 F</p>
+          <span className="admin-metric-trend">+23% vs mois dernier</span>
         </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <FiTrendingUp className="text-blue-600" size={24} />
-            <span className="text-sm font-medium text-slate-500">
-              Transactions ce mois
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {payments.length}
-          </div>
+        <div className="admin-metric-card secondary">
+          <h3>Commissions</h3>
+          <p className="admin-metric-value">1,245,000 F</p>
+          <span className="admin-metric-info">10% du volume</span>
         </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <FiCalendar className="text-indigo-600" size={24} />
-            <span className="text-sm font-medium text-slate-500">
-              Paiements en attente
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {payments.filter((p) => p.status === "PENDING").length}
-          </div>
+        <div className="admin-metric-card accent">
+          <h3>En séquestre</h3>
+          <p className="admin-metric-value">2,340,000 F</p>
+          <span className="admin-metric-info">18 projets actifs</span>
+        </div>
+        <div className="admin-metric-card">
+          <h3>Versé aux pros</h3>
+          <p className="admin-metric-value">8,865,000 F</p>
+          <span className="admin-metric-info">Ce mois</span>
         </div>
       </div>
 
-      {/* Payments Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-zinc-50 border-b border-zinc-200">
-            <tr>
-              <th className="text-left p-4 font-semibold text-slate-900">
-                Projet
-              </th>
-              <th className="text-left p-4 font-semibold text-slate-900">
-                Client
-              </th>
-              <th className="text-left p-4 font-semibold text-slate-900">
-                Professionnel
-              </th>
-              <th className="text-left p-4 font-semibold text-slate-900">
-                Montant
-              </th>
-              <th className="text-left p-4 font-semibold text-slate-900">
-                Commission
-              </th>
-              <th className="text-left p-4 font-semibold text-slate-900">
-                Statut
-              </th>
-              <th className="text-left p-4 font-semibold text-slate-900">
-                Date
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((payment, index) => (
-              <tr
-                key={payment.id}
-                className={index !== payments.length - 1 ? "border-b border-zinc-100" : ""}
-              >
-                <td className="p-4">
-                  <div className="font-medium text-slate-900">
-                    {payment.projectTitle}
-                  </div>
-                </td>
-                <td className="p-4 text-slate-500">{payment.client}</td>
-                <td className="p-4 text-slate-500">{payment.pro}</td>
-                <td className="p-4 font-semibold text-slate-900">
-                  {payment.amount.toLocaleString()} €
-                </td>
-                <td className="p-4 font-semibold text-green-600">
-                  {payment.commission.toLocaleString()} €
-                </td>
-                <td className="p-4">
-                  <span
-                    className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      payment.status === "COMPLETED"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-orange-100 text-orange-700"
-                    }`}
-                  >
-                    {payment.status}
-                  </span>
-                </td>
-                <td className="p-4 text-slate-500 text-sm">{payment.date}</td>
+      {/* Alerts */}
+      <div className="admin-payment-alerts">
+        <div className="admin-alert admin-alert-danger">
+          <FiAlertCircle />
+          <span>3 paiements échoués (dernières 24h)</span>
+          <button className="admin-btn-link">Voir détails</button>
+        </div>
+        <div className="admin-alert admin-alert-warning">
+          <FiAlertTriangle />
+          <span>5 remboursements en attente d'approbation</span>
+          <button className="admin-btn-link">Traiter</button>
+        </div>
+      </div>
+
+      {/* Transactions table */}
+      <div className="admin-transactions">
+        <h3>Transactions récentes</h3>
+        <div className="admin-table-container">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>De → Vers</th>
+                <th>Montant</th>
+                <th>Type</th>
+                <th>Méthode</th>
+                <th>Statut</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {transactions.map((trans) => (
+                <tr key={trans.id}>
+                  <td><strong>{trans.id}</strong></td>
+                  <td>{trans.date}</td>
+                  <td>{trans.de} → {trans.vers}</td>
+                  <td className="admin-text-primary">
+                    <strong>{trans.montant?.toLocaleString()} F</strong>
+                  </td>
+                  <td>{trans.type}</td>
+                  <td>{trans.methode}</td>
+                  <td>{getStatutBadge(trans.statut)}</td>
+                  <td>
+                    <button className="admin-action-btn"><FiEye /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

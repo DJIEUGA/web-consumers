@@ -4,19 +4,20 @@
    ======================================== */
 
 :root {
-  --white: #FFFFFF;
-  --turquoise: #3DC7C9;
-  --turquoise-light: #E8F8F9;
-  --turquoise-dark: #2BA5A7;
-  --gray-50: #FAFAFA;
-  --gray-100: #F5F5F5;
-  --gray-200: #EEEEEE;
+  /* Map dashboard tokens to global design system variables */
+  --white: hsl(var(--card));
+  --turquoise: hsl(var(--primary)); /* primary colour (indigo) */
+  --turquoise-light: #EEF2FF; /* light tint for primary */
+  --turquoise-dark: #4338CA;
+  --gray-50: hsl(var(--background));
+  --gray-100: #F5F5F7;
+  --gray-200: hsl(var(--border));
   --gray-300: #E0E0E0;
   --gray-400: #BDBDBD;
   --gray-500: #9E9E9E;
-  --gray-600: #757575;
-  --gray-700: #616161;
-  --gray-900: #212121;
+  --gray-600: #6B7280;
+  --gray-700: #4B5563;
+  --gray-900: hsl(var(--foreground));
   --success: #4CAF50;
   --success-light: #E8F5E9;
   --warning: #FF9800;

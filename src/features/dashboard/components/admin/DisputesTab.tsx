@@ -1,143 +1,272 @@
-import React from "react";
-import { FiAlertCircle, FiClock, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import React, { useState } from "react";
+import { FiSearch, FiLoader, FiX, FiCheck } from "react-icons/fi";
+import {
+  useAdminDisputes,
+  useResolveDispute,
+  useCloseDispute,
+  useDeleteDispute,
+} from "../../hooks/useAdminData";
+import type { AdminDisputesFilter, DisputeStatus, DisputeResponse } from "@/api/adminEndpoints";
 
-/**
- * Admin Disputes Management Tab
- * Handle and resolve user disputes
- */
-const DisputesTab: React.FC = () => {
-  // TODO: Replace with useAdminDisputesQuery() hook
-  const disputes = [
-    {
-      id: 1,
-      projectTitle: "Développement site web",
-      clientName: "Jean Dupont",
-      proName: "Marie Martin",
-      status: "PENDING",
-      createdAt: "2026-03-01",
-      priority: "high",
-      reason: "Retard de livraison",
-    },
-    {
-      id: 2,
-      projectTitle: "Design logo",
-      clientName: "Sophie Laurent",
-      proName: "Thomas Petit",
-      status: "RESOLVED",
-      createdAt: "2026-02-28",
-      priority: "medium",
-      reason: "Qualité du travail",
-    },
-  ];
+const STATUS_LABELS: Record<DisputeStatus, string> = {
+  OPEN: "Ouvert",
+  IN_INVESTIGATION: "En investigation",
+  RESOLVED: "Résolu",
+  CLOSED: "Clôturé",
+};
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return <FiClock className="text-orange-500" size={24} />;
-      case "RESOLVED":
-        return <FiCheckCircle className="text-green-500" size={24} />;
-      case "REJECTED":
-        return <FiXCircle className="text-red-500" size={24} />;
-      default:
-        return <FiAlertCircle className="text-red-500" size={24} />;
-    }
-  };
+const STATUS_COLORS: Record<DisputeStatus, string> = {
+  OPEN: "#F44336",
+  IN_INVESTIGATION: "#FF9800",
+  RESOLVED: "#4CAF50",
+  CLOSED: "#9E9E9E",
+};
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-700";
-      case "medium":
-        return "bg-orange-100 text-orange-700";
-      case "low":
-        return "bg-blue-100 text-blue-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
-  };
+function DisputeStatusBadge({ status }: { status: DisputeStatus }) {
+  const color = STATUS_COLORS[status] ?? "#9E9E9E";
+  return (
+    <span
+      className="admin-badge"
+      style={{ backgroundColor: `${color}20`, color }}
+    >
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return "bg-orange-100 text-orange-700";
-      case "RESOLVED":
-        return "bg-green-100 text-green-700";
-      case "REJECTED":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-zinc-100 text-zinc-700";
-    }
+/** Inline resolution form shown when admin clicks "Résoudre" */
+function ResolveForm({
+  disputeId,
+  onCancel,
+}: {
+  disputeId: string;
+  onCancel: () => void;
+}) {
+  const resolveDispute = useResolveDispute();
+  const [decision, setDecision] = useState("");
+  const [refundAmount, setRefundAmount] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!decision.trim()) return;
+    resolveDispute.mutate(
+      {
+        disputeId,
+        arbitrationDecision: decision,
+        refundAmount: refundAmount ? parseFloat(refundAmount) : undefined,
+        paymentAmount: paymentAmount ? parseFloat(paymentAmount) : undefined,
+      },
+      { onSuccess: onCancel }
+    );
   };
 
   return (
-    <div className="admin-disputes">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-900 mb-1">
-          Gestion des litiges
-        </h2>
-        <p className="text-sm text-slate-500">{disputes.length} litige(s) actif(s)</p>
+    <form onSubmit={handleSubmit} style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+      <textarea
+        className="admin-filter-select"
+        placeholder="Décision d'arbitrage *"
+        value={decision}
+        onChange={(e) => setDecision(e.target.value)}
+        rows={3}
+        style={{ resize: "vertical", fontSize: 12 }}
+        required
+      />
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          type="number"
+          className="admin-filter-select"
+          placeholder="Montant remboursement (F)"
+          value={refundAmount}
+          onChange={(e) => setRefundAmount(e.target.value)}
+          min={0}
+          style={{ flex: 1, fontSize: 12 }}
+        />
+        <input
+          type="number"
+          className="admin-filter-select"
+          placeholder="Montant paiement (F)"
+          value={paymentAmount}
+          onChange={(e) => setPaymentAmount(e.target.value)}
+          min={0}
+          style={{ flex: 1, fontSize: 12 }}
+        />
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          type="submit"
+          className="dash-btn-primary"
+          disabled={resolveDispute.isPending || !decision.trim()}
+        >
+          <FiCheck /> Confirmer la résolution
+        </button>
+        <button type="button" className="dash-btn-secondary" onClick={onCancel}>
+          <FiX /> Annuler
+        </button>
+      </div>
+    </form>
+  );
+}
+
+const DisputesTab: React.FC = () => {
+  const [filters, setFilters] = useState<AdminDisputesFilter>({});
+  const [search, setSearch] = useState("");
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+
+  const { data: disputes = [], isLoading, isError } = useAdminDisputes(filters);
+  const closeDispute = useCloseDispute();
+  const deleteDispute = useDeleteDispute();
+
+  const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as DisputeStatus | "";
+    setFilters((f) => ({ ...f, status: value || undefined }));
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters((f) => ({ ...f, search: search || undefined }));
+  };
+
+  const handleClose = (dispute: DisputeResponse) => {
+    if (!confirm(`Clôturer le litige "${dispute.reason}" ?`)) return;
+    closeDispute.mutate(dispute.id);
+  };
+
+  const handleDelete = (dispute: DisputeResponse) => {
+    if (!confirm(`Supprimer définitivement ce litige ?`)) return;
+    deleteDispute.mutate(dispute.id);
+  };
+
+  return (
+    <div className="admin-disputes-section">
+      <div className="admin-section-header">
+        <div>
+          <h2>Gestion des litiges</h2>
+          <p className="admin-section-subtitle">
+            {isLoading ? "Chargement…" : `${disputes.length} litiges`}
+          </p>
+        </div>
       </div>
 
-      {/* Disputes List */}
-      <div className="space-y-4">
-        {disputes.map((dispute) => (
-          <div
-            key={dispute.id}
-            className="bg-white rounded-xl border border-zinc-200 p-5"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4 flex-1">
-                {getStatusIcon(dispute.status)}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      {dispute.projectTitle}
-                    </h3>
-                    <span
-                      className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${getPriorityBadge(
-                        dispute.priority
-                      )}`}
-                    >
-                      {dispute.priority.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-xs text-slate-500 mb-3">
-                    <p>
-                      <span className="font-medium">Client:</span>{" "}
-                      {dispute.clientName} •{" "}
-                      <span className="font-medium">Pro:</span> {dispute.proName}
-                    </p>
-                    <p>
-                      <span className="font-medium">Motif:</span> {dispute.reason}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Créé le {dispute.createdAt}
-                    </p>
-                  </div>
-                  <span
-                    className={`inline-flex px-2 py-1 rounded-md text-xs font-medium ${getStatusBadge(
-                      dispute.status
-                    )}`}
-                  >
-                    {dispute.status}
-                  </span>
-                </div>
+      {/* Filters */}
+      <div className="admin-filters">
+        <select className="admin-filter-select" onChange={handleStatusFilter}>
+          <option value="">Tous les statuts</option>
+          {(Object.keys(STATUS_LABELS) as DisputeStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {STATUS_LABELS[s]}
+            </option>
+          ))}
+        </select>
+
+        <form className="admin-search-box" onSubmit={handleSearch}>
+          <FiSearch />
+          <input
+            type="text"
+            placeholder="Rechercher…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </form>
+      </div>
+
+      {/* States */}
+      {isLoading && (
+        <div className="admin-empty-state">
+          <FiLoader className="admin-spinner" /> Chargement des litiges…
+        </div>
+      )}
+      {isError && (
+        <div className="admin-alert admin-alert-danger">
+          Impossible de charger les litiges.
+        </div>
+      )}
+
+      {/* Dispute cards */}
+      {!isLoading && !isError && (
+        <div className="admin-disputes-queue">
+          {disputes.length === 0 ? (
+            <div className="admin-dispute-card">
+              <div className="admin-dispute-info">
+                <h3>Aucun litige</h3>
+                <p>Il n'y a aucun litige correspondant aux filtres sélectionnés.</p>
               </div>
-              {dispute.status === "PENDING" && (
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-xs">
-                  Traiter
-                </button>
-              )}
             </div>
-          </div>
-        ))}
-      </div>
+          ) : (
+            disputes.map((dispute) => (
+              <div key={dispute.id} className="admin-dispute-card">
+                <div className="admin-dispute-header">
+                  <div className="admin-dispute-info">
+                    <h3>{dispute.reason}</h3>
+                    <p>
+                      {dispute.initiatorName} vs {dispute.respondentName}
+                    </p>
+                    <small className="admin-text-muted">
+                      Ouvert le{" "}
+                      {new Date(dispute.createdAt).toLocaleDateString("fr-FR")}
+                      {dispute.resolvedAt &&
+                        ` · Résolu le ${new Date(dispute.resolvedAt).toLocaleDateString("fr-FR")}`}
+                    </small>
+                  </div>
+                  <div className="admin-dispute-meta">
+                    <DisputeStatusBadge status={dispute.status} />
+                  </div>
+                </div>
 
-      {/* Empty State */}
-      {disputes.length === 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-12 text-center">
-          <FiAlertCircle className="mx-auto text-zinc-300 mb-4" size={48} />
-          <p className="text-slate-500">Aucun litige à traiter</p>
+                {/* Resolution details if resolved */}
+                {dispute.arbitrationDecision && (
+                  <div
+                    className="admin-dispute-details"
+                    style={{ flexDirection: "column", gap: 4 }}
+                  >
+                    <strong style={{ fontSize: 12 }}>Décision :</strong>
+                    <span style={{ fontSize: 12 }}>{dispute.arbitrationDecision}</span>
+                    {dispute.refundAmount != null && (
+                      <span style={{ fontSize: 12 }}>
+                        Remboursement : {dispute.refundAmount.toLocaleString()} F
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Resolve inline form */}
+                {resolvingId === dispute.id ? (
+                  <ResolveForm
+                    disputeId={dispute.id}
+                    onCancel={() => setResolvingId(null)}
+                  />
+                ) : (
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    {dispute.status === "OPEN" || dispute.status === "IN_INVESTIGATION" ? (
+                      <>
+                        <button
+                          className="dash-btn-primary"
+                          onClick={() => setResolvingId(dispute.id)}
+                        >
+                          Résoudre
+                        </button>
+                        <button
+                          className="dash-btn-secondary"
+                          onClick={() => handleClose(dispute)}
+                          disabled={closeDispute.isPending}
+                        >
+                          Clôturer
+                        </button>
+                      </>
+                    ) : null}
+                    <button
+                      className="dash-btn-secondary"
+                      onClick={() => handleDelete(dispute)}
+                      disabled={deleteDispute.isPending}
+                      style={{ color: "#F44336", borderColor: "#F44336", marginLeft: "auto" }}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>

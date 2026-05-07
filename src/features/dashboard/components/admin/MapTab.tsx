@@ -1,77 +1,72 @@
 import React from "react";
-import { FiMap, FiMapPin } from "react-icons/fi";
+import { FiMap } from "react-icons/fi";
+import { FaMapMarkedAlt } from "react-icons/fa";
 
-/**
- * Admin Map Tab
- * Location analytics and geographic distribution of users/projects
- */
 const MapTab: React.FC = () => {
-  // TODO: Integrate Mapbox GL for actual map visualization
-  // TODO: Replace with useAdminMapDataQuery() hook
-
-  const locationStats = [
-    { city: "Abidjan", users: 245, projects: 89 },
-    { city: "Yamoussoukro", users: 87, projects: 32 },
-    { city: "Bouaké", users: 56, projects: 18 },
-    { city: "Daloa", users: 34, projects: 12 },
+  const geo = [
+    { pays: "Nigeria", users: 3240, pct: 26, flag: "🇳🇬" },
+    { pays: "Sénégal", users: 2890, pct: 23, flag: "🇸🇳" },
+    { pays: "Côte d'Ivoire", users: 2120, pct: 17, flag: "🇨🇮" },
+    { pays: "Ghana", users: 1890, pct: 15, flag: "🇬🇭" },
+    { pays: "Kenya", users: 1340, pct: 11, flag: "🇰🇪" },
   ];
 
   return (
-    <div className="admin-map">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">
-        Carte des localisations
-      </h2>
+    <div className="admin-map-section">
+      <div className="admin-section-header">
+        <div>
+          <h2>Carte des localisations</h2>
+          <p className="admin-section-subtitle">Répartition géographique des utilisateurs et projets</p>
+        </div>
+      </div>
 
-      {/* Map Placeholder */}
-      <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6 mb-6">
-        <div className="bg-zinc-100 rounded-xl flex items-center justify-center h-96">
-          <div className="text-center">
-            <FiMap className="mx-auto text-zinc-400 mb-4" size={64} />
-            <p className="text-slate-500 font-medium mb-2">
-              Carte interactive à intégrer
-            </p>
-            <p className="text-sm text-slate-400">
-              Intégration Mapbox GL en cours pour visualiser la distribution
-              géographique
-            </p>
+      {/* Map filters */}
+      <div className="admin-map-filters">
+        <label className="admin-checkbox">
+          <input type="checkbox" defaultChecked />
+          <span>Professionnels disponibles</span>
+        </label>
+        <label className="admin-checkbox">
+          <input type="checkbox" defaultChecked />
+          <span>Projets ouverts</span>
+        </label>
+        <label className="admin-checkbox">
+          <input type="checkbox" />
+          <span>Pros certifiés</span>
+        </label>
+        <label className="admin-checkbox">
+          <input type="checkbox" />
+          <span>Nouveaux inscrits (7j)</span>
+        </label>
+      </div>
+
+      {/* Map placeholder */}
+      <div className="admin-map-container">
+        <div className="admin-map-placeholder">
+          <FaMapMarkedAlt />
+          <h3>Carte interactive</h3>
+          <p>Intégration Google Maps / Mapbox</p>
+          <div className="admin-map-legend">
+            <span>🟢 Professionnel disponible</span>
+            <span>🔵 Projet ouvert</span>
+            <span>🟡 Zone d'activité élevée</span>
+            <span>🔴 Problème détecté</span>
           </div>
         </div>
       </div>
 
-      {/* Location Stats */}
-      <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">
-          Statistiques par localisation
-        </h3>
-        <div className="space-y-3">
-          {locationStats.map((location, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 bg-zinc-50 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <FiMapPin className="text-indigo-600" size={20} />
-                <span className="font-medium text-slate-900">
-                  {location.city}
-                </span>
-              </div>
-              <div className="flex items-center gap-6 text-sm">
-                <div>
-                  <span className="text-slate-500">Utilisateurs: </span>
-                  <span className="font-semibold text-slate-900">
-                    {location.users}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500">Projets: </span>
-                  <span className="font-semibold text-slate-900">
-                    {location.projects}
-                  </span>
-                </div>
-              </div>
+      {/* Heatmap */}
+      <div className="admin-heatmap">
+        <h3>Répartition par région</h3>
+        {geo.map((pays) => (
+          <div key={pays.pays} className="admin-heatmap-row">
+            <span className="admin-heatmap-country">{pays.flag} {pays.pays}</span>
+            <div className="admin-heatmap-bar">
+              <div className="admin-heatmap-fill" style={{ width: `${pays.pct}%` }} />
             </div>
-          ))}
-        </div>
+            <span className="admin-heatmap-value">{pays.users.toLocaleString()} ({pays.pct}%)</span>
+          </div>
+        ))}
       </div>
     </div>
   );

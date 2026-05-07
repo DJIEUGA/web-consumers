@@ -1,196 +1,107 @@
 import React, { useState } from "react";
-import { FiSettings, FiSave, FiRefreshCw } from "react-icons/fi";
+import { FiSettings, FiShield, FiBell, FiSave, FiRefreshCw } from "react-icons/fi";
 
-/**
- * Admin Configuration Tab
- * System settings and platform configuration
- */
 const ConfigurationTab: React.FC = () => {
-  const [settings, setSettings] = useState({
-    platformName: "Jobty",
-    commissionRate: 10,
-    maintenanceMode: false,
-    allowNewRegistrations: true,
-    emailNotifications: true,
-    smsNotifications: false,
+  const [notifSettings, setNotifSettings] = useState({
+    emails: true,
+    sms: true,
+    push: false,
+    newsletter: true,
   });
 
-  const handleSave = () => {
-    // TODO: Implement saveAdminSettings mutation
-    console.log("Saving settings:", settings);
-  };
-
   return (
-    <div className="admin-configuration">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">
-        Configuration système
-      </h2>
+    <div className="admin-config-section">
+      <div className="admin-section-header">
+        <h2>Configuration de la plateforme</h2>
+      </div>
 
-      {/* Settings Sections */}
-      <div className="space-y-6">
-        {/* General Settings */}
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <FiSettings className="text-indigo-600" />
-            Paramètres généraux
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Nom de la plateforme
-              </label>
-              <input
-                type="text"
-                value={settings.platformName}
-                onChange={(e) =>
-                  setSettings({ ...settings, platformName: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Taux de commission (%)
-              </label>
-              <input
-                type="number"
-                value={settings.commissionRate}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    commissionRate: Number(e.target.value),
-                  })
-                }
-                className="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+      {/* Finance settings */}
+      <div className="admin-config-card">
+        <h3><FiSettings /> Finances</h3>
+        <div className="admin-config-grid">
+          <div className="admin-config-item">
+            <label>Commission plateforme (%)</label>
+            <input type="number" defaultValue={10} />
+          </div>
+          <div className="admin-config-item">
+            <label>Seuil minimum projet (FCFA)</label>
+            <input type="number" defaultValue={50000} />
+          </div>
+          <div className="admin-config-item">
+            <label>Frais de retrait (FCFA)</label>
+            <input type="number" defaultValue={500} />
+          </div>
+          <div className="admin-config-item">
+            <label>Délai de séquestre (jours)</label>
+            <input type="number" defaultValue={7} />
           </div>
         </div>
+      </div>
 
-        {/* Platform Controls */}
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <FiRefreshCw className="text-indigo-600" />
-            Contrôles de la plateforme
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-slate-900">Mode maintenance</p>
-                <p className="text-sm text-slate-500">
-                  Désactiver temporairement l'accès public
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.maintenanceMode}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      maintenanceMode: e.target.checked,
-                    })
-                  }
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              </label>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-200">
-              <div>
-                <p className="font-medium text-slate-900">
-                  Nouvelles inscriptions
-                </p>
-                <p className="text-sm text-slate-500">
-                  Autoriser les nouveaux utilisateurs à s'inscrire
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.allowNewRegistrations}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      allowNewRegistrations: e.target.checked,
-                    })
-                  }
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              </label>
-            </div>
+      {/* Security settings */}
+      <div className="admin-config-card">
+        <h3><FiShield /> Sécurité</h3>
+        <div className="admin-config-grid">
+          <div className="admin-config-item">
+            <label>KYC obligatoire pour</label>
+            <select>
+              <option>Projets &gt; 500k FCFA</option>
+              <option>Tous les projets</option>
+              <option>Désactivé</option>
+            </select>
+          </div>
+          <div className="admin-config-item">
+            <label>2FA obligatoire pour</label>
+            <select>
+              <option>Admins seulement</option>
+              <option>Tous les utilisateurs</option>
+              <option>Optionnel</option>
+            </select>
+          </div>
+          <div className="admin-config-item">
+            <label>Expiration sessions (jours)</label>
+            <input type="number" defaultValue={30} />
+          </div>
+          <div className="admin-config-item">
+            <label>Tentatives login max</label>
+            <input type="number" defaultValue={5} />
           </div>
         </div>
+      </div>
 
-        {/* Notification Settings */}
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
-            Notifications système
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-slate-900">
-                  Notifications email
-                </p>
-                <p className="text-sm text-slate-500">
-                  Envoyer des emails aux utilisateurs
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+      {/* Notification toggles */}
+      <div className="admin-config-card">
+        <h3><FiBell /> Notifications</h3>
+        <div className="admin-config-toggles">
+          {(Object.keys(notifSettings) as Array<keyof typeof notifSettings>).map((key) => {
+            const labels: Record<keyof typeof notifSettings, string> = {
+              emails: "Emails transactionnels",
+              sms: "SMS pour paiements",
+              push: "Push notifications",
+              newsletter: "Newsletter hebdomadaire",
+            };
+            return (
+              <label key={key} className="admin-toggle">
                 <input
                   type="checkbox"
-                  checked={settings.emailNotifications}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      emailNotifications: e.target.checked,
-                    })
-                  }
-                  className="sr-only peer"
+                  checked={notifSettings[key]}
+                  onChange={(e) => setNotifSettings({ ...notifSettings, [key]: e.target.checked })}
                 />
-                <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                <span className="admin-toggle-slider" />
+                <span>{labels[key]}</span>
               </label>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-200">
-              <div>
-                <p className="font-medium text-slate-900">Notifications SMS</p>
-                <p className="text-sm text-slate-500">
-                  Envoyer des SMS aux utilisateurs
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.smsNotifications}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      smsNotifications: e.target.checked,
-                    })
-                  }
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              </label>
-            </div>
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-          >
-            <FiSave size={18} />
-            Enregistrer les modifications
-          </button>
-        </div>
+      <div className="admin-config-actions">
+        <button className="dash-btn-primary">
+          <FiSave /> Sauvegarder les modifications
+        </button>
+        <button className="dash-btn-secondary">
+          <FiRefreshCw /> Réinitialiser
+        </button>
       </div>
     </div>
   );
