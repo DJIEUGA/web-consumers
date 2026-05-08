@@ -153,7 +153,7 @@ export const useCollaborationStageViewModel = ({
     messagingStatusNotice,
     messagesEndRef,
     isRecording,
-    onToggleRecording: () => setIsRecording((prev) => !prev),
+    onToggleRecording: () => setIsRecording(!isRecording as any),
     canPropose,
     onProposeCollaboration: proposerCollaboration,
   };

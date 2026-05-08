@@ -1,7 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FiSend, FiPaperclip, FiMic, FiImage, FiSmile } from 'react-icons/fi';
 import '../styles/MessagingDrawer.css';
 import type { UiMessage } from '@/features/collaboration/types/workflow';
+import { formatDateHeader } from '../utils/workflow';
+import EmojiPicker from './EmojiPicker';
 
 type Props = {
   title?: string;
@@ -40,6 +42,12 @@ export const CollabChatWidget: React.FC<Props> = ({
   isRecording,
   onToggleRecording,
 }) => {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const handleEmojiSelect = (emoji: string) => {
+    onMessageChange(newMessage + emoji);
+  };
+
   const innerEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -65,24 +73,33 @@ export const CollabChatWidget: React.FC<Props> = ({
             <p>Aucun message pour l'instant.</p>
           </div>
         ) : (
-          messages.map((msg) => {
+          messages.map((msg, idx) => {
             const isSentByMe = isCustomer ? msg.sender === 'porteur' : msg.sender === 'freelance';
+            const showDateHeader = idx === 0 || messages[idx - 1].date !== msg.date;
+
             return (
-              <div key={msg.id} className={`message-bubble ${isSentByMe ? 'sent' : 'received'}`}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {msg.text}
-                </span>
-                <span className="message-time">{msg.time}</span>
-                {msg.deliveryStatus === 'sending' && (
-                  <span className="message-time" style={{ color: '#fd7e14' }}>Envoi...</span>
-                )}
-                {msg.deliveryStatus === 'failed' && onRetryMessage && (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
-                    <span className="message-time" style={{ color: '#dc3545' }}>Echec d'envoi</span>
-                    <button className="input-btn" onClick={() => onRetryMessage(msg.id)}>Réessayer</button>
+              <React.Fragment key={msg.id}>
+                {showDateHeader && (
+                  <div className="message-date-header">
+                    <span>{formatDateHeader(msg.date)}</span>
                   </div>
                 )}
-              </div>
+                <div className={`message-bubble ${isSentByMe ? 'sent' : 'received'}`}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {msg.text}
+                  </span>
+                  <span className="message-time">{msg.time}</span>
+                  {msg.deliveryStatus === 'sending' && (
+                    <span className="message-time" style={{ color: '#fd7e14' }}>Envoi...</span>
+                  )}
+                  {msg.deliveryStatus === 'failed' && onRetryMessage && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                      <span className="message-time" style={{ color: '#dc3545' }}>Echec d'envoi</span>
+                      <button className="input-btn" onClick={() => onRetryMessage(msg.id)}>Réessayer</button>
+                    </div>
+                  )}
+                </div>
+              </React.Fragment>
             );
           })
         )}
@@ -106,8 +123,16 @@ export const CollabChatWidget: React.FC<Props> = ({
             disabled={isMessagingLocked}
           />
 
-          <div className="input-actions-right">
-            <button className="input-btn"><FiSmile /></button>
+          <div className="input-actions-right" style={{ position: 'relative' }}>
+            {showEmojiPicker && (
+              <EmojiPicker 
+                onSelect={handleEmojiSelect} 
+                onClose={() => setShowEmojiPicker(false)} 
+              />
+            )}
+            <button className="input-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+              <FiSmile />
+            </button>
             <button className={`input-btn mic ${isRecording ? 'recording' : ''}`} onClick={onToggleRecording}>
               <FiMic />
             </button>

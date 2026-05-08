@@ -57,6 +57,26 @@ export const formatMessageTime = (dateInput?: string | number) =>
     minute: "2-digit",
   });
 
+export const formatDateHeader = (dateStr?: string) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const msgDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  if (msgDate.getTime() === today.getTime()) return "Aujourd'hui";
+  if (msgDate.getTime() === yesterday.getTime()) return "Hier";
+
+  return d.toLocaleDateString(TIME_LOCALE, {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
+
 export const createUiMessage = ({
   id,
   sender,
@@ -67,13 +87,16 @@ export const createUiMessage = ({
   sender: UiMessage["sender"];
   text: string;
   dateInput?: string | number;
-}): UiMessage => ({
-  id,
-  sender,
-  text,
-  time: formatMessageTime(dateInput),
-  date: "Aujourd'hui",
-});
+}): UiMessage => {
+  const d = new Date(dateInput || Date.now());
+  return {
+    id,
+    sender,
+    text,
+    time: formatMessageTime(d.getTime()),
+    date: d.toISOString().split("T")[0],
+  };
+};
 
 export const getProfilePayload = (profile: unknown): Record<string, any> => {
   if (!profile || typeof profile !== "object") return {};

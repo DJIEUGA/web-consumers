@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { FiX, FiSend, FiPaperclip, FiMic, FiMoreVertical, FiImage, FiSmile, FiTrash2, FiChevronLeft } from 'react-icons/fi';
 import { toast } from 'sonner';
+import EmojiPicker from './EmojiPicker';
 import { useAuthStore } from '@/stores/auth.store';
 import collaborationApi, { CollaborationSpaceResponse } from '../services/collaborationApi';
 import profileApi from '../../profile/services/profileApi';
@@ -35,6 +36,7 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
   const [selectedSpace, setSelectedSpace] = useState<CollaborationSpaceResponse | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isSending, setIsSending] = useState(false);
@@ -42,10 +44,13 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
   const [isLoading, setIsLoading] = useState(false);
   const [activeParticipantPhoto, setActiveParticipantPhoto] = useState<string | null>(null);
   const [photosMap, setPhotosMap] = useState<Record<string, string>>({});
+  const [namesMap, setNamesMap] = useState<Record<string, string>>({});
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   
   const { user: currentUser, isAuthenticated } = useAuthStore();
 
@@ -128,15 +133,16 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
   // Fetch real photos for all spaces in the list
   useEffect(() => {
     if (view === 'list' && spaces.length > 0) {
-      const fetchPhotos = async () => {
+      const fetchDetails = async () => {
         const newPhotos = { ...photosMap };
+        const newNames = { ...namesMap };
         let hasNew = false;
         
         for (const space of spaces) {
           const other = getOtherParticipant(space);
-          if (other.id && !newPhotos[other.id]) {
+          if (other.id && (!newPhotos[other.id] || !newNames[other.id])) {
             try {
-              let details: Record<string, unknown> | null = null;
+              let details: Record<string, any> | null = null;
               const isCurrentUserCustomer = currentUser?.role === 'ROLE_CUSTOMER' || currentUser?.role === 'ROLE_ENTERPRISE';
               if (isCurrentUserCustomer) {
                 details = await collaborationApi.getProProfileDetails(other.id);
@@ -145,24 +151,31 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
               }
               
               if (details) {
-                const photo = details.avatarUrl || details.logoUrl || details.avatar || details.photo || details.profilePictureUrl;
-                if (photo && typeof photo === 'string') {
-                  newPhotos[other.id] = photo;
+                const photoCandidate = details.avatarUrl || details.logoUrl || details.avatar || details.photo;
+                if (typeof photoCandidate === 'string' && photoCandidate) {
+                  newPhotos[other.id] = photoCandidate;
+                  hasNew = true;
+                }
+                const nameCandidate = details.fullName || details.displayName || 
+                  (details.firstName && details.lastName ? `${details.firstName} ${details.lastName}` : null);
+                if (typeof nameCandidate === 'string' && nameCandidate) {
+                  newNames[other.id] = nameCandidate;
                   hasNew = true;
                 }
               }
             } catch (e) {
-              console.warn("Failed to fetch photo for", other.id, e);
+              console.warn("Failed to fetch details for", other.id, e);
             }
           }
         }
         
         if (hasNew) {
           setPhotosMap(newPhotos);
+          setNamesMap(newNames);
         }
       };
       
-      fetchPhotos();
+      fetchDetails();
     }
   }, [view, spaces]);
 
@@ -233,33 +246,92 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       }
 
       if (details) {
-        const realPhoto = details.avatarUrl || details.logoUrl || details.avatar || details.photo || details.profilePictureUrl;
-        if (realPhoto && typeof realPhoto === 'string') {
-          setActiveParticipantPhoto(realPhoto);
-          setPhotosMap(prev => ({ ...prev, [otherId]: realPhoto }));
+        const photoCandidate = details.avatarUrl || details.logoUrl || details.avatar || details.photo;
+        if (typeof photoCandidate === 'string' && photoCandidate) {
+          setActiveParticipantPhoto(photoCandidate);
+          setPhotosMap(prev => ({ ...prev, [otherId]: photoCandidate }));
+        }
+        
+        const nameCandidate = details.fullName || details.displayName || 
+          (details.firstName && details.lastName ? `${details.firstName} ${details.lastName}` : null);
+        
+        if (typeof nameCandidate === 'string' && nameCandidate) {
+          setNamesMap(prev => ({ ...prev, [otherId]: nameCandidate }));
         }
       }
     } catch (e) {
-      console.error("Failed to fetch participant photo", e);
+      console.error("Failed to fetch participant details", e);
     }
 
     await loadMessages(space.id);
     setIsLoading(false);
   };
 
-  const handleVoiceRecord = () => {
-    setIsRecording(!isRecording);
-    if (isRecording) {
-      // Simulate sending voice message
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        sender: 'me',
-        text: 'Message vocal (' + formatTime(recordingTime) + ')',
-        time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        fullDate: new Date().toISOString().split('T')[0],
-        type: 'voice'
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
-      setMessages(prev => [...prev, newMessage]);
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        // In a real app, you would upload this blob to a server
+        // For now we'll add it to the messages with a local URL
+        const newMessage: Message = {
+          id: Date.now().toString(),
+          sender: 'me',
+          text: 'Message vocal (' + formatTime(recordingTime) + ')',
+          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+          fullDate: new Date().toISOString().split('T')[0],
+          type: 'voice',
+          fileUrl: audioUrl
+        };
+        setMessages(prev => [...prev, newMessage]);
+        
+        // Stop all tracks to release the microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast.error("Impossible d'accéder au micro. Veuillez vérifier vos permissions.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleVoiceRecord = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.onstop = null; // Don't trigger the message creation
+      mediaRecorderRef.current.stop();
+      // Stop all tracks
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      setRecordingTime(0);
     }
   };
 
@@ -306,9 +378,22 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
 
   const getOtherParticipant = (space: CollaborationSpaceResponse) => {
     const isCurrentUserCustomer = currentUser?.role === 'ROLE_CUSTOMER' || currentUser?.role === 'ROLE_ENTERPRISE';
+    const details = isCurrentUserCustomer ? space.proDetails : space.customerDetails;
+    const fallbackName = isCurrentUserCustomer ? space.proName : space.customerName;
+    const otherId = String(isCurrentUserCustomer ? space.proId : space.customerId);
+    
+    let name = namesMap[otherId] || details?.fullName || details?.displayName || (details?.firstName && details?.lastName ? `${details.firstName} ${details.lastName}` : fallbackName) || "Utilisateur";
+    
+    // Clean name if it contains technical prefixes
+    if (name && typeof name === 'string') {
+      name = name.replace(/Collaboration avec /i, '')
+                 .replace(/Demande de collaboration /i, '')
+                 .replace(/Conversation avec /i, '');
+    }
+    
     return {
-      name: isCurrentUserCustomer ? space.proName : space.customerName,
-      id: String(isCurrentUserCustomer ? space.proId : space.customerId)
+      name,
+      id: otherId
     };
   };
 
@@ -319,16 +404,20 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
   const currentChatInfo = useMemo(() => {
     if (selectedSpace) {
       const other = getOtherParticipant(selectedSpace);
+      const name = other.name;
       return {
-        name: other.name,
-        photo: activeParticipantPhoto || photosMap[String(other.id)] || getParticipantPhoto(other.name),
+        name: name,
+        photo: activeParticipantPhoto || photosMap[String(other.id)] || getParticipantPhoto(name),
         disponible: false
       };
     }
     if (freelance) {
+      const name = freelance.nom.replace(/Collaboration avec /i, '')
+                                .replace(/Demande de collaboration /i, '')
+                                .replace(/Conversation avec /i, '');
       return {
-        name: freelance.nom,
-        photo: freelance.photo || getParticipantPhoto(freelance.nom),
+        name: name,
+        photo: freelance.photo || getParticipantPhoto(name),
         disponible: freelance.disponible
       };
     }
@@ -337,7 +426,7 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
       photo: "",
       disponible: false
     };
-  }, [selectedSpace, freelance, currentUser, activeParticipantPhoto, photosMap]);
+  }, [selectedSpace, freelance, activeParticipantPhoto, photosMap, namesMap]);
 
   return (
     <>
@@ -422,9 +511,22 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
                         </div>
                       )}
                       <div className={`message-bubble ${msg.sender === 'me' ? 'sent' : 'received'}`}>
-                        {msg.type === 'voice' && <FiMic style={{marginRight: '8px'}} />}
-                        {msg.type === 'file' && <FiPaperclip style={{marginRight: '8px'}} />}
-                        {msg.text}
+                        {msg.type === 'voice' ? (
+                          <div className="voice-message-content">
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                              <FiMic style={{ marginRight: '8px' }} />
+                              <span>Message vocal</span>
+                            </div>
+                            {msg.fileUrl && (
+                              <audio controls src={msg.fileUrl} style={{ width: '100%', height: '30px', marginTop: '4px' }} />
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            {msg.type === 'file' && <FiPaperclip style={{ marginRight: '8px' }} />}
+                            {msg.text}
+                          </>
+                        )}
                         <span className="message-time">{msg.time}</span>
                       </div>
                     </React.Fragment>
@@ -449,7 +551,9 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
                       <div key={i} className="waveform-bar" style={{animationDelay: `${i * 0.1}s`}}></div>
                     ))}
                   </div>
-                  <button className="input-btn" onClick={() => setIsRecording(false)}><FiTrash2 /></button>
+                  <button className="input-btn" onClick={cancelRecording} title="Annuler">
+                    <FiTrash2 />
+                  </button>
                 </div>
               ) : (
                 <>
@@ -476,16 +580,23 @@ const MessagingDrawer: React.FC<MessagingDrawerProps> = ({ isOpen, onClose, free
                   />
 
                   <div className="input-actions-right">
-                    <button className="input-btn"><FiSmile /></button>
-                    {inputText.trim() ? (
-                      <button className="input-btn send-btn" onClick={handleSendMessage} disabled={isSending}>
-                        <FiSend />
-                      </button>
-                    ) : (
-                      <button className="input-btn" onClick={handleVoiceRecord}>
-                        <FiMic />
-                      </button>
+                    {showEmojiPicker && (
+                      <div style={{ position: 'absolute', bottom: '100%', right: 0, marginBottom: '10px' }}>
+                        <EmojiPicker 
+                          onSelect={(emoji) => setInputText(prev => prev + emoji)} 
+                          onClose={() => setShowEmojiPicker(false)} 
+                        />
+                      </div>
                     )}
+                    <button className="input-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                      <FiSmile />
+                    </button>
+                    <button className={`input-btn mic ${isRecording ? 'recording' : ''}`} onClick={handleVoiceRecord}>
+                      <FiMic />
+                    </button>
+                    <button className="input-btn send-btn" onClick={handleSendMessage} disabled={isSending || !inputText.trim()}>
+                      <FiSend />
+                    </button>
                   </div>
                 </>
               )}

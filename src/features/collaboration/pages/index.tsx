@@ -11,6 +11,7 @@ import {
   FiMessageCircle,
   FiMessageSquare,
 } from "react-icons/fi";
+import { toast } from "sonner";
 import { CollabChatBox } from "@/features/collaboration/components/CollabChatBox";
 import CollabChatWidget from "@/features/collaboration/components/CollabChatWidget";
 import { useAuthStore } from "@/stores/auth.store";
@@ -62,7 +63,6 @@ import {
   StepPayment,
   StepRelease,
 } from "@/features/collaboration/components/CollaborationStages";
-import { toast } from "sonner";
 import "../styles/collaboration/style.css";
 
 export const CollaborationSpace = () => {
@@ -203,6 +203,8 @@ export const CollaborationSpace = () => {
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const currentStage = STEP_TO_STAGE[currentStep] ?? "CONTACT";
 
@@ -445,6 +447,53 @@ export const CollaborationSpace = () => {
       return ;
     }
   };
+
+  const startRecording = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error("Votre navigateur ne supporte pas l'enregistrement vocal ou vous n'êtes pas sur une connexion sécurisée (HTTPS)");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const selfSender: UiMessage["sender"] = isCustomer ? "porteur" : "freelance";
+        setMessages((prev) => [...prev, createUiMessage({ 
+          id: `voice-${Date.now()}`, 
+          sender: selfSender, 
+          text: "🎤 Message vocal envoyé" 
+        })]);
+        stream.getTracks().forEach(t => t.stop());
+        toast.success("Message vocal enregistré");
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Recording error:", err);
+      toast.error("Accès au micro refusé");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) stopRecording();
+    else startRecording();
+  };
   
 
   const stageViewModel = useCollaborationStageViewModel({
@@ -460,7 +509,7 @@ export const CollaborationSpace = () => {
     messagingStatusNotice: "Messagerie verrouillée",
     messagesEndRef,
     isRecording,
-    setIsRecording,
+    setIsRecording: toggleRecording as any,
     canPropose: currentStep === 0 && isCustomer,
     proposerCollaboration: async () => transitionToStep(1, "COLLABORATION_PROPOSED"),
     isPro,
@@ -656,7 +705,7 @@ export const CollaborationSpace = () => {
                 isMessagingLocked={isMessageBlockedByStatus(backendSpace?.status)}
                 messagesEndRef={messagesEndRef}
                 isRecording={isRecording}
-                onToggleRecording={() => setIsRecording((s) => !s)}
+                onToggleRecording={toggleRecording}
               />
             )}
           </aside>

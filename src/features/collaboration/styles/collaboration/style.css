@@ -193,6 +193,7 @@
   display: grid;
   grid-template-columns: 292px 1fr 360px;
   gap: 20px;
+  align-items: start; /* Prevents columns from stretching to match the longest one */
 }
 
 /* Right-side persistent chat column */
@@ -200,30 +201,25 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: sticky;
+  top: 80px;
+  height: 550px; /* Aligné sur la hauteur du drawer de messagerie du dashboard */
 }
 
-.collab-right-chat .collab-project-chat {
+.collab-right-chat .messaging-drawer {
   background: white;
   border-radius: 16px;
-  padding: 16px;
   box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
-  height: calc(100vh - 200px);
+  height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  border: 1px solid #e2e8f0;
 }
 
-.collab-right-chat .collab-project-chat h3 {
-  margin: 0 0 12px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.collab-right-chat .collab-project-chat .collab-chat-container {
+.collab-right-chat .messaging-drawer .messaging-body {
   flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
   min-height: 0;
 }
 
@@ -244,6 +240,9 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: sticky;
+  top: 80px;
+  height: fit-content;
 }
 
 .collab-freelance-card {
@@ -640,9 +639,29 @@
   margin-bottom: 25px;
 }
 
+.message-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0;
+  position: relative;
+}
+
+.message-date-header span {
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
 .collab-messages {
   padding: 20px;
-  max-height: 400px;
+  max-height: 480px; /* Légèrement plus petit que 550px pour laisser de la place à l'input */
   overflow-y: auto;
   background: #f8f9fa;
 }
@@ -724,10 +743,17 @@
   max-height: 100px;
 }
 
+.collab-input-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .collab-input-btn {
   width: 36px;
   height: 36px;
   min-width: 36px;
+  flex-shrink: 0;
   border-radius: 50%;
   border: none;
   background: #f1f3f5;
@@ -768,6 +794,20 @@
 .collab-send-btn:hover {
   transform: scale(1.1);
   box-shadow: 0 4px 15px rgba(119, 240, 240, 0.4);
+}
+
+.collab-send-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.collab-send-btn:disabled {
+  background: #3dc7c9;
+  color: white;
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Chat compact (pour étape 6) */

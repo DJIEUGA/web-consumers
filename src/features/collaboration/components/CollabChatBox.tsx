@@ -8,6 +8,9 @@ import {
   FiSmile,
 } from "react-icons/fi";
 import type { UiMessage } from "@/features/collaboration/types/workflow";
+import { formatDateHeader } from "../utils/workflow";
+import EmojiPicker from "./EmojiPicker";
+import { useState } from "react";
 
 type CollabChatBoxProps = {
   isCustomer: boolean;
@@ -46,47 +49,60 @@ export const CollabChatBox = ({
   onToggleRecording,
   onRetryMessage,
 }: CollabChatBoxProps) => {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const handleEmojiSelect = (emoji: string) => {
+    onMessageChange(newMessage + emoji);
+  };
   return (
     <div className={`collab-chat-container ${compact ? "small" : ""}`.trim()}>
       <div className="collab-messages">
-        {messages.map((msg) => {
+        {messages.map((msg, idx) => {
           const isSentByMe = isCustomer ? msg.sender === "porteur" : msg.sender === "freelance";
+          const showDateHeader = idx === 0 || messages[idx - 1].date !== msg.date;
+
           return (
-            <div
-              key={msg.id}
-              className={`collab-message ${isSentByMe ? "sent" : "received"}`}
-            >
-              <img
-                src={msg.sender === "porteur" ? porteurPhoto : freelancePhoto}
-                alt=""
-                className="collab-message-avatar"
-              />
-              <div className="collab-message-content">
-                <div className="collab-message-bubble">{msg.text}</div>
-                <span className="collab-message-time">{msg.time}</span>
-                {msg.deliveryStatus === "sending" && (
-                  <span className="collab-message-time" style={{ color: "#fd7e14" }}>
-                    Envoi...
-                  </span>
-                )}
-                {msg.deliveryStatus === "failed" && (
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
-                    <span className="collab-message-time" style={{ color: "#dc3545" }}>
-                      Echec d'envoi
+            <React.Fragment key={msg.id}>
+              {showDateHeader && (
+                <div className="message-date-header">
+                  <span>{formatDateHeader(msg.date)}</span>
+                </div>
+              )}
+              <div
+                className={`collab-message ${isSentByMe ? "sent" : "received"}`}
+              >
+                <img
+                  src={msg.sender === "porteur" ? porteurPhoto : freelancePhoto}
+                  alt=""
+                  className="collab-message-avatar"
+                />
+                <div className="collab-message-content">
+                  <div className="collab-message-bubble">{msg.text}</div>
+                  <span className="collab-message-time">{msg.time}</span>
+                  {msg.deliveryStatus === "sending" && (
+                    <span className="collab-message-time" style={{ color: "#fd7e14" }}>
+                      Envoi...
                     </span>
-                    {onRetryMessage && (
-                      <button
-                        type="button"
-                        className="collab-btn-sm collab-btn-outline"
-                        onClick={() => onRetryMessage(msg.id)}
-                      >
-                        Reessayer
-                      </button>
-                    )}
-                  </div>
-                )}
+                  )}
+                  {msg.deliveryStatus === "failed" && (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                      <span className="collab-message-time" style={{ color: "#dc3545" }}>
+                        Echec d'envoi
+                      </span>
+                      {onRetryMessage && (
+                        <button
+                          type="button"
+                          className="collab-btn-sm collab-btn-outline"
+                          onClick={() => onRetryMessage(msg.id)}
+                        >
+                          Reessayer
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
         <div ref={messagesEndRef} />
@@ -128,15 +144,26 @@ export const CollabChatBox = ({
           />
           {showComposerTools && (
             <>
-              <button className="collab-input-btn">
-                <FiSmile />
-              </button>
-              <button
-                className={`collab-input-btn mic ${isRecording ? "recording" : ""}`}
-                onClick={onToggleRecording}
-              >
-                <FiMic />
-              </button>
+          <div className="collab-input-actions" style={{ position: 'relative' }}>
+            {showEmojiPicker && (
+              <EmojiPicker 
+                onSelect={handleEmojiSelect} 
+                onClose={() => setShowEmojiPicker(false)} 
+              />
+            )}
+            <button 
+              className="collab-input-btn"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <FiSmile />
+            </button>
+            <button
+              className={`collab-input-btn mic ${isRecording ? "recording" : ""}`}
+              onClick={onToggleRecording}
+            >
+              <FiMic />
+            </button>
+          </div>
             </>
           )}
           <button className="collab-send-btn" onClick={onSend} disabled={isMessagingLocked}>

@@ -16,25 +16,30 @@ import {
   FiCamera,
   FiChevronRight,
   FiStar,
-  FiShield
+  FiShield,
+  FiHome,
+  FiZap,
+  FiMonitor,
+  FiPenTool,
+  FiHeart,
+  FiBookOpen,
+  FiShoppingCart,
+  FiTruck,
+  FiFeather,
+  FiScissors,
+  FiFileText,
+  FiCalendar,
+  FiCoffee,
+  FiTool,
+  FiActivity,
+  FiDroplet,
+  FiCpu,
+  FiMusic,
+  FiVideo,
+  FiTrendingUp as FiMarketing
 } from 'react-icons/fi';
-import { 
-  FaWrench,
-  FaBolt,
-  FaHome,
-  FaCar,
-  FaTools,
-  FaLaptop,
-  FaHospital,
-  FaTruck,
-  FaTshirt,
-  FaBaby,
-  FaDog,
-  FaUtensils,
-  FaFacebookF, 
-  FaInstagram, 
-  FaWhatsapp 
-} from 'react-icons/fa';
+import { HiOutlineSparkles } from 'react-icons/hi';
+import { FaFacebookF, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import { COLORS } from '../../../styles/colors';
 import Logo from '@/components/shared/Logo';
 import { useAuthStore } from '../../../stores/auth.store';
@@ -64,6 +69,7 @@ export const JobAlerte = () => {
   const [professionnelTrouve, setProfessionnelTrouve] = useState(false);
   const [searchingPro, setSearchingPro] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [alerteForm, setAlerteForm] = useState({
     categorie: '',
@@ -75,18 +81,28 @@ export const JobAlerte = () => {
   });
 
   const categories = [
-    { id: 'plomberie', nom: 'Plomberie', icon: FaWrench, color: '#3498db', description: 'Fuite d\'eau, canalisation...' },
-    { id: 'electricite', nom: 'Électricité', icon: FaBolt, color: '#f39c12', description: 'Panne électrique...' },
-    { id: 'serrurerie', nom: 'Serrurerie', icon: FaHome, color: '#9b59b6', description: 'Porte bloquée...' },
-    { id: 'mecanique', nom: 'Mécanique Auto', icon: FaCar, color: '#e74c3c', description: 'Panne de voiture...' },
-    { id: 'electromenager', nom: 'Électroménager', icon: FaTools, color: '#1abc9c', description: 'Appareil en panne...' },
-    { id: 'informatique', nom: 'Informatique', icon: FaLaptop, color: '#34495e', description: 'Ordinateur en panne...' },
-    { id: 'sante', nom: 'Santé', icon: FaHospital, color: '#e91e63', description: 'Assistance médicale...' },
-    { id: 'transport', nom: 'Transport', icon: FaTruck, color: '#795548', description: 'Déménagement urgent...' },
-    { id: 'menage', nom: 'Ménage', icon: FaTshirt, color: '#00bcd4', description: 'Nettoyage urgent...' },
-    { id: 'garde', nom: 'Garde d\'enfants', icon: FaBaby, color: '#ff9800', description: 'Baby-sitting...' },
-    { id: 'animaux', nom: 'Animaux', icon: FaDog, color: '#4caf50', description: 'Vétérinaire...' },
-    { id: 'restauration', nom: 'Restauration', icon: FaUtensils, color: '#ff5722', description: 'Traiteur...' }
+    { id: 'batiment', nom: 'Bâtiment & Travaux', icon: FiHome, color: '#3498db', description: 'Maçons, menuisiers, peintres...' },
+    { id: 'electricite', nom: 'Électricité', icon: FiZap, color: '#f39c12', description: 'Électriciens, domotique...' },
+    { id: 'informatique', nom: 'Informatique & Tech', icon: FiMonitor, color: '#34495e', description: 'Développeurs, techniciens...' },
+    { id: 'design', nom: 'Design & Création', icon: FiPenTool, color: '#9b59b6', description: 'Graphistes, designers...' },
+    { id: 'sante', nom: 'Santé', icon: FiHeart, color: '#e91e63', description: 'Infirmiers, kinés...' },
+    { id: 'education', nom: 'Éducation & Formation', icon: FiBookOpen, color: '#ff9800', description: 'Professeurs, formateurs...' },
+    { id: 'commerce', nom: 'Commerce & Vente', icon: FiShoppingCart, color: '#1abc9c', description: 'Vendeurs, commerciaux...' },
+    { id: 'transport', nom: 'Transport & Logistique', icon: FiTruck, color: '#795548', description: 'Chauffeurs, livreurs...' },
+    { id: 'agriculture', nom: 'Agriculture', icon: FiFeather, color: '#4caf50', description: 'Agronomes, éleveurs...' },
+    { id: 'artisanat', nom: 'Artisanat', icon: FiScissors, color: '#e74c3c', description: 'Couturiers, bijoutiers...' },
+    { id: 'juridique', nom: 'Juridique & Administratif', icon: FiFileText, color: '#607d8b', description: 'Avocats, notaires...' },
+    { id: 'marketing', nom: 'Marketing & Communication', icon: FiMarketing, color: '#ff5722', description: 'Community managers...' },
+    { id: 'finance', nom: 'Finance & Comptabilité', icon: FiDollarSign, color: '#2ecc71', description: 'Comptables, auditeurs...' },
+    { id: 'evenementiel', nom: 'Événementiel', icon: FiCalendar, color: '#9c27b0', description: 'Organisateurs, DJ...' },
+    { id: 'restauration', nom: 'Restauration', icon: FiCoffee, color: '#795548', description: 'Cuisiniers, traiteurs...' },
+    { id: 'mecanique', nom: 'Mécanique & Automobile', icon: FiTool, color: '#607d8b', description: 'Mécaniciens, garagistes...' },
+    { id: 'beaute', nom: 'Beauté & Bien-être', icon: HiOutlineSparkles, color: '#e91e63', description: 'Coiffeurs, esthéticiennes...' },
+    { id: 'sport', nom: 'Sport & Fitness', icon: FiActivity, color: '#2ecc71', description: 'Coachs sportifs...' },
+    { id: 'plomberie', nom: 'Plomberie & Chauffage', icon: FiDroplet, color: '#3498db', description: 'Plombiers, chauffagistes...' },
+    { id: 'intelligence-artificielle', nom: 'Intelligence Artificielle', icon: FiCpu, color: '#34495e', description: 'IA, Machine Learning...' },
+    { id: 'sons-musique', nom: 'Sons & Musique', icon: FiMusic, color: '#9c27b0', description: 'Musiciens, beatmakers...' },
+    { id: 'video', nom: 'Vidéo & Audiovisuel', icon: FiVideo, color: '#e74c3c', description: 'Vidéastes, monteurs...' }
   ];
 
   const niveauxUrgence = [
@@ -164,7 +180,7 @@ export const JobAlerte = () => {
 
   const selectCategorie = (categorieId) => {
     handleFormChange('categorie', categorieId);
-    setCurrentStep(2);
+    setIsDropdownOpen(false);
   };
 
   const envoyerAlerte = (e) => {
@@ -341,24 +357,82 @@ export const JobAlerte = () => {
               <div className="step-content">
                 <h2 className="step-title">Quel type d'assistance recherchez-vous ?</h2>
                 <p className="step-description">Sélectionnez la catégorie qui correspond à votre besoin</p>
-                <div className="categories-grid">
-                  {categories.map((cat) => {
-                    const IconComponent = cat.icon;
-                    return (
-                      <button
-                        key={cat.id}
-                        className={`category-card ${alerteForm.categorie === cat.id ? 'selected' : ''}`}
-                        onClick={() => selectCategorie(cat.id)}
-                        style={{ 'color': cat.color }}
-                      >
-                        <div className="category-icon-wrapper" style={{ backgroundColor: `${cat.color}15` }}>
-                          <IconComponent style={{ color: cat.color }} />
+                <div className="category-select-container">
+                  <div className={`custom-dropdown ${isDropdownOpen ? 'open' : ''}`}>
+                    <div 
+                      className="dropdown-trigger" 
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    >
+                      {alerteForm.categorie ? (
+                        <div className="selected-option">
+                          {(() => {
+                            const cat = categories.find(c => c.id === alerteForm.categorie);
+                            const IconComponent = cat?.icon || FiAlertCircle;
+                            return (
+                              <>
+                                <div className="option-icon" style={{ backgroundColor: `${cat?.color}15`, color: cat?.color }}>
+                                  <IconComponent />
+                                </div>
+                                <span>{cat?.nom}</span>
+                              </>
+                            );
+                          })()}
                         </div>
-                        <h3>{cat.nom}</h3>
-                        <p>{cat.description}</p>
-                      </button>
-                    );
-                  })}
+                      ) : (
+                        <span className="placeholder">Choisissez un secteur d'activité...</span>
+                      )}
+                      <div className="dropdown-arrow">
+                        <FiChevronRight />
+                      </div>
+                    </div>
+
+                    {isDropdownOpen && (
+                      <div className="dropdown-menu">
+                        {categories.map((cat) => {
+                          const IconComponent = cat.icon;
+                          return (
+                            <div 
+                              key={cat.id} 
+                              className={`dropdown-item ${alerteForm.categorie === cat.id ? 'active' : ''}`}
+                              onClick={() => selectCategorie(cat.id)}
+                            >
+                              <div className="item-icon" style={{ backgroundColor: `${cat.color}15`, color: cat.color }}>
+                                <IconComponent />
+                              </div>
+                              <div className="item-text">
+                                <span className="item-name">{cat.nom}</span>
+                                <span className="item-desc">{cat.description}</span>
+                              </div>
+                              {alerteForm.categorie === cat.id && <FiCheckCircle className="check-icon" />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {alerteForm.categorie && (
+                    <div className="category-preview reveal active">
+                      {(() => {
+                        const cat = categories.find(c => c.id === alerteForm.categorie);
+                        const IconComponent = cat?.icon || FiAlertCircle;
+                        return (
+                          <div className="preview-card" style={{ borderColor: cat?.color }}>
+                            <div className="preview-icon" style={{ backgroundColor: `${cat?.color}15` }}>
+                              <IconComponent style={{ color: cat?.color }} />
+                            </div>
+                            <div className="preview-info">
+                              <h3>{cat?.nom}</h3>
+                              <p>{cat?.description}</p>
+                            </div>
+                            <button className="confirm-cat-btn" onClick={() => setCurrentStep(2)} style={{ backgroundColor: cat?.color }}>
+                              Continuer <FiChevronRight />
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
