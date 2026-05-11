@@ -37,10 +37,10 @@ export const useCollaborationWorkspaceState = ({
 
   const briefProgress = useMemo(() => {
     let progress = 0;
-    if (brief.objectif) progress += 25;
+    if (brief.objectif.trim()) progress += 25;
     if (brief.livrables.length > 0) progress += 25;
-    if (brief.delai) progress += 25;
-    if (brief.budget) progress += 25;
+    if (brief.delai.trim()) progress += 25;
+    if (Number(brief.budget) > 0) progress += 25;
     return progress;
   }, [brief]);
 

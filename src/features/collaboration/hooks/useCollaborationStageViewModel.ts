@@ -48,8 +48,11 @@ type UseCollaborationStageViewModelParams = {
   briefProgress: number;
   livrablesSuggestions: string[];
   isCustomer: boolean;
-  validerBrief: () => Promise<void>;
-  confirmerReceptionBrief: () => void;
+  saveBrief: () => Promise<void>;
+  submitBrief: () => Promise<void>;
+  acknowledgeBrief: () => Promise<void>;
+  onUploadFiles: (files: File[]) => Promise<void>;
+  onDeleteFile: (fileId: string) => Promise<void>;
   toggleLivrable: (livrable: string) => void;
   contratAccepte: ContratAccepteState;
   setContratAccepte: React.Dispatch<React.SetStateAction<ContratAccepteState>>;
@@ -110,8 +113,11 @@ export const useCollaborationStageViewModel = ({
   briefProgress,
   livrablesSuggestions,
   isCustomer,
-  validerBrief,
-  confirmerReceptionBrief,
+  saveBrief,
+  submitBrief,
+  acknowledgeBrief,
+  onUploadFiles,
+  onDeleteFile,
   toggleLivrable,
   contratAccepte,
   setContratAccepte,
@@ -193,8 +199,11 @@ export const useCollaborationStageViewModel = ({
     livrablesSuggestions,
     isCustomer,
     onBackToMatch: () => transitionToStep(2, "STEP_CHANGED", { reason: "back_to_match" }),
-    validerBrief,
-    confirmerReceptionBrief,
+    saveBrief,
+    submitBrief,
+    acknowledgeBrief,
+    onUploadFiles,
+    onDeleteFile,
     toggleLivrable,
     freelance,
   };

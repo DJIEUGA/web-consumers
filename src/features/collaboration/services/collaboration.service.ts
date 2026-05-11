@@ -12,6 +12,14 @@ import type {
   CollaborationSpaceResponse,
   MessageDTO,
 } from './collaborationApi';
+import type {
+  BriefFileResponse,
+  CollaborationBriefAcknowledgeResponse,
+  CollaborationBriefPatchRequest,
+  CollaborationBriefRequest,
+  CollaborationBriefResponse,
+  CollaborationBriefSubmitResponse,
+} from './collaborationApi';
 
 // The axios response interceptor already strips the AxiosResponse wrapper and returns
 // response.data, which is the raw API envelope: { success, status, message, data, ... }.
@@ -69,6 +77,49 @@ export const collaborationService = {
   async submitBrief(id: string, payload?: unknown): Promise<ApiResponse<CollaborationSpaceResponse>> {
     const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.SUBMIT_BRIEF(id), payload);
     return asEnvelope<CollaborationSpaceResponse>(response);
+  },
+
+  async getBrief(id: string): Promise<ApiResponse<CollaborationBriefResponse>> {
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.BRIEF(id));
+    return asEnvelope<CollaborationBriefResponse>(response);
+  },
+
+  async saveBrief(
+    id: string,
+    payload: CollaborationBriefRequest | CollaborationBriefPatchRequest,
+  ): Promise<ApiResponse<CollaborationBriefResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.BRIEF(id), payload);
+    return asEnvelope<CollaborationBriefResponse>(response);
+  },
+
+  async patchBrief(
+    id: string,
+    payload: CollaborationBriefPatchRequest,
+  ): Promise<ApiResponse<CollaborationBriefResponse>> {
+    const response = await axiosInstance.patch(COLLABORATION_ENDPOINTS.BRIEF(id), payload);
+    return asEnvelope<CollaborationBriefResponse>(response);
+  },
+
+  async submitBriefPhase(id: string): Promise<ApiResponse<CollaborationBriefSubmitResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.BRIEF_SUBMIT(id));
+    return asEnvelope<CollaborationBriefSubmitResponse>(response);
+  },
+
+  async acknowledgeBrief(id: string): Promise<ApiResponse<CollaborationBriefAcknowledgeResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.BRIEF_ACKNOWLEDGE(id));
+    return asEnvelope<CollaborationBriefAcknowledgeResponse>(response);
+  },
+
+  async uploadBriefFiles(id: string, files: File[]): Promise<ApiResponse<BriefFileResponse[]>> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.BRIEF_FILES(id), formData);
+    return asEnvelope<BriefFileResponse[]>(response);
+  },
+
+  async deleteBriefFile(id: string, fileId: string): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.delete(COLLABORATION_ENDPOINTS.BRIEF_FILE(id, fileId));
+    return asEnvelope<void>(response);
   },
 
   async signContract(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {

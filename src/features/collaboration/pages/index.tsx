@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   FiCheck,
@@ -17,9 +17,13 @@ import CollabChatWidget from "@/features/collaboration/components/CollabChatWidg
 import { useAuthStore } from "@/stores/auth.store";
 import {
   type CollaborationSpaceResponse,
+  type CollaborationBriefDeliverable,
+  type CollaborationBriefRequest,
+  type CollaborationBriefTimeline,
 } from "@/features/collaboration/services/collaborationApi";
 import {
   useCollaborationActions,
+  useCollaborationBrief,
   useMySpaces,
   useSubmitReview,
 } from "@/features/collaboration/hooks/useCollaboration";
@@ -63,7 +67,32 @@ import {
   StepPayment,
   StepRelease,
 } from "@/features/collaboration/components/CollaborationStages";
+import { validateBriefFiles } from "@/features/collaboration/utils/briefValidation";
 import "../styles/collaboration/style.css";
+
+const BRIEF_LIVRABLE_LABEL_TO_VALUE: Record<string, CollaborationBriefDeliverable> = {
+  "Maquette graphique": "MAQUETTE_GRAPHIQUE",
+  "Code source": "CODE_SOURCE",
+  "Documentation": "DOCUMENTATION",
+  "Formation/Tutoriel": "FORMATION_TUTORIEL",
+  "Fichiers sources (PSD, AI...)": "FICHIERS_SOURCES",
+  "Révisions incluses": "REVISIONS_INCLUSES",
+  "Support post-livraison": "SUPPORT_POST_LIVRAISON",
+};
+
+const toBriefRequest = (brief: {
+  objectif: string;
+  livrables: string[];
+  delai: string;
+  budget: string;
+}): CollaborationBriefRequest => ({
+  objectif: brief.objectif,
+  livrables: brief.livrables
+    .map((livrable) => BRIEF_LIVRABLE_LABEL_TO_VALUE[livrable])
+    .filter(Boolean),
+  delai: brief.delai as CollaborationBriefTimeline,
+  budget: Number(brief.budget) || 0,
+});
 
 export const CollaborationSpace = () => {
   const navigate = useNavigate();
@@ -124,7 +153,11 @@ export const CollaborationSpace = () => {
     sendMessage: sendMessageMutation,
     acceptRequest,
     rejectRequest,
-    submitBrief: submitBriefMutation,
+    saveBrief: saveBriefMutation,
+    submitBriefPhase: submitBriefPhaseMutation,
+    acknowledgeBrief: acknowledgeBriefMutation,
+    uploadBriefFiles: uploadBriefFilesMutation,
+    deleteBriefFile: deleteBriefFileMutation,
     signContract: signContractMutation,
     confirmPayment: confirmPaymentMutation,
     submitDeliverable: submitDeliverableMutation,
@@ -290,10 +323,43 @@ export const CollaborationSpace = () => {
     livrerEtape,
     validerEtape,
     demanderModification,
-    initEtapesFromBrief,
   } = useCollaborationWorkspaceState({
     onAdvanceStep: queueStepTransition,
   });
+
+  const briefSpaceId = backendSpace?.id || resolvedSpaceId || undefined;
+  const briefQuery = useCollaborationBrief(briefSpaceId, Boolean(briefSpaceId));
+
+  useEffect(() => {
+    const apiBrief = briefQuery.data;
+    if (!apiBrief) return;
+
+    setBrief((prev) => {
+      const alreadyHydrated =
+        prev.objectif.trim() ||
+        prev.livrables.length > 0 ||
+        prev.delai.trim() ||
+        prev.budget.trim() ||
+        prev.fichiers.length > 0 ||
+        Boolean(prev.status);
+
+      if (alreadyHydrated) {
+        return prev;
+      }
+
+      return {
+        objectif: apiBrief.objectif || "",
+        livrables: Array.isArray(apiBrief.livrables) ? [...apiBrief.livrables] : [],
+        delai: apiBrief.delai || "",
+        budget: apiBrief.budget ? String(apiBrief.budget) : "",
+        fichiers: Array.isArray(apiBrief.files) ? [...apiBrief.files] : [],
+        commentairePro: "",
+        status: apiBrief.status,
+        submittedAt: apiBrief.submittedAt,
+        acknowledgedAt: apiBrief.acknowledgedAt,
+      };
+    });
+  }, [briefQuery.data, setBrief]);
 
   const { spaceMessagesQuery } = useCollaborationWorkspaceSync({
     incomingId,
@@ -386,18 +452,173 @@ export const CollaborationSpace = () => {
     }
   };
 
-  const handleValidateBrief = async () => {
-    const sId = backendSpace?.id || resolvedSpaceId;
-    if (sId) {
-      try {
-        await submitBriefMutation.mutateAsync({
-          id: sId,
-          payload: { objective: brief.objectif, deliverables: brief.livrables, deadline: brief.delai, budget: brief.budget },
-        });
-      } catch (err: any) { toast.error(err?.message); }
-    } else {
-      initEtapesFromBrief(brief.livrables, brief.budget);
-      transitionToStep(4, "STEP_CHANGED", { reason: "Brief validated" });
+  const handleSaveBrief = async () => {
+    const sId = briefSpaceId;
+    if (!sId) return;
+
+    try {
+      const response = await saveBriefMutation.mutateAsync({
+        id: sId,
+        payload: toBriefRequest(brief),
+      });
+
+      const saved = response.data;
+      setBrief((current) => ({
+        ...current,
+        objectif: saved.objectif,
+        livrables: [...saved.livrables],
+        delai: saved.delai,
+        budget: String(saved.budget),
+        fichiers: Array.isArray(saved.files) ? [...saved.files] : current.fichiers,
+        status: saved.status,
+        submittedAt: saved.submittedAt,
+        acknowledgedAt: saved.acknowledgedAt,
+      }));
+    } catch (err: any) {
+      toast.error(err?.message);
+    }
+  };
+
+  const handleSubmitBrief = async () => {
+    const sId = briefSpaceId;
+    if (!sId) {
+      setBrief((current) => ({
+        ...current,
+        status: "SUBMITTED",
+        submittedAt: new Date().toISOString(),
+      }));
+      return;
+    }
+
+    try {
+      const saveResponse = await saveBriefMutation.mutateAsync({
+        id: sId,
+        payload: toBriefRequest(brief),
+      });
+
+      const saved = saveResponse.data;
+      setBrief((current) => ({
+        ...current,
+        objectif: saved.objectif,
+        livrables: [...saved.livrables],
+        delai: saved.delai,
+        budget: String(saved.budget),
+        fichiers: Array.isArray(saved.files) ? [...saved.files] : current.fichiers,
+        status: saved.status,
+        submittedAt: saved.submittedAt,
+        acknowledgedAt: saved.acknowledgedAt,
+      }));
+
+      const submitResponse = await submitBriefPhaseMutation.mutateAsync(sId);
+      setBrief((current) => ({
+        ...current,
+        status: submitResponse.data.status,
+        submittedAt: submitResponse.data.submittedAt,
+      }));
+    } catch (err: any) {
+      toast.error(err?.message);
+    }
+  };
+
+  const handleAcknowledgeBrief = async () => {
+    const sId = briefSpaceId;
+    if (!sId) {
+      setBrief((current) => ({
+        ...current,
+        status: "ACKNOWLEDGED",
+        acknowledgedAt: new Date().toISOString(),
+      }));
+      transitionToStep(4, "STEP_CHANGED", { reason: "Brief acknowledged" });
+      return;
+    }
+
+    try {
+      const response = await acknowledgeBriefMutation.mutateAsync(sId);
+      setBrief((current) => ({
+        ...current,
+        status: response.data.status,
+        acknowledgedAt: response.data.acknowledgedAt,
+      }));
+      transitionToStep(4, "STEP_CHANGED", { reason: "Brief acknowledged" });
+    } catch (err: any) {
+      toast.error(err?.message);
+    }
+  };
+
+  const handleUploadBriefFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    // Validate files before upload
+    const { validFiles, errors } = validateBriefFiles(files);
+
+    // Display validation errors
+    if (errors.length > 0) {
+      errors.forEach((error) => toast.error(error));
+    }
+
+    // If no valid files, return early
+    if (validFiles.length === 0) return;
+
+    const sId = briefSpaceId;
+
+    if (!sId) {
+      setBrief((current) => ({
+        ...current,
+        fichiers: [
+          ...current.fichiers,
+          ...validFiles.map((file) => ({
+            originalName: file.name,
+            mimeType: file.type,
+            sizeBytes: file.size,
+            url: URL.createObjectURL(file),
+            file,
+          })),
+        ],
+      }));
+      if (validFiles.length > 0) {
+        toast.success(`${validFiles.length} fichier(s) ajouté(s) au brouillon`);
+      }
+      return;
+    }
+
+    try {
+      const response = await uploadBriefFilesMutation.mutateAsync({ id: sId, files: validFiles });
+      setBrief((current) => ({
+        ...current,
+        fichiers: [
+          ...current.fichiers,
+          ...response.data.map((file) => ({
+            id: file.id,
+            originalName: file.originalName,
+            mimeType: file.mimeType,
+            sizeBytes: file.sizeBytes,
+            url: file.url,
+          })),
+        ],
+      }));
+    } catch (err: any) {
+      toast.error(err?.message);
+    }
+  };
+
+  const handleDeleteBriefFile = async (fileId: string) => {
+    const sId = briefSpaceId;
+    if (!sId) {
+      setBrief((current) => ({
+        ...current,
+        fichiers: current.fichiers.filter((file) => file.id !== fileId),
+      }));
+      return;
+    }
+
+    try {
+      await deleteBriefFileMutation.mutateAsync({ id: sId, fileId });
+      setBrief((current) => ({
+        ...current,
+        fichiers: current.fichiers.filter((file) => file.id !== fileId),
+      }));
+    } catch (err: any) {
+      toast.error(err?.message);
     }
   };
 
@@ -528,8 +749,11 @@ export const CollaborationSpace = () => {
     briefProgress,
     livrablesSuggestions: LIVRABLES_SUGGESTIONS,
     isCustomer,
-    validerBrief: handleValidateBrief,
-    confirmerReceptionBrief: () => transitionToStep(4, "STEP_CHANGED"),
+    saveBrief: handleSaveBrief,
+    submitBrief: handleSubmitBrief,
+    acknowledgeBrief: handleAcknowledgeBrief,
+    onUploadFiles: handleUploadBriefFiles,
+    onDeleteFile: handleDeleteBriefFile,
     toggleLivrable,
     contratAccepte,
     setContratAccepte,
@@ -642,7 +866,7 @@ export const CollaborationSpace = () => {
                 <div className="collab-actor-info">
                   <span className="collab-actor-role">Porteur de projet</span>
                   <strong>{porteur.nom}</strong>
-                  <small>{porteur.entreprise || "Client Jobty"}</small>
+                  <small>{"Client Jobty"}</small>
                   {porteur.location && (
                     <small className="collab-actor-location" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', color: '#64748b' }}>
                       <FiMapPin size={12} /> {porteur.location}

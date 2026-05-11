@@ -7,6 +7,13 @@ export const COLLABORATION_ENDPOINTS = {
   // Base resource
   BASE: '/collaborations/spaces',
 
+  // Collaboration brief resource
+  BRIEF: (id: string) => `/collaborations/${id}/brief`,
+  BRIEF_SUBMIT: (id: string) => `/collaborations/${id}/brief/submit`,
+  BRIEF_ACKNOWLEDGE: (id: string) => `/collaborations/${id}/brief/acknowledge`,
+  BRIEF_FILES: (id: string) => `/collaborations/${id}/brief/files`,
+  BRIEF_FILE: (id: string, fileId: string) => `/collaborations/${id}/brief/files/${fileId}`,
+
   // Queries
   MY_SPACES: '/collaborations/spaces/me',
   SPACE_DETAIL: (id: string) => `/collaborations/${id}`,
