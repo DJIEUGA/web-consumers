@@ -329,42 +329,53 @@ const CustomerDashboard = () => {
                   </button>
                 </div>
 
-                <div style={{ display: "grid", gap: "12px" }}>
+                <div className="dash-collab-grid">
                   {ongoingCollaborations.slice(0, 2).map((collab) => (
-                    <div
-                      key={`overview-${collab.id}`}
-                      style={{
-                        border: "1px solid var(--gray-200)",
-                        borderRadius: "var(--radius-sm)",
-                        padding: "12px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 600 }}>
-                          {collab.titre || `Collaboration ${collab.id}`}
-                        </p>
-                        <p style={{ margin: "4px 0 0 0", color: "var(--gray-600)", fontSize: "13px" }}>
-                          {collab.nom || "Professionnel"} • Statut: {getCollaborationStatusMeta({
+                    <div key={`overview-${collab.id}`} className="dash-collab-card">
+                      <div className="dash-collab-header">
+                        <img src={collab.clientImgUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"} alt={collab.nom} />
+                        <div className="dash-collab-info">
+                          <h3>{collab.titre || `Collaboration ${collab.id}`}</h3>
+                          <p>{collab.nom || "Professionnel"}</p>
+                        </div>
+                        <span
+                          className="dash-statut-badge"
+                          style={{
+                            backgroundColor: `${getCollaborationStatusMeta({
+                              backendStatus: collab.backendStatus,
+                              statut: collab.statut,
+                            }).color}20`,
+                            color: getCollaborationStatusMeta({
+                              backendStatus: collab.backendStatus,
+                              statut: collab.statut,
+                            }).color,
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {getCollaborationStatusMeta({
                             backendStatus: collab.backendStatus,
                             statut: collab.statut,
                           }).label}
-                        </p>
+                        </span>
                       </div>
+
+                      <div className="dash-collab-footer">
+                        <span className="dash-collab-amount">
+                          <FiDollarSign /> {collab.montant || "N/A"} FCFA
+                        </span>
+                      </div>
+
                       <button
-                        className="admin-public-btn"
+                        className="dash-btn-outline dash-btn-sm"
                         onClick={() => navigate(`/collaboration/${encodeURIComponent(String(collab.id))}`)}
                       >
-                        <FiArrowRight /> Ouvrir
+                        Ouvrir l'espace projet
                       </button>
                     </div>
                   ))}
 
                   {ongoingCollaborations.length === 0 && (
-                    <p style={{ margin: 0, color: "var(--gray-600)" }}>
+                    <p style={{ margin: 0, color: "var(--gray-600)", gridColumn: "1 / -1" }}>
                       Aucun projet actif pour le moment.
                     </p>
                   )}
@@ -429,38 +440,49 @@ const CustomerDashboard = () => {
               )}
 
               {!isCollaborationsLoading && !isCollaborationsError && collaborations.length > 0 && (
-                <div style={{ display: "grid", gap: "12px", marginTop: "12px" }}>
+                <div className="dash-collab-grid">
                   {collaborations.map((collab) => (
-                    <div
-                      key={collab.id}
-                      style={{
-                        border: "1px solid var(--gray-200)",
-                        borderRadius: "var(--radius-sm)",
-                        padding: "12px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 600 }}>
-                          {collab.nom || "Professionnel"}
-                        </p>
-                        <p style={{ margin: "4px 0 0 0", color: "var(--gray-600)", fontSize: "13px" }}>
-                          {collab.role || "Collaboration"} • Statut: {getCollaborationStatusMeta({
+                    <div key={collab.id} className="dash-collab-card">
+                      <div className="dash-collab-header">
+                        <img src={collab.clientImgUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"} alt={collab.nom} />
+                        <div className="dash-collab-info">
+                          <h3>{collab.titre || collab.nom || "Collaboration"}</h3>
+                          <p>{collab.nom || "Professionnel"}</p>
+                        </div>
+                        <span
+                          className="dash-statut-badge"
+                          style={{
+                            backgroundColor: `${getCollaborationStatusMeta({
+                              backendStatus: collab.backendStatus,
+                              statut: collab.statut,
+                            }).color}20`,
+                            color: getCollaborationStatusMeta({
+                              backendStatus: collab.backendStatus,
+                              statut: collab.statut,
+                            }).color,
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {getCollaborationStatusMeta({
                             backendStatus: collab.backendStatus,
                             statut: collab.statut,
                           }).label}
-                        </p>
+                        </span>
                       </div>
+
+                      <div className="dash-collab-footer">
+                        <span className="dash-collab-amount">
+                          <FiDollarSign /> {collab.montant || "N/A"} FCFA
+                        </span>
+                      </div>
+
                       <button
-                        className="admin-public-btn"
+                        className="dash-btn-outline dash-btn-sm"
                         onClick={() =>
                           navigate(`/collaboration/${encodeURIComponent(String(collab.id))}`)
                         }
                       >
-                        <FiArrowRight /> Ouvrir
+                        Ouvrir l'espace projet
                       </button>
                     </div>
                   ))}
@@ -483,30 +505,25 @@ const CustomerDashboard = () => {
               )}
 
               {!isCollaborationsLoading && !isCollaborationsError && collaborations.length > 0 && (
-                <div style={{ display: "grid", gap: "12px", marginTop: "12px" }}>
+                <div className="dash-collab-grid">
                   {collaborations.map((collab) => (
-                    <div
-                      key={`${collab.id}-review`}
-                      style={{
-                        border: "1px solid var(--gray-200)",
-                        borderRadius: "var(--radius-sm)",
-                        padding: "12px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 600 }}>
-                          {collab.nom || "Professionnel"}
-                        </p>
-                        <p style={{ margin: "4px 0 0 0", color: "var(--gray-600)", fontSize: "13px" }}>
-                          Collaboration: {collab.id}
-                        </p>
+                    <div key={`${collab.id}-review`} className="dash-collab-card">
+                      <div className="dash-collab-header">
+                        <img src={collab.clientImgUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=default"} alt={collab.nom} />
+                        <div className="dash-collab-info">
+                          <h3>{collab.titre || collab.nom || "Collaboration"}</h3>
+                          <p>{collab.nom || "Professionnel"}</p>
+                        </div>
                       </div>
+
+                      <div className="dash-collab-footer">
+                        <span className="dash-collab-amount">
+                          <FiDollarSign /> {collab.montant || "N/A"} FCFA
+                        </span>
+                      </div>
+
                       <button
-                        className="admin-public-btn"
+                        className="dash-btn-outline dash-btn-sm"
                         onClick={() => handleLeaveReview(String(collab.id))}
                       >
                         <FiStar /> Laisser un avis
