@@ -420,7 +420,11 @@ export const StepBrief = ({
         </div>
         <div>
           <h2>Brief express</h2>
-          <p>Décrivez votre projet de manière simple et claire</p>
+          <p>
+            {isCustomer
+              ? "Décrivez votre projet de manière simple et claire"
+              : "Examinez et confirmez les détails du projet"}
+          </p>
         </div>
       </div>
 
@@ -470,7 +474,7 @@ export const StepBrief = ({
             <FiList /> Livrables attendus *
           </label>
           <div className="collab-livrables-grid">
-            {livrablesSuggestions.map((livrable, index) => (
+            {(isCustomer ? livrablesSuggestions : brief.livrables).map((livrable, index) => (
               <div
                 key={index}
                 className={`collab-livrable-item ${brief.livrables.includes(livrable) ? "selected" : ""}`}
@@ -815,22 +819,6 @@ export const StepContract = ({
           </div>
         </div>
       </div>
-
-      {isCustomer && !contratAccepte.freelance && (
-        <div className="collab-demo-actions">
-          <p className="collab-demo-note">
-            🎮 Demo : Simuler la signature du freelance
-          </p>
-          <button
-            className="collab-btn-outline"
-            onClick={() =>
-              setContratAccepte((prev) => ({ ...prev, freelance: true }))
-            }
-          >
-            <FiCheck /> Le freelance signe
-          </button>
-        </div>
-      )}
     </div>
   );
 };
@@ -1418,7 +1406,7 @@ export const StepDelivery = ({
       <div className="collab-paiement-card">
         <div className="collab-match-users" style={{ justifyContent: "center", marginBottom: 24 }}>
           <div className="collab-match-user">
-            <img src={freelance.avatarUrl} alt={freelance.nom} />
+            <img src={freelance.photo} alt={freelance.nom} />
             <span>{freelance.nom}</span>
             <span className="collab-role">Prestataire</span>
           </div>
@@ -1503,7 +1491,7 @@ export const StepRelease = ({
         <div className="collab-match-success-card" style={{ marginBottom: 16 }}>
           <div className="collab-match-users" style={{ justifyContent: "center" }}>
             <div className="collab-match-user">
-              <img src={freelance.avatarUrl} alt={freelance.nom} />
+              <img src={freelance.photo} alt={freelance.nom} />
               <span>{freelance.nom}</span>
               <span className="collab-role">Prestataire</span>
             </div>
