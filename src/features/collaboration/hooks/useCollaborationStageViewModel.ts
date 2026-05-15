@@ -63,9 +63,9 @@ type UseCollaborationStageViewModelParams = {
   paiementDepose: boolean;
   deposerPaiement: () => Promise<void>;
   getStatutBadge: (statut: string) => React.ReactNode;
-  livrerEtape: (etapeId: number) => void;
-  validerEtape: (etapeId: number) => void;
-  demanderModification: (etapeId: number) => void;
+  livrerEtape: (etapeId: string) => void;
+  validerEtape: (etapeId: string) => void;
+  demanderModification: (etapeId: string) => void;
   setEtapes: React.Dispatch<React.SetStateAction<ProjectEtape[]>>;
   soumettrelivrable: () => Promise<void>;
   libererPaiement: () => Promise<void>;

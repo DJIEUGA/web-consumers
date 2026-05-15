@@ -18,6 +18,9 @@ export const BACKEND_STATUS_TO_STEP: BackendStatusToStepMap = {
   CLOSED: 9,
   COMPLETED: 9,
   CANCELLED: 1,
+  // DISPUTED is cross-phase; the backend provides the authoritative step via lifecycleStep.
+  // Map to 6 (EXECUTION) as a safe fallback so the UI renders a phase context, not a blank.
+  DISPUTED: 6,
 };
 
 export const MESSAGE_BLOCKED_STATUSES: CollaborationStatus[] = [

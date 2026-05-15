@@ -82,7 +82,8 @@ export type CollaborationStatus =
   | "PAYMENT_RELEASED"
   | "CLOSED"
   | "COMPLETED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "DISPUTED";
 
 export type LifecycleTimelineItem = {
   index: number;
@@ -248,6 +249,153 @@ export type ProPublicProfileDetails = Record<string, unknown> & {
 };
 
 export type CustomerProfileDetails = Record<string, unknown>;
+
+// ─── Contract ────────────────────────────────────────────────────────────────
+
+export type CollaborationContract = {
+  id: string;
+  collaborationId: string;
+  objectif: string;
+  livrables: CollaborationBriefDeliverable[];
+  delai: CollaborationBriefTimeline;
+  budget: number;
+  currency: string;
+  customerSigned: boolean;
+  proSigned: boolean;
+  customerSignedAt: string | null;
+  proSignedAt: string | null;
+  generatedAt: string;
+};
+
+// ─── Etapes / Milestones ─────────────────────────────────────────────────────
+
+export type EtapeStatut =
+  | "a_venir"
+  | "en_cours"
+  | "livree"
+  | "validee"
+  | "modification";
+
+export type CollaborationEtape = {
+  id: string;
+  titre: string;
+  description: string | null;
+  montant: number;
+  currency: string;
+  statut: EtapeStatut;
+  ordre: number;
+  revisionCount: number;
+  maxRevisions: number;
+  lockedAt: string | null;
+  reminderSentAt?: string | null;
+  autoValidatedAt?: string | null;
+};
+
+export type CreateEtapeRequest = {
+  titre: string;
+  description?: string;
+  montant: number;
+  ordre?: number;
+};
+
+export type UpdateEtapeRequest = Partial<{
+  titre: string;
+  description: string;
+  montant: number;
+  ordre: number;
+}>;
+
+export type UpdateEtapeStatusRequest = {
+  statut: EtapeStatut;
+};
+
+export type ReorderEtapesRequest = {
+  order: Array<{ id: string; ordre: number }>;
+};
+
+export type ConfirmPlanResponse = {
+  planLocked: boolean;
+  customerConfirmed: boolean;
+  proConfirmed: boolean;
+};
+
+// ─── Deliverables ─────────────────────────────────────────────────────────────
+
+export type MilestoneDeliverable = {
+  id: string;
+  etapeId: string;
+  fileUrl: string | null;
+  externalLink: string | null;
+  notes: string | null;
+  revisionRound: number;
+  submittedAt: string;
+};
+
+// ─── Payment ─────────────────────────────────────────────────────────────────
+
+export type EscrowTransaction = {
+  id: string;
+  type: "DEPOSIT" | "RELEASE" | "REFUND" | "REVERSAL";
+  amount: number;
+  currency: string;
+  status: "PENDING" | "CONFIRMED" | "FAILED";
+  etapeId: string | null;
+  simulatedAt: string | null;
+};
+
+export type PaymentSummaryResponse = {
+  escrow: {
+    totalAmount: number;
+    currency: string;
+    lockedAmount: number;
+    releasedAmount: number;
+    status: "OPEN" | "PARTIALLY_RELEASED" | "FULLY_RELEASED" | "FROZEN";
+  };
+  transactions: EscrowTransaction[];
+};
+
+export type ConfirmPaymentRequest = {
+  currency?: string;
+};
+
+// ─── Dispute ─────────────────────────────────────────────────────────────────
+
+export type CollaborationDisputeStatus = "OPEN" | "IN_INVESTIGATION" | "RESOLVED" | "CLOSED";
+
+export type CollaborationDisputeResponse = {
+  id: string;
+  collaborationSpaceId: string;
+  initiatorId: string;
+  initiatorName: string;
+  respondentId: string;
+  respondentName: string;
+  reason: string;
+  status: CollaborationDisputeStatus;
+  arbitrationDecision: string | null;
+  refundAmount: number | null;
+  paymentAmount: number | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+};
+
+export type TriggerDisputeRequest = {
+  reason: string;
+};
+
+// ─── Closure ─────────────────────────────────────────────────────────────────
+
+export type CloseSpaceRequest = {
+  rating?: number;
+  comment?: string;
+};
+
+// ─── Notifications / FCM ─────────────────────────────────────────────────────
+
+export type FcmTokenRequest = {
+  token: string;
+  platform: "web" | "android" | "ios";
+};
 
 type MaybeEnvelope<T> = ApiEnvelope<T> | T;
 

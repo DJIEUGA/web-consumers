@@ -634,7 +634,7 @@ export const CollaborationSpace = () => {
   const handleConfirmPayment = async () => {
     const sId = backendSpace?.id || resolvedSpaceId;
     if (sId) {
-      try { await confirmPaymentMutation.mutateAsync(sId); } catch (err: any) { toast.error(err?.message); }
+      try { await confirmPaymentMutation.mutateAsync({ id: sId }); } catch (err: any) { toast.error(err?.message); }
     } else {
       deposerPaiement();
     }
@@ -650,7 +650,7 @@ export const CollaborationSpace = () => {
         });
       } catch (err: any) { toast.error(err?.message); }
     } else {
-      livrerEtape(1);
+      livrerEtape("1");
     }
   };
 
@@ -776,7 +776,13 @@ export const CollaborationSpace = () => {
     },
     cloturerEspace: async () => {
       const sId = backendSpace?.id || resolvedSpaceId;
-      if (sId) await closeSpaceMutation.mutateAsync(sId);
+      if (sId) await closeSpaceMutation.mutateAsync({
+        id: sId,
+        payload: {
+          rating: avis.note > 0 ? avis.note : undefined,
+          comment: avis.commentaire.trim() || undefined,
+        },
+      });
       navigate("/dashboard");
     },
     isCheckingExistingReview: false,

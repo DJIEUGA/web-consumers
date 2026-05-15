@@ -17,21 +17,21 @@ export const LIVRABLES_SUGGESTIONS = [
 
 export const INITIAL_ETAPES: ProjectEtape[] = [
   {
-    id: 1,
+    id: "1",
     titre: "Maquette initiale",
     statut: "en_cours",
     montant: 50000,
     progression: 65,
   },
   {
-    id: 2,
+    id: "2",
     titre: "Développement",
     statut: "a_venir",
     montant: 100000,
     progression: 0,
   },
   {
-    id: 3,
+    id: "3",
     titre: "Tests & Livraison",
     statut: "a_venir",
     montant: 50000,

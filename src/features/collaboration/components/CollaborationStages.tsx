@@ -993,9 +993,9 @@ type StepExecutionProps = {
   getStatutBadge: (statut: string) => React.ReactNode;
   isPro: boolean;
   isCustomer: boolean;
-  livrerEtape: (etapeId: number) => void;
-  validerEtape: (etapeId: number) => void;
-  demanderModification: (etapeId: number) => void;
+  livrerEtape: (etapeId: string) => void;
+  validerEtape: (etapeId: string) => void;
+  demanderModification: (etapeId: string) => void;
   messages: UiMessage[];
   newMessage: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;

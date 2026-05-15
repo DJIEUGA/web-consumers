@@ -38,4 +38,29 @@ export const COLLABORATION_ENDPOINTS = {
   RELEASE_PAYMENT: (id: string) => `/collaborations/spaces/${id}/release-payment`,
   CLOSE: (id: string) => `/collaborations/spaces/${id}/close`,
   LIFECYCLE_ACTION: (id: string) => `/collaborations/spaces/${id}/lifecycle`,
+
+  // Contract
+  CONTRACT: (id: string) => `/collaborations/${id}/contract`,
+  CONTRACT_PDF: (id: string) => `/collaborations/${id}/contract/pdf`,
+
+  // Etapes / Milestones
+  ETAPES: (id: string) => `/collaborations/${id}/etapes`,
+  ETAPE: (id: string, etapeId: string) => `/collaborations/${id}/etapes/${etapeId}`,
+  ETAPE_STATUS: (id: string, etapeId: string) => `/collaborations/${id}/etapes/${etapeId}/status`,
+  ETAPES_REORDER: (id: string) => `/collaborations/${id}/etapes/reorder`,
+  ETAPES_CONFIRM_PLAN: (id: string) => `/collaborations/${id}/etapes/confirm-plan`,
+
+  // Deliverables (per etape)
+  ETAPE_DELIVERABLES: (id: string, etapeId: string) => `/collaborations/${id}/etapes/${etapeId}/deliverables`,
+
+  // Payment summary
+  PAYMENT_SUMMARY: (id: string) => `/collaborations/${id}/payment/summary`,
+
+  // Dispute (collaboration-side trigger)
+  TRIGGER_DISPUTE: (id: string) => `/collaborations/spaces/${id}/dispute`,
+  DISPUTE_DETAIL: (id: string) => `/collaborations/${id}/dispute`,
+
+  // FCM push notification token management
+  FCM_REGISTER: '/notifications/fcm/register',
+  FCM_DEREGISTER: (token: string) => `/notifications/fcm/register/${encodeURIComponent(token)}`,
 } as const;

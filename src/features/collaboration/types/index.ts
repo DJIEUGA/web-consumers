@@ -22,7 +22,8 @@ export type CollaborationStatus =
   | 'CONTRACTING'
   | 'PAYMENT_PENDING'
   | 'IN_PROGRESS'
-  | 'DELIVERED';
+  | 'DELIVERED'
+  | 'DISPUTED';
 
 export type LifecycleTimelineItem = {
   index: number;

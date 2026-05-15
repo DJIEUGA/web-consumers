@@ -14,11 +14,25 @@ import type {
 } from './collaborationApi';
 import type {
   BriefFileResponse,
+  CloseSpaceRequest,
   CollaborationBriefAcknowledgeResponse,
   CollaborationBriefPatchRequest,
   CollaborationBriefRequest,
   CollaborationBriefResponse,
   CollaborationBriefSubmitResponse,
+  CollaborationContract,
+  CollaborationDisputeResponse,
+  CollaborationEtape,
+  ConfirmPaymentRequest,
+  ConfirmPlanResponse,
+  CreateEtapeRequest,
+  FcmTokenRequest,
+  MilestoneDeliverable,
+  PaymentSummaryResponse,
+  ReorderEtapesRequest,
+  TriggerDisputeRequest,
+  UpdateEtapeRequest,
+  UpdateEtapeStatusRequest,
 } from './collaborationApi';
 
 // The axios response interceptor already strips the AxiosResponse wrapper and returns
@@ -127,8 +141,11 @@ export const collaborationService = {
     return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
-  async confirmPayment(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.CONFIRM_PAYMENT(id));
+  async confirmPayment(
+    id: string,
+    payload: ConfirmPaymentRequest = {},
+  ): Promise<ApiResponse<CollaborationSpaceResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.CONFIRM_PAYMENT(id), payload);
     return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
@@ -150,9 +167,127 @@ export const collaborationService = {
     return asEnvelope<CollaborationSpaceResponse>(response);
   },
 
-  async closeSpace(id: string): Promise<ApiResponse<CollaborationSpaceResponse>> {
-    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.CLOSE(id));
+  async closeSpace(
+    id: string,
+    payload: CloseSpaceRequest = {},
+  ): Promise<ApiResponse<CollaborationSpaceResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.CLOSE(id), payload);
     return asEnvelope<CollaborationSpaceResponse>(response);
+  },
+
+  // ─── Contract ──────────────────────────────────────────────────────────────
+
+  async getContract(id: string): Promise<ApiResponse<CollaborationContract>> {
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.CONTRACT(id));
+    return asEnvelope<CollaborationContract>(response);
+  },
+
+  async downloadContractPdf(id: string): Promise<Blob> {
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.CONTRACT_PDF(id), {
+      responseType: 'blob',
+    });
+    return response as unknown as Blob;
+  },
+
+  // ─── Etapes / Milestones ───────────────────────────────────────────────────
+
+  async getEtapes(id: string): Promise<ApiResponse<CollaborationEtape[]>> {
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.ETAPES(id));
+    return asEnvelope<CollaborationEtape[]>(response);
+  },
+
+  async createEtape(id: string, payload: CreateEtapeRequest): Promise<ApiResponse<CollaborationEtape>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.ETAPES(id), payload);
+    return asEnvelope<CollaborationEtape>(response);
+  },
+
+  async updateEtape(
+    id: string,
+    etapeId: string,
+    payload: UpdateEtapeRequest,
+  ): Promise<ApiResponse<CollaborationEtape>> {
+    const response = await axiosInstance.patch(COLLABORATION_ENDPOINTS.ETAPE(id, etapeId), payload);
+    return asEnvelope<CollaborationEtape>(response);
+  },
+
+  async deleteEtape(id: string, etapeId: string): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.delete(COLLABORATION_ENDPOINTS.ETAPE(id, etapeId));
+    return asEnvelope<void>(response);
+  },
+
+  async confirmMilestonePlan(id: string): Promise<ApiResponse<ConfirmPlanResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.ETAPES_CONFIRM_PLAN(id));
+    return asEnvelope<ConfirmPlanResponse>(response);
+  },
+
+  async updateEtapeStatus(
+    id: string,
+    etapeId: string,
+    payload: UpdateEtapeStatusRequest,
+  ): Promise<ApiResponse<CollaborationEtape>> {
+    const response = await axiosInstance.patch(COLLABORATION_ENDPOINTS.ETAPE_STATUS(id, etapeId), payload);
+    return asEnvelope<CollaborationEtape>(response);
+  },
+
+  async reorderEtapes(id: string, payload: ReorderEtapesRequest): Promise<ApiResponse<CollaborationEtape[]>> {
+    const response = await axiosInstance.patch(COLLABORATION_ENDPOINTS.ETAPES_REORDER(id), payload);
+    return asEnvelope<CollaborationEtape[]>(response);
+  },
+
+  // ─── Deliverables ──────────────────────────────────────────────────────────
+
+  async listEtapeDeliverables(
+    id: string,
+    etapeId: string,
+  ): Promise<ApiResponse<MilestoneDeliverable[]>> {
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.ETAPE_DELIVERABLES(id, etapeId));
+    return asEnvelope<MilestoneDeliverable[]>(response);
+  },
+
+  async submitEtapeDeliverable(
+    id: string,
+    etapeId: string,
+    formData: FormData,
+  ): Promise<ApiResponse<MilestoneDeliverable>> {
+    const response = await axiosInstance.post(
+      COLLABORATION_ENDPOINTS.ETAPE_DELIVERABLES(id, etapeId),
+      formData,
+    );
+    return asEnvelope<MilestoneDeliverable>(response);
+  },
+
+  // ─── Payment summary ───────────────────────────────────────────────────────
+
+  async getPaymentSummary(id: string): Promise<ApiResponse<PaymentSummaryResponse>> {
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.PAYMENT_SUMMARY(id));
+    return asEnvelope<PaymentSummaryResponse>(response);
+  },
+
+  // ─── Dispute ───────────────────────────────────────────────────────────────
+
+  async triggerDispute(
+    id: string,
+    payload: TriggerDisputeRequest,
+  ): Promise<ApiResponse<CollaborationDisputeResponse>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.TRIGGER_DISPUTE(id), payload);
+    return asEnvelope<CollaborationDisputeResponse>(response);
+  },
+
+  async getDispute(id: string): Promise<ApiResponse<CollaborationDisputeResponse | null>> {
+    const response = await axiosInstance.get(COLLABORATION_ENDPOINTS.DISPUTE_DETAIL(id));
+    return asEnvelope<CollaborationDisputeResponse | null>(response);
+  },
+
+  // ─── FCM token ─────────────────────────────────────────────────────────────
+
+  async registerFcmToken(payload: FcmTokenRequest): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.post(COLLABORATION_ENDPOINTS.FCM_REGISTER, payload);
+    return asEnvelope<void>(response);
+  },
+
+  async deregisterFcmToken(token: string): Promise<ApiResponse<void>> {
+    const response = await axiosInstance.delete(COLLABORATION_ENDPOINTS.FCM_DEREGISTER(token));
+    return asEnvelope<void>(response);
   },
 
   async applyLifecycleAction(

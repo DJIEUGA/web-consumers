@@ -85,11 +85,17 @@ export type EtapeStatut =
   | "modification";
 
 export type ProjectEtape = {
-  id: number;
+  id: string;
   titre: string;
+  description?: string | null;
   statut: EtapeStatut;
   montant: number;
+  currency?: string;
+  ordre?: number;
+  revisionCount?: number;
+  maxRevisions?: number;
   progression: number;
+  lockedAt?: string | null;
 };
 
 export type ContratAccepteState = {
