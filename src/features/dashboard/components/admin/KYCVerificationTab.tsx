@@ -11,6 +11,7 @@ import {
 import { useAdminKycProfiles, useUpdateKycStatus } from "../../hooks/useAdminData";
 import { adminApi } from "../../services/adminApi";
 import type { ProProfileKycResponse, KycStatus } from "@/api/adminEndpoints";
+import AdminConfirmModal from "./AdminConfirmModal";
 
 /* ─── Constants ─────────────────────────────────────────────────────────────── */
 
@@ -21,20 +22,20 @@ const KYC_STATUS_LABELS: Record<KycStatus, string> = {
   NOT_SUBMITTED: "Non soumis",
 };
 
-const KYC_STATUS_COLORS: Record<KycStatus, string> = {
-  PENDING:       "#FF9800",
-  VERIFIED:      "#4CAF50",
-  REJECTED:      "#F44336",
-  NOT_SUBMITTED: "#9E9E9E",
+const KYC_STATUS_COLORS: Record<KycStatus, { bg: string; text: string }> = {
+  PENDING:       { bg: "#FFF3E0", text: "#E65100" }, // Orange
+  VERIFIED:      { bg: "#E8F5E9", text: "#2E7D32" }, // Vert
+  REJECTED:      { bg: "#FFEBEE", text: "#B71C1C" }, // Rouge
+  NOT_SUBMITTED: { bg: "#F5F5F7", text: "#616161" }, // Gris
 };
 
 /* ─── Sub-components ────────────────────────────────────────────────────────── */
 
 function KycStatusBadge({ status }: { status: KycStatus }) {
-  const color = KYC_STATUS_COLORS[status];
+  const color = KYC_STATUS_COLORS[status] ?? { bg: "#F5F5F7", text: "#616161" };
   return (
-    <span className="admin-badge" style={{ backgroundColor: `${color}20`, color }}>
-      {KYC_STATUS_LABELS[status]}
+    <span className="admin-status-pill" style={{ backgroundColor: color.bg, color: color.text }}>
+      {(KYC_STATUS_LABELS[status] ?? status).toUpperCase()}
     </span>
   );
 }
@@ -71,96 +72,42 @@ function useOpenKycDocument() {
   return { open, loadingId, errorId };
 }
 
-/** Actions row for a single KYC profile card */
-function KycCardActions({ profile }: { profile: ProProfileKycResponse }) {
+/** Rejection form shown in expanded row or inline */
+function RejectionForm({ 
+  profile, 
+  onCancel, 
+  onSuccess 
+}: { 
+  profile: ProProfileKycResponse;
+  onCancel: () => void;
+  onSuccess: () => void;
+}) {
+  const [comment, setComment] = useState("");
   const updateKyc = useUpdateKycStatus();
-  const { open, loadingId, errorId } = useOpenKycDocument();
-  const [rejectComment, setRejectComment] = useState("");
-  const [showRejectInput, setShowRejectInput] = useState(false);
 
-  const isDocLoading = loadingId === profile.userId;
-  const hasDocError = errorId === profile.userId;
-
-  const approve = () => {
-    updateKyc.mutate({ userId: profile.userId, status: "VERIFIED" });
-  };
-
-  const submitReject = () => {
+  const handleReject = () => {
     updateKyc.mutate({
       userId: profile.userId,
       status: "REJECTED",
-      comment: rejectComment || undefined,
-    });
+      comment: comment || undefined,
+    }, { onSuccess });
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {/* View document button — always present if status isn't NOT_SUBMITTED */}
-      {profile.kycStatus !== "NOT_SUBMITTED" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button
-            className="dash-btn-secondary"
-            onClick={() => open(profile.userId)}
-            disabled={isDocLoading}
-            style={{ fontSize: 13 }}
-          >
-            {isDocLoading ? (
-              <><FiLoader /> Chargement…</>
-            ) : (
-              <><FiFileText /> Voir le document<FiExternalLink size={12} style={{ marginLeft: 2 }} /></>
-            )}
-          </button>
-          {hasDocError && (
-            <span style={{ fontSize: 12, color: "#F44336" }}>
-              Impossible d'ouvrir le document
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Approve / reject — only for PENDING */}
-      {profile.kycStatus === "PENDING" && (
-        <>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              className="dash-btn-primary"
-              onClick={approve}
-              disabled={updateKyc.isPending}
-            >
-              <FiCheckCircle /> Approuver
-            </button>
-            <button
-              className="dash-btn-secondary"
-              onClick={() => setShowRejectInput((v) => !v)}
-              style={{ color: "#F44336", borderColor: "#F44336" }}
-            >
-              <FiXCircle /> Rejeter
-            </button>
-          </div>
-
-          {showRejectInput && (
-            <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-              <input
-                type="text"
-                className="admin-filter-select"
-                placeholder="Motif de refus (optionnel)"
-                value={rejectComment}
-                onChange={(e) => setRejectComment(e.target.value)}
-                style={{ flex: 1, fontSize: 12, padding: "6px 10px" }}
-                autoFocus
-              />
-              <button
-                className="dash-btn-secondary"
-                onClick={submitReject}
-                disabled={updateKyc.isPending}
-                style={{ color: "#F44336", borderColor: "#F44336", whiteSpace: "nowrap" }}
-              >
-                {updateKyc.isPending ? <FiLoader /> : "Confirmer le refus"}
-              </button>
-            </div>
-          )}
-        </>
-      )}
+    <div className="admin-rejection-form">
+      <input
+        type="text"
+        placeholder="Motif du refus (ex: Photo floue, document expiré...)"
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        autoFocus
+      />
+      <div className="admin-rejection-actions">
+        <button className="admin-btn-confirm" onClick={handleReject} disabled={updateKyc.isPending}>
+          {updateKyc.isPending ? <FiLoader className="admin-spinner" /> : "Confirmer le rejet"}
+        </button>
+        <button className="admin-btn-cancel" onClick={onCancel}>Annuler</button>
+      </div>
     </div>
   );
 }
@@ -169,8 +116,23 @@ function KycCardActions({ profile }: { profile: ProProfileKycResponse }) {
 
 const KYCVerificationTab: React.FC = () => {
   const { data: profiles = [], isLoading, isError } = useAdminKycProfiles();
+  const updateKyc = useUpdateKycStatus();
+  const { open, loadingId } = useOpenKycDocument();
+  
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
-  const pending = profiles.filter((p) => p.kycStatus === "PENDING");
+  const pendingCount = profiles.filter((p) => p.kycStatus === "PENDING").length;
+
+  const confirmApprove = () => {
+    if (!approvingId) return;
+    updateKyc.mutate(
+      { userId: approvingId, status: "VERIFIED" },
+      { onSuccess: () => setApprovingId(null) }
+    );
+  };
+
+  const COL_SPAN = 5;
 
   return (
     <div className="admin-kyc-section">
@@ -178,7 +140,7 @@ const KYCVerificationTab: React.FC = () => {
         <div>
           <h2>Vérification KYC</h2>
           <p className="admin-section-subtitle">
-            {isLoading ? "Chargement…" : `${pending.length} en attente`}
+            {isLoading ? "Chargement…" : `${pendingCount} demandes en attente`}
           </p>
         </div>
       </div>
@@ -196,7 +158,7 @@ const KYCVerificationTab: React.FC = () => {
           const color = KYC_STATUS_COLORS[status];
           return (
             <div key={status} className="dash-stat-card">
-              <div className="dash-stat-icon" style={{ background: `${color}20`, color }}>
+              <div className="dash-stat-icon" style={{ background: color.bg, color: color.text }}>
                 {icons[status]}
               </div>
               <div className="dash-stat-content">
@@ -220,52 +182,148 @@ const KYCVerificationTab: React.FC = () => {
         </div>
       )}
 
-      {/* KYC queue */}
+      {/* Table */}
       {!isLoading && !isError && (
-        <>
-          {profiles.length === 0 ? (
-            <div className="admin-kyc-card">
-              <FiShield style={{ fontSize: 32, color: "#BDBDBD" }} />
-              <div className="admin-kyc-info">
-                <h3>Aucune demande KYC</h3>
-                <p>Toutes les vérifications sont à jour.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="admin-kyc-queue">
-              {profiles.map((profile) => (
-                <div key={profile.userId} className="admin-kyc-card">
-                  {/* Identity and meta */}
-                  <div className="admin-kyc-info">
-                    <h3>{profile.firstName} {profile.lastName}</h3>
-                    <p>{profile.email}</p>
-                    {profile.documentType && (
-                      <small>Document soumis : <strong>{profile.documentType}</strong></small>
-                    )}
-                    {profile.submittedAt && (
-                      <small className="admin-text-muted">
-                        <FiClock size={11} /> Soumis le{" "}
-                        {new Date(profile.submittedAt).toLocaleDateString("fr-FR")}
-                      </small>
-                    )}
-                    {profile.comment && (
-                      <small style={{ color: "#F44336" }}>Note : {profile.comment}</small>
-                    )}
-                  </div>
+        <div className="admin-table-container">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Document</th>
+                <th>Date de soumission</th>
+                <th>Statut</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profiles.length === 0 ? (
+                <tr>
+                  <td colSpan={COL_SPAN} style={{ textAlign: "center", padding: 32 }}>
+                    Aucune demande KYC trouvée
+                  </td>
+                </tr>
+              ) : (
+                profiles.map((profile) => (
+                  <React.Fragment key={profile.userId}>
+                    <tr className={rejectingId === profile.userId ? "selected" : ""}>
+                      {/* User */}
+                      <td>
+                        <div className="admin-user-cell">
+                          <div className="admin-user-avatar">
+                            {profile.firstName[0]}{profile.lastName[0]}
+                          </div>
+                          <div className="admin-user-info">
+                            <strong>{profile.firstName} {profile.lastName}</strong>
+                            <small>{profile.email}</small>
+                          </div>
+                        </div>
+                      </td>
 
-                  {/* Status badge */}
-                  <div className="admin-kyc-time">
-                    <KycStatusBadge status={profile.kycStatus} />
-                  </div>
+                      {/* Document */}
+                      <td>
+                        <div className="admin-document-cell">
+                          <FiFileText size={16} />
+                          <span>{profile.documentType || "N/A"}</span>
+                        </div>
+                      </td>
 
-                  {/* Actions: view document + approve/reject */}
-                  <KycCardActions profile={profile} />
-                </div>
-              ))}
-            </div>
-          )}
-        </>
+                      {/* Date */}
+                      <td>
+                        <div className="admin-date-cell">
+                          {profile.submittedAt ? (
+                            <>
+                              <FiClock size={12} />
+                              <span>{new Date(profile.submittedAt).toLocaleDateString("fr-FR")}</span>
+                            </>
+                          ) : "—"}
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td>
+                        <KycStatusBadge status={profile.kycStatus} />
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ textAlign: "right" }}>
+                        <div className="admin-actions" style={{ justifyContent: "flex-end" }}>
+                          {profile.kycStatus !== "NOT_SUBMITTED" && (
+                            <button
+                              className="admin-action-btn-circle"
+                              title="Voir le document"
+                              onClick={() => open(profile.userId)}
+                              disabled={loadingId === profile.userId}
+                            >
+                              {loadingId === profile.userId ? <FiLoader className="admin-spinner" /> : <FiExternalLink size={14} />}
+                            </button>
+                          )}
+
+                          {profile.kycStatus === "PENDING" && (
+                            <>
+                              <button
+                                className="admin-action-btn-circle"
+                                title="Approuver"
+                                onClick={() => setApprovingId(profile.userId)}
+                                style={{ color: "var(--success)" }}
+                              >
+                                <FiCheckCircle size={14} />
+                              </button>
+                              <button
+                                className="admin-action-btn-circle"
+                                title="Rejeter"
+                                onClick={() => setRejectingId(rejectingId === profile.userId ? null : profile.userId)}
+                                style={{ 
+                                  color: rejectingId === profile.userId ? "var(--danger)" : "var(--danger)",
+                                  backgroundColor: rejectingId === profile.userId ? "#FEF2F2" : undefined,
+                                  borderColor: rejectingId === profile.userId ? "var(--danger)" : undefined
+                                }}
+                              >
+                                <FiXCircle size={14} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Rejection Form Row */}
+                    {rejectingId === profile.userId && (
+                      <tr>
+                        <td colSpan={COL_SPAN} style={{ padding: "0 16px 16px", background: "#FDF2F2" }}>
+                          <div style={{ background: "white", padding: 16, borderRadius: 8, border: "1px solid #FEE2E2" }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--danger)", display: "block", marginBottom: 8, textTransform: "uppercase" }}>
+                              Motif du rejet
+                            </span>
+                            <RejectionForm 
+                              profile={profile} 
+                              onCancel={() => setRejectingId(null)}
+                              onSuccess={() => setRejectingId(null)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
+
+      {/* Approve Confirmation Modal */}
+      <AdminConfirmModal
+        isOpen={approvingId !== null}
+        title="Approuver le document KYC"
+        message="Êtes-vous sûr de vouloir approuver ce document ? Le statut du professionnel passera à Vérifié."
+        confirmLabel="Approuver"
+        cancelLabel="Annuler"
+        pendingLabel="Approbation..."
+        confirmStyle="primary"
+        isPending={updateKyc.isPending && !!approvingId}
+        onConfirm={confirmApprove}
+        onCancel={() => setApprovingId(null)}
+      />
     </div>
   );
 };

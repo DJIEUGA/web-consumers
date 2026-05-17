@@ -10,6 +10,12 @@ import {
   FiCheck,
   FiX,
   FiCopy,
+  FiEye,
+  FiEdit2,
+  FiMoreVertical,
+  FiMapPin,
+  FiStar,
+  FiClock,
 } from "react-icons/fi";
 import {
   useAdminUsers,
@@ -29,11 +35,11 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 const ROLE_COLORS: Record<UserRole, { bg: string; text: string }> = {
-  ROLE_PRO:         { bg: "#EEF2FF", text: "#4338CA" },
-  ROLE_ENTERPRISE:  { bg: "#EFF6FF", text: "#1D4ED8" },
-  ROLE_CUSTOMER:    { bg: "#F5F5F7", text: "#4B5563" },
-  ROLE_MODERATOR:   { bg: "#F3E8FF", text: "#7C3AED" },
-  ROLE_ADMIN:       { bg: "#FEF3C7", text: "#92400E" },
+  ROLE_PRO:         { bg: "#E0F2F1", text: "#00796B" },
+  ROLE_ENTERPRISE:  { bg: "#E3F2FD", text: "#1976D2" },
+  ROLE_CUSTOMER:    { bg: "#F5F5F5", text: "#616161" },
+  ROLE_MODERATOR:   { bg: "#F3E5F5", text: "#7B1FA2" },
+  ROLE_ADMIN:       { bg: "#FFF9C4", text: "#FBC02D" },
 };
 
 const ALL_ROLES = Object.keys(ROLE_LABELS) as UserRole[];
@@ -186,13 +192,34 @@ function UserDetailRow({
   );
 }
 
+function StatusPill({ active }: { active: boolean }) {
+  return (
+    <span className="admin-status-pill" style={{
+      backgroundColor: active ? "#E8F5E9" : "#FFF3E0",
+      color: active ? "#2E7D32" : "#EF6C00",
+    }}>
+      {active ? "ACTIF" : "SUSPENDU"}
+    </span>
+  );
+}
+
+function KycBadge({ verified }: { verified: boolean }) {
+  return (
+    <span className={`admin-kyc-badge-pill ${verified ? "verified" : "rejected"}`}>
+      {verified ? <FiCheckCircle size={12} /> : <FiXCircle size={12} />}
+      {verified ? "Vérifié" : "Non vérifié"}
+    </span>
+  );
+}
+
 /* ─── Main component ────────────────────────────────────────────────────────── */
 
 const UsersTab: React.FC = () => {
   const [filters, setFilters] = useState<AdminUsersFilter>({});
   const [search, setSearch] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: users = [], isLoading, isError } = useAdminUsers(filters);
   const updateVerification = useUpdateUserVerification();
@@ -215,18 +242,30 @@ const UsersTab: React.FC = () => {
     }));
   };
 
-  const toggleExpand = (userId: string) => {
-    setExpandedId((id) => (id === userId ? null : userId));
-    // Close role editor if opening details for a different row
-    if (editingRoleId !== userId) setEditingRoleId(null);
+  const toggleSelectAll = () => {
+    if (selectedIds.length === users.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(users.map((u) => u.userId));
+    }
+  };
+
+  const toggleSelect = (userId: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
   };
 
   const toggleVerification = (user: AdminUserResponse) => {
     updateVerification.mutate({ userId: user.userId, verified: !user.verified });
   };
 
-  // 5 columns: user, role, verified, date, actions
-  const COL_SPAN = 5;
+  const toggleExpand = (userId: string) => {
+    setExpandedId((id) => (id === userId ? null : userId));
+  };
+
+  // 6 columns: checkbox, user, type, statut, kyc, actions
+  const COL_SPAN = 6;
 
   return (
     <div className="admin-users-section">
@@ -286,11 +325,19 @@ const UsersTab: React.FC = () => {
           <table className="admin-table">
             <thead>
               <tr>
+                <th style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    checked={users.length > 0 && selectedIds.length === users.length}
+                    onChange={toggleSelectAll}
+                    className="admin-checkbox"
+                  />
+                </th>
                 <th>Utilisateur</th>
                 <th>Rôle</th>
-                <th>Vérification</th>
-                <th>Inscrit le</th>
-                <th>Actions</th>
+                <th>Statut</th>
+                <th>KYC</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -303,81 +350,90 @@ const UsersTab: React.FC = () => {
               ) : (
                 users.map((user) => (
                   <React.Fragment key={user.userId}>
-                    <tr style={{ background: expandedId === user.userId ? "#F8F9FF" : undefined }}>
+                    <tr className={selectedIds.includes(user.userId) ? "selected" : ""}>
+                      {/* Checkbox */}
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(user.userId)}
+                          onChange={() => toggleSelect(user.userId)}
+                          className="admin-checkbox"
+                        />
+                      </td>
+
                       {/* Identity */}
                       <td>
                         <div className="admin-user-cell">
+                          <img
+                            src={`https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random&color=fff`}
+                            alt=""
+                            className="admin-avatar"
+                          />
                           <div>
                             <strong>{user.firstName} {user.lastName}</strong>
                             <small>{user.email}</small>
+                            <span className="admin-inscribed-date">
+                              Inscrit: {new Date(user.createdAt).toLocaleDateString("fr-FR")}
+                            </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* Role — shows editor when editing, badge otherwise */}
+                      {/* Type */}
                       <td>
-                        {editingRoleId === user.userId ? (
-                          <RoleEditor
-                            user={user}
-                            onDone={() => setEditingRoleId(null)}
-                          />
-                        ) : (
-                          <RoleBadge role={user.role} />
-                        )}
-                      </td>
-
-                      {/* Verified toggle */}
-                      <td>
-                        <button
-                          onClick={() => toggleVerification(user)}
-                          disabled={updateVerification.isPending}
-                          style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                          title={user.verified ? "Retirer la vérification" : "Marquer comme vérifié"}
-                        >
-                          {user.verified ? (
-                            <span className="admin-kyc-badge verified">
-                              <FiCheckCircle /> Vérifié
-                            </span>
+                        <div className="admin-user-type">
+                          {editingRoleId === user.userId ? (
+                            <RoleEditor
+                              user={user}
+                              onDone={() => setEditingRoleId(null)}
+                            />
                           ) : (
-                            <span className="admin-kyc-badge rejected">
-                              <FiXCircle /> Non vérifié
+                            <span style={{ fontWeight: 600 }}>
+                              {ROLE_LABELS[user.role]}
                             </span>
                           )}
-                        </button>
+                        </div>
                       </td>
 
-                      {/* Date */}
-                      <td className="admin-text-muted">
-                        {new Date(user.createdAt).toLocaleDateString("fr-FR")}
+                      {/* Statut */}
+                      <td>
+                        <StatusPill active={user.verified} />
+                      </td>
+
+                      {/* KYC */}
+                      <td>
+                        <KycBadge verified={user.verified} />
                       </td>
 
                       {/* Actions */}
-                      <td>
-                        <div className="admin-actions">
-                          {/* Expand / collapse details */}
-                          <button
-                            className="admin-action-btn"
-                            title={expandedId === user.userId ? "Masquer les détails" : "Voir les détails"}
+                      <td style={{ textAlign: "right" }}>
+                        <div className="admin-actions" style={{ justifyContent: "flex-end" }}>
+                          <button 
+                            className="admin-action-btn-circle" 
+                            title="Voir l'ID et les permissions"
                             onClick={() => toggleExpand(user.userId)}
-                          >
-                            {expandedId === user.userId ? <FiChevronUp /> : <FiChevronDown />}
-                          </button>
-
-                          {/* Edit role inline */}
-                          <button
-                            className="admin-action-btn"
-                            title="Changer le rôle"
-                            onClick={() =>
-                              setEditingRoleId((id) =>
-                                id === user.userId ? null : user.userId
-                              )
-                            }
                             style={{
-                              color: editingRoleId === user.userId ? "#4338CA" : undefined,
-                              background: editingRoleId === user.userId ? "#EEF2FF" : undefined,
+                              color: expandedId === user.userId ? "var(--turquoise)" : undefined,
+                              borderColor: expandedId === user.userId ? "var(--turquoise)" : undefined,
+                              backgroundColor: expandedId === user.userId ? "var(--turquoise-light)" : undefined,
                             }}
                           >
-                            <span style={{ fontSize: 11, fontWeight: 600 }}>RÔLE</span>
+                            <FiEye size={14} />
+                          </button>
+                          <button
+                            className="admin-action-btn-circle"
+                            title="Modifier le rôle"
+                            onClick={() => setEditingRoleId(user.userId === editingRoleId ? null : user.userId)}
+                            style={{
+                              color: editingRoleId === user.userId ? "var(--turquoise)" : undefined,
+                              borderColor: editingRoleId === user.userId ? "var(--turquoise)" : undefined,
+                              backgroundColor: editingRoleId === user.userId ? "var(--turquoise-light)" : undefined,
+                            }}
+                          >
+                            <FiEdit2 size={14} />
+                          </button>
+                          <button className="admin-action-btn-circle" title="Plus">
+                            <FiMoreVertical size={14} />
                           </button>
                         </div>
                       </td>

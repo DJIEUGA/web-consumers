@@ -7,6 +7,11 @@ import {
   FiLoader,
   FiCheck,
   FiX,
+  FiEye,
+  FiEdit2,
+  FiMoreVertical,
+  FiMapPin,
+  FiClock,
 } from "react-icons/fi";
 import {
   useAdminProjects,
@@ -29,12 +34,12 @@ const STATUS_LABELS: Record<AdminProjectStatus, string> = {
   DISPUTED:    "Litige",
 };
 
-const STATUS_COLORS: Record<AdminProjectStatus, string> = {
-  OPEN:        "#4CAF50",
-  IN_PROGRESS: "#3DC7C9",
-  COMPLETED:   "#28a745",
-  CANCELLED:   "#F44336",
-  DISPUTED:    "#FF9800",
+const STATUS_COLORS: Record<AdminProjectStatus, { bg: string; text: string }> = {
+  OPEN:        { bg: "#E8F5E9", text: "#2E7D32" }, // Vert (Ouvert)
+  IN_PROGRESS: { bg: "#E0F7FA", text: "#006064" }, // Cyan (En cours)
+  COMPLETED:   { bg: "#F1F8E9", text: "#33691E" }, // Vert foncé (Terminé)
+  CANCELLED:   { bg: "#FFEBEE", text: "#B71C1C" }, // Rouge (Annulé)
+  DISPUTED:    { bg: "#FFF3E0", text: "#E65100" }, // Orange (Litige)
 };
 
 const ALL_STATUSES = Object.keys(STATUS_LABELS) as AdminProjectStatus[];
@@ -42,10 +47,10 @@ const ALL_STATUSES = Object.keys(STATUS_LABELS) as AdminProjectStatus[];
 /* ─── Sub-components ────────────────────────────────────────────────────────── */
 
 function StatusBadge({ status }: { status: AdminProjectStatus }) {
-  const color = STATUS_COLORS[status] ?? "#9E9E9E";
+  const color = STATUS_COLORS[status] ?? { bg: "#F5F5F7", text: "#616161" };
   return (
-    <span className="admin-badge" style={{ backgroundColor: `${color}20`, color }}>
-      {STATUS_LABELS[status] ?? status}
+    <span className="admin-status-pill" style={{ backgroundColor: color.bg, color: color.text }}>
+      {(STATUS_LABELS[status] ?? status).toUpperCase()}
     </span>
   );
 }
@@ -189,6 +194,7 @@ const ProjectsTab: React.FC = () => {
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   const { data: projects = [], isLoading, isError } = useAdminProjects(filters);
   const deleteProject = useDeleteProject();
@@ -213,6 +219,7 @@ const ProjectsTab: React.FC = () => {
     deleteProject.mutate(project.id);
   };
 
+  // 6 columns: Titre, Client, Professionnel, Budget, Statut, Actions
   const COL_SPAN = 6;
 
   return (
@@ -267,9 +274,9 @@ const ProjectsTab: React.FC = () => {
                 <th>Titre</th>
                 <th>Client</th>
                 <th>Professionnel</th>
+                <th>Budget</th>
                 <th>Statut</th>
-                <th>Créé le</th>
-                <th>Actions</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -282,17 +289,40 @@ const ProjectsTab: React.FC = () => {
               ) : (
                 projects.map((project) => (
                   <React.Fragment key={project.id}>
-                    <tr style={{ background: expandedId === project.id ? "#F8F9FF" : undefined }}>
+                    <tr className={expandedId === project.id ? "selected" : ""}>
                       {/* Title */}
                       <td>
-                        <strong>{project.title}</strong>
+                        <div className="admin-project-title-cell">
+                          <strong>{project.title}</strong>
+                          <small>Créé le {new Date(project.createdAt).toLocaleDateString("fr-FR")}</small>
+                        </div>
                       </td>
 
-                      {/* Participants */}
-                      <td>{project.customerDetails.fullName}</td>
-                      <td>{project.proDetails.fullName}</td>
+                      {/* Client */}
+                      <td>
+                        <div className="admin-project-client-cell">
+                          <strong>{project.customerDetails.fullName}</strong>
+                          <small>Client</small>
+                        </div>
+                      </td>
 
-                      {/* Status — shows editor when editing, badge otherwise */}
+                      {/* Professionnel */}
+                      <td>
+                        <div className="admin-project-client-cell">
+                          <strong>{project.proDetails.fullName || "Non assigné"}</strong>
+                          <small>Professionnel</small>
+                        </div>
+                      </td>
+
+                      {/* Budget */}
+                      <td>
+                        <span className="admin-budget-text">
+                          {/* Placeholder as it's missing from API */}
+                          À définir
+                        </span>
+                      </td>
+
+                      {/* Status */}
                       <td>
                         {editingStatusId === project.id ? (
                           <StatusEditor
@@ -304,52 +334,66 @@ const ProjectsTab: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Date */}
-                      <td className="admin-text-muted">
-                        {new Date(project.createdAt).toLocaleDateString("fr-FR")}
-                      </td>
-
                       {/* Actions */}
-                      <td>
-                        <div className="admin-actions">
-                          {/* Expand / collapse details */}
+                      <td style={{ textAlign: "right" }}>
+                        <div className="admin-actions" style={{ justifyContent: "flex-end", position: "relative" }}>
                           <button
-                            className="admin-action-btn"
-                            title={expandedId === project.id ? "Masquer les détails" : "Voir les détails"}
+                            className="admin-action-btn-circle"
+                            title="Voir les détails"
                             onClick={() => toggleExpand(project.id)}
+                            style={{
+                              color: expandedId === project.id ? "var(--turquoise)" : undefined,
+                              borderColor: expandedId === project.id ? "var(--turquoise)" : undefined,
+                              backgroundColor: expandedId === project.id ? "var(--turquoise-light)" : undefined,
+                            }}
                           >
-                            {expandedId === project.id ? <FiChevronUp /> : <FiChevronDown />}
+                            <FiEye size={14} />
                           </button>
 
-                          {/* Edit status inline */}
                           <button
-                            className="admin-action-btn"
-                            title="Changer le statut"
+                            className="admin-action-btn-circle"
+                            title="Modifier le statut"
                             onClick={() =>
                               setEditingStatusId((id) =>
                                 id === project.id ? null : project.id
                               )
                             }
                             style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: editingStatusId === project.id ? "#3DC7C9" : undefined,
-                              background: editingStatusId === project.id ? "#E0F7FA" : undefined,
+                              color: editingStatusId === project.id ? "var(--turquoise)" : undefined,
+                              borderColor: editingStatusId === project.id ? "var(--turquoise)" : undefined,
+                              backgroundColor: editingStatusId === project.id ? "var(--turquoise-light)" : undefined,
                             }}
                           >
-                            <span style={{ fontSize: 10, fontWeight: 700 }}>STATUT</span>
+                            <FiEdit2 size={14} />
                           </button>
 
-                          {/* Delete */}
-                          <button
-                            className="admin-action-btn"
-                            title="Supprimer le projet"
-                            onClick={() => handleDelete(project)}
-                            disabled={deleteProject.isPending}
-                            style={{ color: "#F44336" }}
+                          <button 
+                            className="admin-action-btn-circle" 
+                            title="Plus"
+                            onClick={() => setActiveMenuId(activeMenuId === project.id ? null : project.id)}
+                            style={{
+                              color: activeMenuId === project.id ? "var(--turquoise)" : undefined,
+                              borderColor: activeMenuId === project.id ? "var(--turquoise)" : undefined,
+                              backgroundColor: activeMenuId === project.id ? "var(--turquoise-light)" : undefined,
+                            }}
                           >
-                            <FiTrash2 />
+                            <FiMoreVertical size={14} />
                           </button>
+
+                          {/* Action Menu */}
+                          {activeMenuId === project.id && (
+                            <div className="admin-context-menu">
+                              <button 
+                                className="admin-menu-item danger"
+                                onClick={() => {
+                                  handleDelete(project);
+                                  setActiveMenuId(null);
+                                }}
+                              >
+                                <FiTrash2 size={14} /> Supprimer le projet
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -375,7 +419,7 @@ const ProjectsTab: React.FC = () => {
                 display: "inline-block",
                 width: 8, height: 8,
                 borderRadius: "50%",
-                background: STATUS_COLORS[s],
+                background: STATUS_COLORS[s].bg,
                 marginRight: 4,
               }}
             />

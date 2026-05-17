@@ -2025,3 +2025,396 @@
 html {
   scroll-behavior: smooth;
 }
+/* ========================================
+   USER TABLE ENHANCEMENTS
+   ======================================== */
+
+.admin-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--turquoise);
+}
+
+.admin-table tr.selected {
+  background: var(--turquoise-light) !important;
+}
+
+.admin-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--white);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.admin-inscribed-date {
+  display: block;
+  font-size: 10px;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+.admin-status-pill {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.admin-kyc-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-kyc-badge-pill.verified {
+  color: var(--success);
+}
+
+.admin-kyc-badge-pill.pending {
+  color: var(--warning);
+}
+
+.admin-kyc-badge-pill.rejected {
+  color: var(--danger);
+}
+
+.admin-note-stars {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-note-stars .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.admin-note-stars .count {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+
+.admin-action-btn-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--gray-200);
+  background: var(--white);
+  color: var(--gray-500);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  margin-left: 4px;
+}
+
+.admin-action-btn-circle:hover {
+  background: var(--gray-50);
+  color: var(--turquoise);
+  border-color: var(--turquoise);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ========================================
+   PROJECT TABLE ENHANCEMENTS
+   ======================================== */
+
+.admin-project-id {
+  color: var(--gray-700);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.admin-project-title-cell,
+.admin-project-client-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-project-title-cell strong,
+.admin-project-client-cell strong {
+  color: var(--gray-800);
+  font-size: 14px;
+}
+
+.admin-project-title-cell small,
+.admin-project-client-cell small {
+  color: var(--gray-400);
+  font-size: 11px;
+}
+
+.admin-budget-text {
+  color: var(--turquoise);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.admin-candidatures-text {
+  color: var(--gray-500);
+  font-size: 13px;
+}
+
+/* ========================================
+   CONTEXT MENU STYLES
+   ======================================== */
+
+.admin-context-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  min-width: 180px;
+  padding: 6px;
+  margin-top: 8px;
+  animation: slideDown 0.2s ease-out;
+}
+
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.admin-menu-item:hover {
+  background: var(--gray-50);
+  color: var(--turquoise);
+}
+
+.admin-menu-item.danger {
+  color: var(--danger);
+}
+
+.admin-menu-item.danger:hover {
+  background: #FEF2F2;
+  color: var(--danger);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================
+   KYC VERIFICATION ENHANCEMENTS
+   ======================================== */
+
+.admin-document-cell,
+.admin-date-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-600);
+  font-size: 13px;
+}
+
+.admin-rejection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-rejection-form input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-rejection-form input:focus {
+  border-color: var(--danger);
+}
+
+.admin-rejection-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.admin-btn-confirm {
+  padding: 8px 16px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.admin-btn-cancel {
+  padding: 8px 16px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-btn-confirm:hover { opacity: 0.9; }
+.admin-btn-cancel:hover { background: var(--gray-200); }
+
+
+/* ========================================
+   GENERAL ADMIN TABLE CELLS
+   ======================================== */
+
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--turquoise-light);
+  color: var(--turquoise);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.admin-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-user-info strong {
+  color: var(--gray-800);
+  font-size: 14px;
+}
+
+.admin-user-info small {
+  color: var(--gray-400);
+  font-size: 11px;
+}
+
+/* ========================================
+   ADMIN MODAL ENHANCEMENTS
+   ======================================== */
+
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(17, 24, 39, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.admin-modal-panel {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.admin-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.admin-modal-close {
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.admin-modal-close:hover {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+.admin-modal-body {
+  padding: 20px;
+}
+
+.admin-modal-message {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+.admin-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-100);
+}
+
+.admin-btn-confirm.primary { background: #3dc7c9; }
+.admin-btn-confirm.success { background: var(--success); }
+.admin-btn-confirm.danger { background: var(--danger); }
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
