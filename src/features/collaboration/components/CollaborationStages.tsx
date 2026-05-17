@@ -12,10 +12,12 @@ import {
   FiFile,
   FiList,
   FiLock,
+  FiInfo,
   FiMessageCircle,
   FiPlay,
   FiRefreshCw,
   FiSend,
+  FiSave,
   FiShield,
   FiTarget,
   FiThumbsDown,
@@ -380,8 +382,11 @@ type StepBriefProps = {
   livrablesSuggestions: string[];
   isCustomer: boolean;
   onBackToMatch: () => void;
-  validerBrief: () => Promise<void>;
-  confirmerReceptionBrief: () => void;
+  saveBrief: () => Promise<void>;
+  submitBrief: () => Promise<void>;
+  acknowledgeBrief: () => Promise<void>;
+  onUploadFiles: (files: File[]) => Promise<void>;
+  onDeleteFile: (fileId: string) => Promise<void>;
   toggleLivrable: (livrable: string) => void;
   freelance: CollaborationCardSummary;
 };
@@ -393,11 +398,17 @@ export const StepBrief = ({
   livrablesSuggestions,
   isCustomer,
   onBackToMatch,
-  validerBrief,
-  confirmerReceptionBrief,
+  saveBrief,
+  submitBrief,
+  acknowledgeBrief,
+  onUploadFiles,
+  onDeleteFile,
   toggleLivrable,
   freelance,
 }: StepBriefProps) => {
+  const isEditable = isCustomer && brief.status !== "SUBMITTED" && brief.status !== "ACKNOWLEDGED";
+  const submitDisabled = briefProgress < 100 || brief.status === "SUBMITTED" || brief.status === "ACKNOWLEDGED";
+
   return (
     <div className="collab-step-content">
       <div className="collab-step-header">
@@ -409,7 +420,11 @@ export const StepBrief = ({
         </div>
         <div>
           <h2>Brief express</h2>
-          <p>Décrivez votre projet de manière simple et claire</p>
+          <p>
+            {isCustomer
+              ? "Décrivez votre projet de manière simple et claire"
+              : "Examinez et confirmez les détails du projet"}
+          </p>
         </div>
       </div>
 
@@ -429,6 +444,15 @@ export const StepBrief = ({
         </span>
       </div>
 
+      <div className="collab-alert-info">
+        <FiInfo />
+        <span>
+          Statut actuel : {brief.status || "DRAFT"}
+          {brief.submittedAt ? ` · soumis le ${new Date(brief.submittedAt).toLocaleString("fr-FR")}` : ""}
+          {brief.acknowledgedAt ? ` · confirmé le ${new Date(brief.acknowledgedAt).toLocaleString("fr-FR")}` : ""}
+        </span>
+      </div>
+
       <div className="collab-brief-form">
         <div className="collab-form-group">
           <label>
@@ -440,7 +464,7 @@ export const StepBrief = ({
             onChange={(e) =>
               setBrief((prev) => ({ ...prev, objectif: e.target.value }))
             }
-            disabled={!isCustomer}
+            disabled={!isEditable}
             rows={3}
           />
         </div>
@@ -450,11 +474,11 @@ export const StepBrief = ({
             <FiList /> Livrables attendus *
           </label>
           <div className="collab-livrables-grid">
-            {livrablesSuggestions.map((livrable, index) => (
+            {(isCustomer ? livrablesSuggestions : brief.livrables).map((livrable, index) => (
               <div
                 key={index}
                 className={`collab-livrable-item ${brief.livrables.includes(livrable) ? "selected" : ""}`}
-                onClick={() => isCustomer && toggleLivrable(livrable)}
+                onClick={() => isEditable && toggleLivrable(livrable)}
               >
                 <FiCheckCircle />
                 <span>{livrable}</span>
@@ -472,14 +496,14 @@ export const StepBrief = ({
             onChange={(e) =>
               setBrief((prev) => ({ ...prev, delai: e.target.value }))
             }
-            disabled={!isCustomer}
+            disabled={!isEditable}
           >
             <option value="">Sélectionnez un délai</option>
-            <option value="Moins d'1 semaine">Moins d'1 semaine</option>
-            <option value="1-2 semaines">1-2 semaines</option>
-            <option value="2-4 semaines">2-4 semaines</option>
-            <option value="1-2 mois">1-2 mois</option>
-            <option value="Plus de 2 mois">Plus de 2 mois</option>
+            <option value="MOINS_1_SEMAINE">Moins d'1 semaine</option>
+            <option value="_1_2_SEMAINES">1-2 semaines</option>
+            <option value="_2_4_SEMAINES">2-4 semaines</option>
+            <option value="_1_2_MOIS">1-2 mois</option>
+            <option value="PLUS_2_MOIS">Plus de 2 mois</option>
           </select>
         </div>
 
@@ -495,7 +519,7 @@ export const StepBrief = ({
               onChange={(e) =>
                 setBrief((prev) => ({ ...prev, budget: e.target.value }))
               }
-              disabled={!isCustomer}
+              disabled={!isEditable}
             />
             <span className="collab-currency">FCFA</span>
           </div>
@@ -510,6 +534,41 @@ export const StepBrief = ({
             <span>Glissez vos fichiers ici ou cliquez pour uploader</span>
             <small>PDF, Images, Documents (max 10MB)</small>
           </div>
+          {isEditable && (
+            <input
+              type="file"
+              multiple
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length > 0) {
+                  void onUploadFiles(files);
+                }
+                e.currentTarget.value = "";
+              }}
+            />
+          )}
+          {brief.fichiers.length > 0 && (
+            <div className="collab-brief-file-list">
+              {brief.fichiers.map((file) => (
+                <div key={file.id || file.originalName} className="collab-brief-file-item">
+                  <div>
+                    <strong>{file.originalName}</strong>
+                    <span>{file.mimeType || "Fichier"}</span>
+                  </div>
+                  <div>
+                    {file.url && (
+                      <a href={file.url} target="_blank" rel="noreferrer">Télécharger</a>
+                    )}
+                    {file.id && isEditable && (
+                      <button type="button" onClick={() => void onDeleteFile(file.id!)}>
+                        Supprimer
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {!isCustomer && (
@@ -543,17 +602,24 @@ export const StepBrief = ({
               <FiArrowLeft /> Retour
             </button>
             <button
-              className={`collab-btn-primary ${briefProgress < 100 ? "disabled" : ""}`}
-              onClick={() => { void validerBrief(); }}
-              disabled={briefProgress < 100}
+              className="collab-btn-secondary"
+              onClick={() => { void saveBrief(); }}
+              disabled={!isEditable}
             >
-              <FiCheck /> Valider le brief
+              <FiSave /> Enregistrer le brouillon
+            </button>
+            <button
+              className={`collab-btn-primary ${submitDisabled ? "disabled" : ""}`}
+              onClick={() => { void submitBrief(); }}
+              disabled={submitDisabled}
+            >
+              <FiCheck /> Soumettre le brief
             </button>
           </>
         ) : (
           <button
             className="collab-btn-primary"
-            onClick={confirmerReceptionBrief}
+            onClick={() => { void acknowledgeBrief(); }}
           >
             <FiCheck /> Confirmer la reception du brief
           </button>
@@ -753,22 +819,6 @@ export const StepContract = ({
           </div>
         </div>
       </div>
-
-      {isCustomer && !contratAccepte.freelance && (
-        <div className="collab-demo-actions">
-          <p className="collab-demo-note">
-            🎮 Demo : Simuler la signature du freelance
-          </p>
-          <button
-            className="collab-btn-outline"
-            onClick={() =>
-              setContratAccepte((prev) => ({ ...prev, freelance: true }))
-            }
-          >
-            <FiCheck /> Le freelance signe
-          </button>
-        </div>
-      )}
     </div>
   );
 };
@@ -943,9 +993,9 @@ type StepExecutionProps = {
   getStatutBadge: (statut: string) => React.ReactNode;
   isPro: boolean;
   isCustomer: boolean;
-  livrerEtape: (etapeId: number) => void;
-  validerEtape: (etapeId: number) => void;
-  demanderModification: (etapeId: number) => void;
+  livrerEtape: (etapeId: string) => void;
+  validerEtape: (etapeId: string) => void;
+  demanderModification: (etapeId: string) => void;
   messages: UiMessage[];
   newMessage: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
@@ -1356,7 +1406,7 @@ export const StepDelivery = ({
       <div className="collab-paiement-card">
         <div className="collab-match-users" style={{ justifyContent: "center", marginBottom: 24 }}>
           <div className="collab-match-user">
-            <img src={freelance.avatarUrl} alt={freelance.nom} />
+            <img src={freelance.photo} alt={freelance.nom} />
             <span>{freelance.nom}</span>
             <span className="collab-role">Prestataire</span>
           </div>
@@ -1441,7 +1491,7 @@ export const StepRelease = ({
         <div className="collab-match-success-card" style={{ marginBottom: 16 }}>
           <div className="collab-match-users" style={{ justifyContent: "center" }}>
             <div className="collab-match-user">
-              <img src={freelance.avatarUrl} alt={freelance.nom} />
+              <img src={freelance.photo} alt={freelance.nom} />
               <span>{freelance.nom}</span>
               <span className="collab-role">Prestataire</span>
             </div>

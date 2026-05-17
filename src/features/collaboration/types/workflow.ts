@@ -1,4 +1,4 @@
-import type { CollaborationStatus } from "@/features/collaboration/services/collaborationApi";
+import type { CollaborationBriefStatus, CollaborationStatus } from "@/features/collaboration/services/collaborationApi";
 
 export type CollaborationActor = "customer" | "pro" | "other";
 
@@ -61,8 +61,20 @@ export type BriefState = {
   livrables: string[];
   delai: string;
   budget: string;
-  fichiers: unknown[];
+  fichiers: BriefFileState[];
   commentairePro: string;
+  status?: CollaborationBriefStatus;
+  submittedAt?: string | null;
+  acknowledgedAt?: string | null;
+};
+
+export type BriefFileState = {
+  id?: string;
+  originalName: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  url?: string;
+  file?: File;
 };
 
 export type EtapeStatut =
@@ -73,11 +85,17 @@ export type EtapeStatut =
   | "modification";
 
 export type ProjectEtape = {
-  id: number;
+  id: string;
   titre: string;
+  description?: string | null;
   statut: EtapeStatut;
   montant: number;
+  currency?: string;
+  ordre?: number;
+  revisionCount?: number;
+  maxRevisions?: number;
   progression: number;
+  lockedAt?: string | null;
 };
 
 export type ContratAccepteState = {

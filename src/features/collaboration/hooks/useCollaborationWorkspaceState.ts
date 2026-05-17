@@ -37,10 +37,10 @@ export const useCollaborationWorkspaceState = ({
 
   const briefProgress = useMemo(() => {
     let progress = 0;
-    if (brief.objectif) progress += 25;
+    if (brief.objectif.trim()) progress += 25;
     if (brief.livrables.length > 0) progress += 25;
-    if (brief.delai) progress += 25;
-    if (brief.budget) progress += 25;
+    if (brief.delai.trim()) progress += 25;
+    if (Number(brief.budget) > 0) progress += 25;
     return progress;
   }, [brief]);
 
@@ -72,17 +72,17 @@ export const useCollaborationWorkspaceState = ({
     onAdvanceStep(6, "payment_deposited", 2000);
   };
 
-  const updateEtapeStatut = (etapeId: number, statut: EtapeStatut) => {
+  const updateEtapeStatut = (etapeId: string, statut: EtapeStatut) => {
     setEtapes((prev) =>
       prev.map((e) => (e.id === etapeId ? { ...e, statut } : e)),
     );
   };
 
-  const livrerEtape = (etapeId: number) => {
+  const livrerEtape = (etapeId: string) => {
     updateEtapeStatut(etapeId, "livree");
   };
 
-  const validerEtape = (etapeId: number) => {
+  const validerEtape = (etapeId: string) => {
     setEtapes((prev) => {
       const nextEtapes = prev.map((e) =>
         e.id === etapeId ? { ...e, statut: "validee" as const } : e,
@@ -94,7 +94,7 @@ export const useCollaborationWorkspaceState = ({
     });
   };
 
-  const demanderModification = (etapeId: number) => {
+  const demanderModification = (etapeId: string) => {
     updateEtapeStatut(etapeId, "modification");
   };
 
@@ -104,7 +104,7 @@ export const useCollaborationWorkspaceState = ({
     const perEtape = livrables.length > 0 ? Math.round(total / livrables.length) : 0;
     setEtapes(
       livrables.map((titre, index) => ({
-        id: index + 1,
+        id: String(index + 1),
         titre,
         statut: index === 0 ? ("en_cours" as const) : ("a_venir" as const),
         montant: perEtape,

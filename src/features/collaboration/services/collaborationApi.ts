@@ -9,6 +9,65 @@ import type {
   SubmitDeliverableParams,
 } from "../types";
 
+export type CollaborationBriefStatus = "DRAFT" | "SUBMITTED" | "ACKNOWLEDGED";
+
+export type CollaborationBriefDeliverable =
+  | "MAQUETTE_GRAPHIQUE"
+  | "CODE_SOURCE"
+  | "DOCUMENTATION"
+  | "FORMATION_TUTORIEL"
+  | "FICHIERS_SOURCES"
+  | "REVISIONS_INCLUSES"
+  | "SUPPORT_POST_LIVRAISON";
+
+export type CollaborationBriefTimeline =
+  | "MOINS_1_SEMAINE"
+  | "_1_2_SEMAINES"
+  | "_2_4_SEMAINES"
+  | "_1_2_MOIS"
+  | "PLUS_2_MOIS";
+
+export type BriefFileResponse = {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  url: string;
+};
+
+export type CollaborationBriefRequest = {
+  objectif: string;
+  livrables: CollaborationBriefDeliverable[];
+  delai: CollaborationBriefTimeline;
+  budget: number;
+};
+
+export type CollaborationBriefPatchRequest = Partial<CollaborationBriefRequest>;
+
+export type CollaborationBriefResponse = {
+  id: string;
+  collaborationId: string;
+  objectif: string;
+  livrables: CollaborationBriefDeliverable[];
+  delai: CollaborationBriefTimeline;
+  budget: number;
+  status: CollaborationBriefStatus;
+  progress: number;
+  submittedAt: string | null;
+  acknowledgedAt: string | null;
+  files: BriefFileResponse[];
+};
+
+export type CollaborationBriefSubmitResponse = {
+  status: "SUBMITTED";
+  submittedAt: string;
+};
+
+export type CollaborationBriefAcknowledgeResponse = {
+  status: "ACKNOWLEDGED";
+  acknowledgedAt: string;
+};
+
 export type CollaborationStatus =
   | "PENDING"
   | "REQUEST_INFO"
@@ -23,7 +82,8 @@ export type CollaborationStatus =
   | "PAYMENT_RELEASED"
   | "CLOSED"
   | "COMPLETED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "DISPUTED";
 
 export type LifecycleTimelineItem = {
   index: number;
@@ -189,6 +249,153 @@ export type ProPublicProfileDetails = Record<string, unknown> & {
 };
 
 export type CustomerProfileDetails = Record<string, unknown>;
+
+// ─── Contract ────────────────────────────────────────────────────────────────
+
+export type CollaborationContract = {
+  id: string;
+  collaborationId: string;
+  objectif: string;
+  livrables: CollaborationBriefDeliverable[];
+  delai: CollaborationBriefTimeline;
+  budget: number;
+  currency: string;
+  customerSigned: boolean;
+  proSigned: boolean;
+  customerSignedAt: string | null;
+  proSignedAt: string | null;
+  generatedAt: string;
+};
+
+// ─── Etapes / Milestones ─────────────────────────────────────────────────────
+
+export type EtapeStatut =
+  | "a_venir"
+  | "en_cours"
+  | "livree"
+  | "validee"
+  | "modification";
+
+export type CollaborationEtape = {
+  id: string;
+  titre: string;
+  description: string | null;
+  montant: number;
+  currency: string;
+  statut: EtapeStatut;
+  ordre: number;
+  revisionCount: number;
+  maxRevisions: number;
+  lockedAt: string | null;
+  reminderSentAt?: string | null;
+  autoValidatedAt?: string | null;
+};
+
+export type CreateEtapeRequest = {
+  titre: string;
+  description?: string;
+  montant: number;
+  ordre?: number;
+};
+
+export type UpdateEtapeRequest = Partial<{
+  titre: string;
+  description: string;
+  montant: number;
+  ordre: number;
+}>;
+
+export type UpdateEtapeStatusRequest = {
+  statut: EtapeStatut;
+};
+
+export type ReorderEtapesRequest = {
+  order: Array<{ id: string; ordre: number }>;
+};
+
+export type ConfirmPlanResponse = {
+  planLocked: boolean;
+  customerConfirmed: boolean;
+  proConfirmed: boolean;
+};
+
+// ─── Deliverables ─────────────────────────────────────────────────────────────
+
+export type MilestoneDeliverable = {
+  id: string;
+  etapeId: string;
+  fileUrl: string | null;
+  externalLink: string | null;
+  notes: string | null;
+  revisionRound: number;
+  submittedAt: string;
+};
+
+// ─── Payment ─────────────────────────────────────────────────────────────────
+
+export type EscrowTransaction = {
+  id: string;
+  type: "DEPOSIT" | "RELEASE" | "REFUND" | "REVERSAL";
+  amount: number;
+  currency: string;
+  status: "PENDING" | "CONFIRMED" | "FAILED";
+  etapeId: string | null;
+  simulatedAt: string | null;
+};
+
+export type PaymentSummaryResponse = {
+  escrow: {
+    totalAmount: number;
+    currency: string;
+    lockedAmount: number;
+    releasedAmount: number;
+    status: "OPEN" | "PARTIALLY_RELEASED" | "FULLY_RELEASED" | "FROZEN";
+  };
+  transactions: EscrowTransaction[];
+};
+
+export type ConfirmPaymentRequest = {
+  currency?: string;
+};
+
+// ─── Dispute ─────────────────────────────────────────────────────────────────
+
+export type CollaborationDisputeStatus = "OPEN" | "IN_INVESTIGATION" | "RESOLVED" | "CLOSED";
+
+export type CollaborationDisputeResponse = {
+  id: string;
+  collaborationSpaceId: string;
+  initiatorId: string;
+  initiatorName: string;
+  respondentId: string;
+  respondentName: string;
+  reason: string;
+  status: CollaborationDisputeStatus;
+  arbitrationDecision: string | null;
+  refundAmount: number | null;
+  paymentAmount: number | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+};
+
+export type TriggerDisputeRequest = {
+  reason: string;
+};
+
+// ─── Closure ─────────────────────────────────────────────────────────────────
+
+export type CloseSpaceRequest = {
+  rating?: number;
+  comment?: string;
+};
+
+// ─── Notifications / FCM ─────────────────────────────────────────────────────
+
+export type FcmTokenRequest = {
+  token: string;
+  platform: "web" | "android" | "ios";
+};
 
 type MaybeEnvelope<T> = ApiEnvelope<T> | T;
 
@@ -398,13 +605,64 @@ export const collaborationApi = {
 
   async submitBrief(
     spaceId: string,
-    payload?: GenericActionPayload,
-  ): Promise<CollaborationSpaceResponse> {
+    payload?: CollaborationBriefRequest,
+  ): Promise<CollaborationBriefResponse> {
     const response = await axiosInstance.post<MaybeEnvelope<CollaborationSpaceResponse>>(
-      COLLABORATION_ENDPOINTS.SUBMIT_BRIEF(encodeURIComponent(spaceId)),
+      COLLABORATION_ENDPOINTS.BRIEF(encodeURIComponent(spaceId)),
       payload || {},
     );
-    return unwrapEnvelope<CollaborationSpaceResponse>(response);
+    return unwrapEnvelope<CollaborationBriefResponse>(response);
+  },
+
+  async patchBrief(
+    spaceId: string,
+    payload?: CollaborationBriefPatchRequest,
+  ): Promise<CollaborationBriefResponse> {
+    const response = await axiosInstance.patch<MaybeEnvelope<CollaborationBriefResponse>>(
+      COLLABORATION_ENDPOINTS.BRIEF(encodeURIComponent(spaceId)),
+      payload || {},
+    );
+    return unwrapEnvelope<CollaborationBriefResponse>(response);
+  },
+
+  async getBrief(spaceId: string): Promise<CollaborationBriefResponse> {
+    const response = await axiosInstance.get<MaybeEnvelope<CollaborationBriefResponse>>(
+      COLLABORATION_ENDPOINTS.BRIEF(encodeURIComponent(spaceId)),
+    );
+    return unwrapEnvelope<CollaborationBriefResponse>(response);
+  },
+
+  async submitBriefPhase(spaceId: string): Promise<CollaborationBriefSubmitResponse> {
+    const response = await axiosInstance.post<MaybeEnvelope<CollaborationBriefSubmitResponse>>(
+      COLLABORATION_ENDPOINTS.BRIEF_SUBMIT(encodeURIComponent(spaceId)),
+      {},
+    );
+    return unwrapEnvelope<CollaborationBriefSubmitResponse>(response);
+  },
+
+  async acknowledgeBrief(spaceId: string): Promise<CollaborationBriefAcknowledgeResponse> {
+    const response = await axiosInstance.post<MaybeEnvelope<CollaborationBriefAcknowledgeResponse>>(
+      COLLABORATION_ENDPOINTS.BRIEF_ACKNOWLEDGE(encodeURIComponent(spaceId)),
+      {},
+    );
+    return unwrapEnvelope<CollaborationBriefAcknowledgeResponse>(response);
+  },
+
+  async uploadBriefFiles(spaceId: string, files: File[]): Promise<BriefFileResponse[]> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+    const response = await axiosInstance.post<MaybeEnvelope<BriefFileResponse[]>>(
+      COLLABORATION_ENDPOINTS.BRIEF_FILES(encodeURIComponent(spaceId)),
+      formData,
+    );
+    return unwrapEnvelope<BriefFileResponse[]>(response) || [];
+  },
+
+  async deleteBriefFile(spaceId: string, fileId: string): Promise<void> {
+    const response = await axiosInstance.delete<MaybeEnvelope<void>>(
+      COLLABORATION_ENDPOINTS.BRIEF_FILE(encodeURIComponent(spaceId), encodeURIComponent(fileId)),
+    );
+    unwrapEnvelope<void>(response);
   },
 
   async signContract(spaceId: string): Promise<CollaborationSpaceResponse> {
